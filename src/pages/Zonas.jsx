@@ -1,7 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +13,9 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useNavigate } from "react-router-dom";
 
 export default function Zonas() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
   const [editingZona, setEditingZona] = useState(null);
@@ -24,7 +25,6 @@ export default function Zonas() {
     ultima_visita: "",
     anotaciones: "",
   });
-  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
@@ -153,12 +153,6 @@ export default function Zonas() {
 
   if (!user) return null;
   const isAdmin = user.role === "admin";
-
-  const createPageUrl = (url) => {
-    const currentUrl = window.location.href;
-    const baseUrl = currentUrl.substring(0, currentUrl.indexOf('/pages'));
-    return `${baseUrl}/pages/${url}`;
-  };
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
