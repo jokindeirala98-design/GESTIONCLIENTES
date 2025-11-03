@@ -209,12 +209,69 @@ export default function Layout({ children }) {
                     <Menu className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-[280px] bg-[#F5F5F5]">
-                  <SidebarProvider>
-                    <Sidebar className="border-none bg-[#F5F5F5]">
-                      <SidebarNav />
-                    </Sidebar>
-                  </SidebarProvider>
+                <SheetContent side="left" className="p-0 w-[280px] bg-white">
+                  <div className="flex flex-col h-full">
+                    {/* Header */}
+                    <div className="border-b border-gray-200 p-4 bg-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#004D9D] to-[#00AEEF] rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-lg">V</span>
+                        </div>
+                        <div>
+                          <h2 className="font-bold text-[#004D9D] text-sm">Voltis Energía</h2>
+                          <p className="text-xs text-[#666666]">Gestor de Clientes</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="flex-1 overflow-auto p-2 bg-[#F5F5F5]">
+                      <nav className="space-y-1">
+                        {navigationItems.map((item) => (
+                          <Link
+                            key={item.title}
+                            to={item.url}
+                            onClick={() => setMobileOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                              location.pathname === item.url
+                                ? 'bg-[#004D9D] text-white'
+                                : 'text-[#666666] hover:bg-white hover:text-[#004D9D]'
+                            }`}
+                          >
+                            <item.icon className="w-5 h-5" />
+                            <span className="font-medium text-sm">{item.title}</span>
+                          </Link>
+                        ))}
+                      </nav>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="border-t border-gray-200 p-4 bg-white">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-9 h-9 bg-gradient-to-br from-[#00AEEF] to-[#004D9D] rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-bold text-sm">
+                              {user.iniciales || user.full_name?.substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-[#004D9D] text-sm truncate">{user.full_name}</p>
+                            <p className="text-xs text-[#666666] truncate">
+                              {isAdmin ? 'Administrador' : 'Comercial'}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleLogout}
+                          className="text-[#666666] hover:text-red-600 hover:bg-red-50 flex-shrink-0"
+                        >
+                          <LogOut className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </SheetContent>
               </Sheet>
               <h1 className="font-bold text-[#004D9D] text-lg">Voltis</h1>
