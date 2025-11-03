@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,9 +12,9 @@ import {
   Upload, Download, Trash2, Edit, X, CheckCircle2
 } from "lucide-react";
 import { toast } from "sonner";
-import EditClienteDialog from "../components/clientes/EditClienteDialog";
-import SubirFacturasDialog from "../components/clientes/SubirFacturasDialog";
-import SubirInformeDialog from "../components/clientes/SubirInformeDialog";
+import EditClienteDialog from "../components/clientes/EditClienteDialog.jsx";
+import SubirFacturasDialog from "../components/clientes/SubirFacturasDialog.jsx";
+import SubirInformeDialog from "../components/clientes/SubirInformeDialog.jsx";
 
 const estadoColors = {
   "Primer contacto": "bg-gray-500",

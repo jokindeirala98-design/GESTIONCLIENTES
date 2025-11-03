@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Users, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import ClienteCard from "../components/clientes/ClienteCard";
-import CreateClienteDialog from "../components/clientes/CreateClienteDialog";
+import ClienteCard from "../components/clientes/ClienteCard.jsx";
+import CreateClienteDialog from "../components/clientes/CreateClienteDialog.jsx";
 
 export default function Clientes() {
   const navigate = useNavigate();
