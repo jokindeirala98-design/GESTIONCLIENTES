@@ -4,6 +4,8 @@ import Clientes from './pages/Clientes';
 import DetalleCliente from './pages/DetalleCliente';
 import ReadyToGo from './pages/ReadyToGo';
 import InformesPorPresentar from './pages/InformesPorPresentar';
+import Comisiones from './pages/Comisiones';
+import GestionUsuarios from './pages/GestionUsuarios';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +16,8 @@ export const PAGES = {
     "DetalleCliente": DetalleCliente,
     "ReadyToGo": ReadyToGo,
     "InformesPorPresentar": InformesPorPresentar,
+    "Comisiones": Comisiones,
+    "GestionUsuarios": GestionUsuarios,
 }
 
 export const pagesConfig = {
