@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 export default function Zonas() {
   const [user, setUser] = useState(null);
@@ -22,6 +24,7 @@ export default function Zonas() {
     ultima_visita: "",
     anotaciones: "",
   });
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
@@ -151,6 +154,12 @@ export default function Zonas() {
   if (!user) return null;
   const isAdmin = user.role === "admin";
 
+  const createPageUrl = (url) => {
+    const currentUrl = window.location.href;
+    const baseUrl = currentUrl.substring(0, currentUrl.indexOf('/pages'));
+    return `${baseUrl}/pages/${url}`;
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -211,9 +220,10 @@ export default function Zonas() {
             return (
               <Card 
                 key={zona.id} 
-                className={`hover:shadow-lg transition-all duration-300 border-2 ${
+                className={`hover:shadow-lg transition-all duration-300 border-2 cursor-pointer ${
                   isPriority ? 'border-green-500 bg-green-50' : 'border-transparent'
                 }`}
+                onClick={() => navigate(createPageUrl(`DetalleZona?id=${zona.id}`))}
               >
                 <CardHeader className={`${isPriority ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-[#004D9D] to-[#00AEEF]'}`}>
                   <div className="flex items-start justify-between">
@@ -260,7 +270,10 @@ export default function Zonas() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEdit(zona)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(zona);
+                      }}
                       className="flex-1"
                     >
                       <Edit className="w-4 h-4 mr-1" />
@@ -270,7 +283,10 @@ export default function Zonas() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(zona)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(zona);
+                        }}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />

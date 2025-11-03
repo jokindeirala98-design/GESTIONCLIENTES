@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -8,16 +8,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-export default function CreateClienteDialog({ open, onClose, user, zonas }) {
+export default function CreateClienteDialog({ open, onClose, user, zonas, zonaPreseleccionada = null }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     nombre_negocio: "",
     nombre_cliente: "",
     telefono: "",
     email: "",
-    zona_id: "",
+    zona_id: zonaPreseleccionada || "",
     anotaciones: "",
   });
+
+  useEffect(() => {
+    if (zonaPreseleccionada) {
+      setFormData(prev => ({ ...prev, zona_id: zonaPreseleccionada }));
+    }
+  }, [zonaPreseleccionada]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Cliente.create(data),
@@ -35,7 +41,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonas }) {
       nombre_cliente: "",
       telefono: "",
       email: "",
-      zona_id: "",
+      zona_id: zonaPreseleccionada || "",
       anotaciones: "",
     });
   };
@@ -114,7 +120,11 @@ export default function CreateClienteDialog({ open, onClose, user, zonas }) {
               <label className="text-sm font-medium text-[#666666] mb-1 block">
                 Zona *
               </label>
-              <Select value={formData.zona_id} onValueChange={(value) => setFormData({ ...formData, zona_id: value })} required>
+              <Select 
+                value={formData.zona_id} 
+                onValueChange={(value) => setFormData({ ...formData, zona_id: value })} 
+                required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una zona" />
                 </SelectTrigger>
@@ -124,6 +134,11 @@ export default function CreateClienteDialog({ open, onClose, user, zonas }) {
                   ))}
                 </SelectContent>
               </Select>
+              {zonaPreseleccionada && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Zona preseleccionada
+                </p>
+              )}
             </div>
 
             <div>
