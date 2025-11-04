@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -40,7 +41,8 @@ export default function Dashboard() {
     esperandoFacturas: misClientes.filter(c => c.estado === "Esperando facturas").length,
     facturasPresent: misClientes.filter(c => c.estado === "Facturas presentadas").length,
     informeListo: misClientes.filter(c => c.estado === "Informe listo").length,
-    cerrados: misClientes.filter(c => c.estado === "Cerrado con éxito").length,
+    pendienteFirma: misClientes.filter(c => c.estado === "Pendiente de firma").length,
+    firmados: misClientes.filter(c => c.estado === "Firmado con éxito").length,
     rechazados: misClientes.filter(c => c.estado === "Rechazado").length,
   };
 
@@ -66,9 +68,9 @@ export default function Dashboard() {
       color: "from-blue-500 to-blue-600",
       link: isAdmin ? createPageUrl("InformesPorPresentar") : createPageUrl("ReadyToGo"),
     },
-    {
-      title: "Cerrados con Éxito",
-      value: clientesPorEstado.cerrados,
+    { // Updated card: "Cerrados con Éxito" is replaced by "Firmado con Éxito"
+      title: "Firmado con Éxito",
+      value: clientesPorEstado.firmados,
       icon: CheckCircle2,
       color: "from-green-500 to-green-600",
       link: createPageUrl("Clientes"),
@@ -120,8 +122,9 @@ export default function Dashboard() {
                 { label: "Primer contacto", value: clientesPorEstado.primerContacto, color: "bg-gray-400" },
                 { label: "Esperando facturas", value: clientesPorEstado.esperandoFacturas, color: "bg-orange-500" },
                 { label: "Facturas presentadas", value: clientesPorEstado.facturasPresent, color: "bg-blue-500" },
-                { label: "Informe listo", value: clientesPorEstado.informeListo, color: "bg-purple-500" },
-                { label: "Cerrado con éxito", value: clientesPorEstado.cerrados, color: "bg-green-500" },
+                { label: "Informe listo", value: clientesPorEstado.informeListo, color: "bg-green-500" },
+                { label: "Pendiente de firma", value: clientesPorEstado.pendienteFirma, color: "bg-purple-500" },
+                { label: "Firmado con éxito", value: clientesPorEstado.firmados, color: "bg-yellow-600" },
                 { label: "Rechazado", value: clientesPorEstado.rechazados, color: "bg-red-500" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">

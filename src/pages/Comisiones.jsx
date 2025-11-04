@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ export default function Comisiones() {
 
   const misClientesCerrados = clientes.filter(
     c => c.propietario_email === user.email && 
-         c.estado === "Cerrado con éxito" && 
+         c.estado === "Firmado con éxito" && 
          c.comision
   );
 
