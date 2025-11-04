@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Users, Eye } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ClienteCard from "../components/clientes/ClienteCard.jsx";
@@ -42,13 +41,16 @@ export default function Clientes() {
 
   const isAdmin = user.role === "admin";
 
-  const filteredClientes = clientes.filter(cliente => {
+  // Filtrar: cada usuario ve solo sus clientes (admin ve todos)
+  const misClientes = isAdmin 
+    ? clientes 
+    : clientes.filter(c => c.propietario_email === user.email);
+
+  const filteredClientes = misClientes.filter(cliente => {
     const matchSearch = 
-      (cliente.propietario_email === user.email || isAdmin) 
-        ? (cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           cliente.telefono?.includes(searchTerm))
-        : cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase());
+      cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.telefono?.includes(searchTerm);
     
     const matchEstado = filterEstado === "all" || cliente.estado === filterEstado;
     const matchZona = filterZona === "all" || cliente.zona_id === filterZona;
@@ -101,7 +103,8 @@ export default function Clientes() {
                 <SelectItem value="Esperando facturas">Esperando facturas</SelectItem>
                 <SelectItem value="Facturas presentadas">Facturas presentadas</SelectItem>
                 <SelectItem value="Informe listo">Informe listo</SelectItem>
-                <SelectItem value="Cerrado con éxito">Cerrado con éxito</SelectItem>
+                <SelectItem value="Pendiente de firma">Pendiente de firma</SelectItem>
+                <SelectItem value="Firmado con éxito">Firmado con éxito</SelectItem>
                 <SelectItem value="Rechazado">Rechazado</SelectItem>
               </SelectContent>
             </Select>
