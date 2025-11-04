@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, X, Building2, MapPin, User, Phone, DollarSign, Search } from "lucide-react";
+import { CheckCircle2, X, Building2, MapPin, User, Phone, DollarSign, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CierresVerificados() {
@@ -48,11 +48,15 @@ export default function CierresVerificados() {
 
   if (!user) return null;
 
-  // Solo clientes firmados que NO han sido aprobados aún
+  // Mostrar todos los clientes firmados del mes actual (aprobados y pendientes)
+  const mesActual = new Date().toISOString().substring(0, 7); // YYYY-MM
   const clientesFirmados = clientes.filter(c => 
     c.estado === "Firmado con éxito" && 
-    c.aprobado_admin !== true
+    c.mes_comision === mesActual
   );
+
+  const clientesPendientes = clientesFirmados.filter(c => c.aprobado_admin !== true);
+  const clientesAprobados = clientesFirmados.filter(c => c.aprobado_admin === true);
 
   const clientesFiltrados = clientesFirmados.filter(cliente =>
     cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -131,38 +135,79 @@ export default function CierresVerificados() {
   const clientesPorZona = zonas.map(zona => ({
     zona,
     clientes: clientesFiltrados.filter(c => c.zona_id === zona.id)
+      .sort((a, b) => {
+        // Primero los pendientes, luego los aprobados
+        if (a.aprobado_admin === true && b.aprobado_admin !== true) return 1;
+        if (a.aprobado_admin !== true && b.aprobado_admin === true) return -1;
+        return 0;
+      })
   })).filter(grupo => grupo.clientes.length > 0)
     .sort((a, b) => b.clientes.length - a.clientes.length);
+
+  const formatearMes = (mesStr) => {
+    if (!mesStr) return "";
+    const [year, month] = mesStr.split('-');
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[parseInt(month) - 1]} ${year}`;
+  };
+
+  const totalComisiones = clientesAprobados.reduce((sum, c) => sum + (c.comision || 0), 0);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
           <CheckCircle2 className="w-8 h-8" />
-          Cierres Verificados
+          Cierres Verificados - {formatearMes(mesActual)}
         </h1>
         <p className="text-[#666666]">
-          Clientes marcados como firmados por los comerciales - Pendientes de tu aprobación
+          Historial de cierres del mes actual
         </p>
       </div>
 
-      <Card className="border-2 border-yellow-200 bg-yellow-50 mb-6">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
-              <CheckCircle2 className="w-6 h-6 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="border-2 border-yellow-200 bg-yellow-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-yellow-700 mb-1">Pendientes</p>
+                <p className="text-3xl font-bold text-yellow-600">{clientesPendientes.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-yellow-800 mb-2">
-                {clientesFirmados.length} cierre(s) pendiente(s) de verificación
-              </h3>
-              <p className="text-sm text-yellow-700">
-                Revisa cada cierre y aprueba o rechaza según corresponda. Solo los cierres aprobados contabilizarán comisión.
-              </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-green-200 bg-green-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-700 mb-1">Aprobados</p>
+                <p className="text-3xl font-bold text-green-600">{clientesAprobados.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-white" />
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-700 mb-1">Total Comisiones</p>
+                <p className="text-3xl font-bold text-blue-600">€{totalComisiones.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {clientesFirmados.length > 0 && (
         <div className="mb-6">
@@ -183,10 +228,10 @@ export default function CierresVerificados() {
           <CardContent className="p-12 text-center">
             <CheckCircle2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-[#666666] text-lg">
-              No hay cierres pendientes de verificación
+              No hay cierres en el mes actual
             </p>
             <p className="text-gray-400 text-sm mt-2">
-              Los clientes aparecerán aquí cuando los comerciales marquen "Firmado con éxito"
+              Los cierres aparecerán aquí cuando los comerciales marquen "Firmado con éxito"
             </p>
           </CardContent>
         </Card>
@@ -219,78 +264,100 @@ export default function CierresVerificados() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {clientesZona.map(cliente => (
-                  <Card 
-                    key={cliente.id}
-                    className="hover:shadow-lg transition-all duration-300 border-l-4 border-yellow-500"
-                  >
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Building2 className="w-5 h-5 text-[#004D9D]" />
-                            <h3 className="font-bold text-[#004D9D]">{cliente.nombre_negocio}</h3>
+                {clientesZona.map(cliente => {
+                  const isAprobado = cliente.aprobado_admin === true;
+                  
+                  return (
+                    <Card 
+                      key={cliente.id}
+                      className={`hover:shadow-lg transition-all duration-300 border-l-4 ${
+                        isAprobado ? 'border-green-500 bg-green-50/30' : 'border-yellow-500'
+                      }`}
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Building2 className="w-5 h-5 text-[#004D9D]" />
+                              <h3 className="font-bold text-[#004D9D]">{cliente.nombre_negocio}</h3>
+                            </div>
+                            
+                            {isAprobado ? (
+                              <Badge className="bg-green-600 text-white text-xs mb-2">
+                                ✓ Aprobado
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-yellow-600 text-white text-xs mb-2">
+                                ⏳ Pendiente
+                              </Badge>
+                            )}
                           </div>
-                          
-                          <Badge className="bg-yellow-600 text-white text-xs mb-2">
-                            🏆 Firmado con éxito
-                          </Badge>
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">
+                              {cliente.propietario_iniciales}
+                            </span>
+                          </div>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">
-                            {cliente.propietario_iniciales}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="space-y-2 mb-4">
-                        {cliente.nombre_cliente && (
-                          <div className="flex items-center gap-2 text-sm text-[#666666]">
-                            <User className="w-4 h-4" />
-                            <span>{cliente.nombre_cliente}</span>
+                        <div className="space-y-2 mb-4">
+                          {cliente.nombre_cliente && (
+                            <div className="flex items-center gap-2 text-sm text-[#666666]">
+                              <User className="w-4 h-4" />
+                              <span>{cliente.nombre_cliente}</span>
+                            </div>
+                          )}
+                          {cliente.telefono && (
+                            <div className="flex items-center gap-2 text-sm text-[#666666]">
+                              <Phone className="w-4 h-4" />
+                              <span>{cliente.telefono}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-sm">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                            <span className="font-bold text-green-600">
+                              €{cliente.comision?.toFixed(2) || '0.00'}
+                            </span>
                           </div>
-                        )}
-                        {cliente.telefono && (
-                          <div className="flex items-center gap-2 text-sm text-[#666666]">
-                            <Phone className="w-4 h-4" />
-                            <span>{cliente.telefono}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-sm">
-                          <DollarSign className="w-4 h-4 text-green-600" />
-                          <span className="font-bold text-green-600">
-                            €{cliente.comision?.toFixed(2) || '0.00'}
-                          </span>
+                          {cliente.fecha_cierre && (
+                            <p className="text-xs text-[#666666]">
+                              Fecha: {new Date(cliente.fecha_cierre).toLocaleDateString('es-ES')}
+                            </p>
+                          )}
                         </div>
-                        {cliente.fecha_cierre && (
-                          <p className="text-xs text-[#666666]">
-                            Fecha: {new Date(cliente.fecha_cierre).toLocaleDateString('es-ES')}
-                          </p>
-                        )}
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleRechazar(cliente)}
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Rechazar
-                        </Button>
-                        <Button
-                          onClick={() => handleAprobar(cliente)}
-                          size="sm"
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle2 className="w-4 h-4 mr-1" />
-                          Aprobar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        {!isAprobado && (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleRechazar(cliente)}
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Rechazar
+                            </Button>
+                            <Button
+                              onClick={() => handleAprobar(cliente)}
+                              size="sm"
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-1" />
+                              Aprobar
+                            </Button>
+                          </div>
+                        )}
+
+                        {isAprobado && (
+                          <div className="bg-green-100 border border-green-300 rounded-lg p-2 text-center">
+                            <p className="text-xs font-semibold text-green-700">
+                              ✓ Cierre aprobado - Comisión contabilizada
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           ))}

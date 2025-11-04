@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -61,31 +62,25 @@ export default function Configuracion() {
     try {
       const zonasMap = {};
       zonas.forEach(z => {
-        zonasMap[z.id] = z;
+        zonasMap[z.id] = z.nombre;
       });
 
       const rows = clientes.map(cliente => {
-        const zona = zonasMap[cliente.zona_id];
+        const zonaNombre = zonasMap[cliente.zona_id] || 'Sin zona';
         return {
-          'Zona': zona?.nombre || '',
-          'Fecha Creación Zona': zona?.fecha_creacion_zona || zona?.created_date || '',
-          'Anotaciones Zona': zona?.anotaciones || '',
-          'Nombre Negocio': cliente.nombre_negocio || '',
-          'Nombre Cliente': cliente.nombre_cliente || '',
-          'Teléfono': cliente.telefono || '',
-          'Email': cliente.email || '',
-          'Estado': cliente.estado || '',
-          'Tipo Factura': cliente.tipo_factura || '',
-          'Anotaciones Cliente': cliente.anotaciones || '',
-          'Facturas': cliente.facturas?.map(f => f.url).join(', ') || '',
-          'Informe Final': cliente.informe_final?.url || '',
-          'Comisión': cliente.comision || '',
-          'Propietario': cliente.propietario_iniciales || '',
-          'Mes Comisión': cliente.mes_comision || ''
+          'Zona': zonaNombre,
+          'Cliente': cliente.nombre_negocio || '',
+          'Estado': cliente.estado || ''
         };
       });
 
-      const headers = Object.keys(rows[0] || {});
+      // Ordenar por zona y luego por nombre de cliente
+      rows.sort((a, b) => {
+        if (a.Zona !== b.Zona) return a.Zona.localeCompare(b.Zona);
+        return a.Cliente.localeCompare(b.Cliente);
+      });
+
+      const headers = ['Zona', 'Cliente', 'Estado'];
       const csvContent = [
         headers.join(','),
         ...rows.map(row => headers.map(header => {
@@ -94,7 +89,7 @@ export default function Configuracion() {
         }).join(','))
       ].join('\n');
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
