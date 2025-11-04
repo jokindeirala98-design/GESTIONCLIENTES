@@ -5,25 +5,20 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, MapPin, Calendar, Edit, Trash2, AlertCircle, Sparkles } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { Plus, MapPin, Calendar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Zonas() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingZona, setEditingZona] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingUltimaVisita, setEditingUltimaVisita] = useState(null);
+  const [ultimaVisitaValue, setUltimaVisitaValue] = useState("");
   const [formData, setFormData] = useState({
     nombre: "",
-    ultima_visita: "",
-    anotaciones: "",
   });
 
   const queryClient = useQueryClient();
@@ -60,67 +55,38 @@ export default function Zonas() {
     mutationFn: ({ id, data }) => base44.entities.Zona.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['zonas']);
-      setShowDialog(false);
-      setEditingZona(null);
-      resetForm();
-      toast.success("Zona actualizada correctamente");
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Zona.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['zonas']);
-      toast.success("Zona eliminada correctamente");
+      setEditingUltimaVisita(null);
+      toast.success("Última visita actualizada");
     },
   });
 
   const resetForm = () => {
-    setFormData({
-      nombre: "",
-      ultima_visita: "",
-      anotaciones: "",
-    });
+    setFormData({ nombre: "" });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
     const dataToSave = {
-      ...formData,
-      fecha_creacion_zona: editingZona ? editingZona.fecha_creacion_zona : format(new Date(), 'yyyy-MM-dd'),
+      nombre: formData.nombre,
+      fecha_creacion_zona: new Date().toISOString().split('T')[0],
       creador_email: user?.email,
     };
 
-    if (editingZona) {
-      updateMutation.mutate({ id: editingZona.id, data: dataToSave });
-    } else {
-      createMutation.mutate(dataToSave);
-    }
+    createMutation.mutate(dataToSave);
   };
 
-  const handleEdit = (zona) => {
-    setEditingZona(zona);
-    setFormData({
-      nombre: zona.nombre,
-      ultima_visita: zona.ultima_visita || "",
-      anotaciones: zona.anotaciones || "",
+  const handleUltimaVisitaClick = (zona, e) => {
+    e.stopPropagation();
+    setEditingUltimaVisita(zona.id);
+    setUltimaVisitaValue(zona.ultima_visita || "");
+  };
+
+  const handleUltimaVisitaSubmit = (zona) => {
+    updateMutation.mutate({
+      id: zona.id,
+      data: { ultima_visita: ultimaVisitaValue }
     });
-    setShowDialog(true);
-  };
-
-  const handleDelete = (zona) => {
-    const clientesEnZona = clientes.filter(c => c.zona_id === zona.id);
-    
-    if (clientesEnZona.length > 0) {
-      if (!window.confirm(`Esta zona tiene ${clientesEnZona.length} cliente(s). ¿Estás seguro de eliminarla? Los clientes quedarán sin zona asignada.`)) {
-        return;
-      }
-    }
-    
-    if (window.confirm(`¿Eliminar la zona "${zona.nombre}"?`)) {
-      deleteMutation.mutate(zona.id);
-    }
   };
 
   const getClientesEnZona = (zonaId) => {
@@ -128,8 +94,11 @@ export default function Zonas() {
   };
 
   const getClientesInformeListo = (zonaId) => {
-    const clientesZona = getClientesEnZona(zonaId);
-    return clientesZona.filter(c => c.estado === "Informe listo").length;
+    return getClientesEnZona(zonaId).filter(c => c.estado === "Informe listo").length;
+  };
+
+  const getClientesFacturasPresentadas = (zonaId) => {
+    return getClientesEnZona(zonaId).filter(c => c.estado === "Facturas presentadas").length;
   };
 
   const isPriorityZone = (zonaId) => {
@@ -142,9 +111,19 @@ export default function Zonas() {
   const sortedZonas = [...zonas].sort((a, b) => {
     const aPriority = isPriorityZone(a.id);
     const bPriority = isPriorityZone(b.id);
+    
     if (aPriority && !bPriority) return -1;
     if (!aPriority && bPriority) return 1;
-    return new Date(b.created_date) - new Date(a.created_date);
+    
+    const aVisita = a.ultima_visita ? new Date(a.ultima_visita) : null;
+    const bVisita = b.ultima_visita ? new Date(b.ultima_visita) : null;
+    const aCreacion = new Date(a.fecha_creacion_zona || a.created_date);
+    const bCreacion = new Date(b.fecha_creacion_zona || b.created_date);
+    
+    const aFecha = aVisita || aCreacion;
+    const bFecha = bVisita || bCreacion;
+    
+    return bFecha - aFecha;
   });
 
   const filteredZonas = sortedZonas.filter(zona => 
@@ -152,45 +131,32 @@ export default function Zonas() {
   );
 
   if (!user) return null;
-  const isAdmin = user.role === "admin";
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2">Zonas</h1>
-          <p className="text-[#666666]">Gestiona las zonas de trabajo</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold text-[#004D9D] mb-2">Gestión de Áreas</h1>
+        <p className="text-[#666666]">Organiza tus clientes por ubicación geográfica</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Input
+          placeholder="Buscar área..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="md:max-w-md"
+        />
         <Button
           onClick={() => {
             resetForm();
-            setEditingZona(null);
             setShowDialog(true);
           }}
-          className="bg-[#004D9D] hover:bg-[#00AEEF] w-full md:w-auto"
+          className="bg-[#6366F1] hover:bg-[#5558E3] text-white"
         >
           <Plus className="w-5 h-5 mr-2" />
-          Nueva Zona
+          Nueva Área
         </Button>
       </div>
-
-      <div className="mb-6">
-        <Input
-          placeholder="Buscar zona..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
-
-      {filteredZonas.some(z => isPriorityZone(z.id)) && (
-        <Alert className="mb-6 border-green-500 bg-green-50">
-          <Sparkles className="w-4 h-4 text-green-600" />
-          <AlertDescription className="text-green-700">
-            Las zonas resaltadas en verde tienen más del 70% de clientes con informe listo
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
@@ -203,88 +169,98 @@ export default function Zonas() {
         ) : filteredZonas.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-[#666666]">No hay zonas creadas</p>
+            <p className="text-[#666666]">No hay áreas creadas</p>
           </div>
         ) : (
           filteredZonas.map((zona) => {
             const clientesCount = getClientesEnZona(zona.id).length;
             const informesListos = getClientesInformeListo(zona.id);
+            const facturasPresent = getClientesFacturasPresentadas(zona.id);
             const isPriority = isPriorityZone(zona.id);
 
             return (
               <Card 
                 key={zona.id} 
-                className={`hover:shadow-lg transition-all duration-300 border-2 cursor-pointer ${
-                  isPriority ? 'border-green-500 bg-green-50' : 'border-transparent'
+                className={`hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden ${
+                  isPriority ? 'border-green-500 shadow-lg shadow-green-100' : 'border-gray-100'
                 }`}
                 onClick={() => navigate(createPageUrl(`DetalleZona?id=${zona.id}`))}
               >
-                <CardHeader className={`${isPriority ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-[#004D9D] to-[#00AEEF]'}`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-white text-lg mb-2">{zona.nombre}</CardTitle>
-                      <div className="flex items-center gap-2 text-white/90 text-xs">
-                        <Calendar className="w-3 h-3" />
-                        {zona.fecha_creacion_zona 
-                          ? format(new Date(zona.fecha_creacion_zona), "d 'de' MMMM, yyyy", { locale: es })
-                          : format(new Date(zona.created_date), "d 'de' MMMM, yyyy", { locale: es })
-                        }
+                <CardHeader className={`p-0 ${
+                  isPriority 
+                    ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+                    : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                }`}>
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <MapPin className="w-6 h-6 text-white" />
                       </div>
+                      {isPriority && (
+                        <div className="flex items-center gap-1 bg-yellow-400/90 backdrop-blur-sm px-2 py-1 rounded-full">
+                          <Sparkles className="w-3 h-3 text-yellow-900" />
+                          <span className="text-xs font-bold text-yellow-900">50% Ready ¡Visita recomendada!</span>
+                        </div>
+                      )}
                     </div>
-                    {isPriority && (
-                      <Sparkles className="w-5 h-5 text-yellow-300" />
+                    <h3 className="text-xl font-bold text-white mb-2">{zona.nombre}</h3>
+                    
+                    {editingUltimaVisita === zona.id ? (
+                      <div onClick={(e) => e.stopPropagation()} className="flex gap-2">
+                        <Input
+                          value={ultimaVisitaValue}
+                          onChange={(e) => setUltimaVisitaValue(e.target.value)}
+                          placeholder="Última visita..."
+                          className="h-8 text-sm bg-white/90"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleUltimaVisitaSubmit(zona);
+                            if (e.key === 'Escape') setEditingUltimaVisita(null);
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleUltimaVisitaSubmit(zona)}
+                          className="h-8 bg-white/90 text-indigo-600 hover:bg-white"
+                        >
+                          OK
+                        </Button>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={(e) => handleUltimaVisitaClick(zona, e)}
+                        className="flex items-center gap-2 text-white/90 text-sm hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>{zona.ultima_visita || "Click para añadir fecha"}</span>
+                      </div>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
-                  {zona.ultima_visita && (
-                    <div className="mb-3 text-sm">
-                      <span className="text-[#666666]">Última visita: </span>
-                      <span className="font-medium text-[#004D9D]">{zona.ultima_visita}</span>
+                
+                <CardContent className="p-5 bg-white">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Total clientes:</span>
+                      <span className="font-bold text-indigo-600 text-lg">{clientesCount}</span>
                     </div>
-                  )}
-                  
-                  {zona.anotaciones && (
-                    <p className="text-sm text-[#666666] mb-4 line-clamp-2">{zona.anotaciones}</p>
-                  )}
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Informes listos:</span>
+                      <span className="font-bold text-green-600 text-lg">{informesListos}</span>
+                    </div>
 
-                  <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="text-center flex-1">
-                      <p className="text-2xl font-bold text-[#004D9D]">{clientesCount}</p>
-                      <p className="text-xs text-[#666666]">Clientes</p>
+                    <div className="flex items-center justify-between text-sm pb-3 border-b">
+                      <span className="text-gray-600">Facturas presentadas:</span>
+                      <span className="font-bold text-blue-600 text-lg">{facturasPresent}</span>
                     </div>
-                    <div className="w-px h-8 bg-gray-300" />
-                    <div className="text-center flex-1">
-                      <p className="text-2xl font-bold text-green-600">{informesListos}</p>
-                      <p className="text-xs text-[#666666]">Listos</p>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(zona);
-                      }}
-                      className="flex-1"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
-                    {isAdmin && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(zona);
-                        }}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    {isPriority && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                        <p className="text-xs font-semibold text-green-700">
+                          ⚡ +70% con informe listo
+                        </p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -297,44 +273,19 @@ export default function Zonas() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[#004D9D]">
-              {editingZona ? 'Editar Zona' : 'Nueva Zona'}
-            </DialogTitle>
+            <DialogTitle className="text-[#004D9D]">Nueva Área</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-[#666666] mb-1 block">
-                  Nombre de la zona *
+                  Nombre del área *
                 </label>
                 <Input
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  placeholder="Ej: Valencia Centro"
+                  placeholder="Ej: Alicante"
                   required
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-[#666666] mb-1 block">
-                  Última visita
-                </label>
-                <Input
-                  value={formData.ultima_visita}
-                  onChange={(e) => setFormData({ ...formData, ultima_visita: e.target.value })}
-                  placeholder="Ej: Próxima semana"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-[#666666] mb-1 block">
-                  Anotaciones
-                </label>
-                <Textarea
-                  value={formData.anotaciones}
-                  onChange={(e) => setFormData({ ...formData, anotaciones: e.target.value })}
-                  placeholder="Notas sobre la zona..."
-                  rows={3}
                 />
               </div>
             </div>
@@ -345,14 +296,13 @@ export default function Zonas() {
                 variant="outline"
                 onClick={() => {
                   setShowDialog(false);
-                  setEditingZona(null);
                   resetForm();
                 }}
               >
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-[#004D9D] hover:bg-[#00AEEF]">
-                {editingZona ? 'Actualizar' : 'Crear'}
+              <Button type="submit" className="bg-[#6366F1] hover:bg-[#5558E3]">
+                Crear
               </Button>
             </DialogFooter>
           </form>
