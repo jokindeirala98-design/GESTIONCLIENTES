@@ -351,8 +351,8 @@ export default function DetalleCliente() {
         <Card>
           <CardHeader>
             <CardTitle className="text-[#004D9D] flex items-center justify-between">
-              <span>Informe Final</span>
-              {isAdmin && !cliente.informe_final && cliente.estado === "Facturas presentadas" && (
+              <span>Informes Finales</span> {/* Changed title */}
+              {isAdmin && (!cliente.informes_finales || cliente.informes_finales.length === 0) && cliente.estado === "Facturas presentadas" && ( {/* Updated condition */}
                 <Button
                   size="sm"
                   onClick={() => setShowInformeDialog(true)}
@@ -365,25 +365,28 @@ export default function DetalleCliente() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!cliente.informe_final ? (
+            {!cliente.informes_finales || cliente.informes_finales.length === 0 ? ( {/* Updated condition */}
               <p className="text-[#666666] text-sm text-center py-4">
-                No hay informe final
+                No hay informes finales
               </p>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                    <span className="text-sm truncate">{cliente.informe_final.nombre}</span>
+                {cliente.informes_finales.map((informe, index) => ( {/* Mapped over informes_finales */}
+                  <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                      <span className="text-sm truncate">{informe.nombre}</span>
+                    </div>
+                    <a href={informe.url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="ghost">
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </a>
                   </div>
-                  <a href={cliente.informe_final.url} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" variant="ghost">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </a>
-                </div>
+                ))}
+                
                 {cliente.comision && cliente.aprobado_admin && (
-                  <div className="p-3 bg-green-50 rounded-lg">
+                  <div className="p-3 bg-green-50 rounded-lg mt-3"> {/* Added mt-3 */}
                     <p className="text-sm text-[#666666] mb-1">Comisión</p>
                     <p className="text-2xl font-bold text-green-600">
                       €{cliente.comision.toFixed(2)}
@@ -396,7 +399,7 @@ export default function DetalleCliente() {
                   </div>
                 )}
                 {cliente.comision && !cliente.aprobado_admin && cliente.estado === "Firmado con éxito" && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mt-3"> {/* Added mt-3 */}
                     <p className="text-sm text-yellow-700 mb-1">⏳ Comisión pendiente de aprobación</p>
                     <p className="text-2xl font-bold text-yellow-600">
                       €{cliente.comision.toFixed(2)}

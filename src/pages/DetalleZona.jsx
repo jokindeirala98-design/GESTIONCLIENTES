@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -65,13 +66,29 @@ export default function DetalleZona() {
   });
 
   const handleDeleteZona = () => {
-    const clientesEnZona = clientesDeZona.length;
-    
+    const clientesEnZona = clientes.filter(c => c.zona_id === zonaId).length; // Moved here to ensure it's up-to-date
+
     if (!window.confirm(`¿Estás seguro de eliminar el área "${zona.nombre}"?\n\n⚠️ Se eliminarán también ${clientesEnZona} cliente(s) asociados a esta área.\n\nEsta acción no se puede deshacer.`)) {
       return;
     }
     
     deleteZonaMutation.mutate(zonaId);
+  };
+
+  const getClientesEnZona = (id) => {
+    return clientes.filter(c => c.zona_id === id);
+  };
+
+  const getClientesInformeListo = (id) => {
+    const clientesZona = getClientesEnZona(id);
+    return clientesZona.filter(c => c.estado === "Informe listo").length;
+  };
+
+  const isPriorityZone = (id) => {
+    const clientesZona = getClientesEnZona(id);
+    if (clientesZona.length === 0) return false;
+    const informesListos = getClientesInformeListo(id);
+    return (informesListos / clientesZona.length) > 0.7;
   };
 
   if (loadingZona || loadingClientes || !user || !zona) {
@@ -87,8 +104,13 @@ export default function DetalleZona() {
 
   const isAdmin = user.role === "admin";
   const clientesDeZona = clientes.filter(c => c.zona_id === zonaId);
-  const misClientesDeZona = clientesDeZona.filter(c => c.propietario_email === user.email);
   
+  // Admins ven TODOS los clientes, comerciales solo los suyos
+  const clientesParaMostrar = isAdmin 
+    ? clientesDeZona 
+    : clientesDeZona.filter(c => c.propietario_email === user.email);
+  
+  const misClientesDeZona = clientesDeZona.filter(c => c.propietario_email === user.email);
   const clientesInformeListo = clientesDeZona.filter(c => c.estado === "Informe listo").length;
 
   return (
@@ -131,7 +153,9 @@ export default function DetalleZona() {
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <h2 className="text-2xl font-bold text-[#004D9D]">Clientes en {zona.nombre}</h2>
+        <h2 className="text-2xl font-bold text-[#004D9D]">
+          {isAdmin ? `Todos los clientes en ${zona.nombre}` : `Mis clientes en ${zona.nombre}`}
+        </h2>
         <Button
           onClick={() => setShowCreateCliente(true)}
           className="bg-[#6366F1] hover:bg-[#5558E3] w-full md:w-auto"
@@ -141,15 +165,15 @@ export default function DetalleZona() {
         </Button>
       </div>
 
-      {misClientesDeZona.length === 0 ? (
+      {clientesParaMostrar.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-[#666666] text-lg mb-2">
-              No tienes clientes en esta área
+              {isAdmin ? 'No hay clientes en esta área' : 'No tienes clientes en esta área'}
             </p>
             <p className="text-gray-400 text-sm mb-4">
-              Comienza agregando tu primer cliente
+              Comienza agregando {isAdmin ? 'un' : 'tu primer'} cliente
             </p>
             <Button
               onClick={() => setShowCreateCliente(true)}
@@ -162,7 +186,7 @@ export default function DetalleZona() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          {misClientesDeZona.map(cliente => (
+          {clientesParaMostrar.map(cliente => (
             <ClienteCard
               key={cliente.id}
               cliente={cliente}

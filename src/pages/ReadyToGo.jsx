@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, MapPin, Building2, X, Edit3 } from "lucide-react";
+import { CheckCircle2, MapPin, Building2, X, Edit3, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -128,81 +128,111 @@ export default function ReadyToGo() {
                   return (
                     <Card 
                       key={cliente.id}
-                      className="hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-green-500"
-                      onClick={() => canViewDetails && navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                      className="hover:shadow-lg transition-all duration-300 border-l-4 border-green-500"
                     >
                       <CardContent className="p-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Building2 className="w-5 h-5 text-[#004D9D]" />
-                              <h3 className="font-bold text-[#004D9D]">
-                                {canViewDetails ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
-                              </h3>
+                        <div 
+                          className="cursor-pointer"
+                          onClick={() => canViewDetails && navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Building2 className="w-5 h-5 text-[#004D9D]" />
+                                <h3 className="font-bold text-[#004D9D]">
+                                  {canViewDetails ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
+                                </h3>
+                              </div>
+                              
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <button className="text-left">
+                                    <Badge className="bg-green-500 text-white text-xs hover:opacity-80 cursor-pointer">
+                                      ✓ Informe listo ▼
+                                    </Badge>
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                  {!isAdmin && isOwner && (
+                                    <>
+                                      <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Rechazado")}>
+                                        <X className="w-4 h-4 mr-2 text-red-600" />
+                                        <span className="text-red-600">Rechazado</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Pendiente de firma")}>
+                                        <Edit3 className="w-4 h-4 mr-2 text-purple-600" />
+                                        <span className="text-purple-600">✍️ Pendiente de firma</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Firmado con éxito")}>
+                                        <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
+                                        <span className="text-yellow-600">🏆 Firmado con éxito</span>
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {isAdmin && (
+                                    <>
+                                      <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Rechazado")}>
+                                        <X className="w-4 h-4 mr-2 text-red-600" />
+                                        <span className="text-red-600">Rechazado</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Firmado con éxito")}>
+                                        <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
+                                        <span className="text-yellow-600">🏆 Firmado con éxito</span>
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <button className="text-left">
-                                  <Badge className="bg-green-500 text-white text-xs hover:opacity-80 cursor-pointer">
-                                    ✓ Informe listo ▼
-                                  </Badge>
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                {!isAdmin && isOwner && (
-                                  <>
-                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Rechazado")}>
-                                      <X className="w-4 h-4 mr-2 text-red-600" />
-                                      <span className="text-red-600">Rechazado</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Pendiente de firma")}>
-                                      <Edit3 className="w-4 h-4 mr-2 text-purple-600" />
-                                      <span className="text-purple-600">✍️ Pendiente de firma</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Firmado con éxito")}>
-                                      <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
-                                      <span className="text-yellow-600">🏆 Firmado con éxito</span>
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                {isAdmin && (
-                                  <>
-                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Rechazado")}>
-                                      <X className="w-4 h-4 mr-2 text-red-600" />
-                                      <span className="text-red-600">Rechazado</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Firmado con éxito")}>
-                                      <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
-                                      <span className="text-yellow-600">🏆 Firmado con éxito</span>
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
+                              <span className="text-white font-bold text-sm">
+                                {cliente.propietario_iniciales}
+                              </span>
+                            </div>
                           </div>
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">
-                              {cliente.propietario_iniciales}
-                            </span>
-                          </div>
+
+                          {canViewDetails && (
+                            <>
+                              {cliente.nombre_cliente && (
+                                <p className="text-sm text-[#666666] mb-1">👤 {cliente.nombre_cliente}</p>
+                              )}
+                              {cliente.telefono && (
+                                <p className="text-sm text-[#666666] mb-1">📞 {cliente.telefono}</p>
+                              )}
+                            </>
+                          )}
+
+                          {!canViewDetails && (
+                            <p className="text-sm text-gray-400 italic mt-2">
+                              Solo puedes ver la advertencia de este cliente
+                            </p>
+                          )}
                         </div>
 
-                        {canViewDetails && (
-                          <>
-                            {cliente.nombre_cliente && (
-                              <p className="text-sm text-[#666666] mb-1">👤 {cliente.nombre_cliente}</p>
-                            )}
-                            {cliente.telefono && (
-                              <p className="text-sm text-[#666666] mb-1">📞 {cliente.telefono}</p>
-                            )}
-                          </>
-                        )}
-
-                        {!canViewDetails && (
-                          <p className="text-sm text-gray-400 italic mt-2">
-                            Solo puedes ver la advertencia de este cliente
-                          </p>
+                        {/* Informes disponibles para descargar */}
+                        {cliente.informes_finales && cliente.informes_finales.length > 0 && (
+                          <div className="mt-4 pt-3 border-t space-y-2">
+                            <p className="text-xs font-semibold text-purple-600 mb-2">
+                              📄 Informes disponibles:
+                            </p>
+                            {cliente.informes_finales.map((informe, index) => (
+                              <a
+                                key={index}
+                                href={informe.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center justify-between p-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <Download className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                  <span className="text-sm text-purple-700 truncate">
+                                    {informe.nombre}
+                                  </span>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
                         )}
                       </CardContent>
                     </Card>

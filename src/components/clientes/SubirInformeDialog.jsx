@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export default function SubirInformeDialog({ open, onClose, cliente, user }) {
   const queryClient = useQueryClient();
-  const [archivo, setArchivo] = useState(null);
+  const [archivos, setArchivos] = useState([]);
   const [comision, setComision] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -35,17 +35,21 @@ export default function SubirInformeDialog({ open, onClose, cliente, user }) {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setArchivo(file);
+    const files = Array.from(e.target.files);
+    
+    if (files.length > 2) {
+      toast.error("Solo puedes subir hasta 2 archivos");
+      return;
     }
+    
+    setArchivos(files);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!archivo) {
-      toast.error("Selecciona un archivo");
+    if (archivos.length === 0) {
+      toast.error("Selecciona al menos un archivo");
       return;
     }
     
@@ -57,18 +61,23 @@ export default function SubirInformeDialog({ open, onClose, cliente, user }) {
     setUploading(true);
     
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: archivo });
+      const informesSubidos = [];
+      
+      for (const archivo of archivos) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: archivo });
+        informesSubidos.push({
+          nombre: archivo.name,
+          url: file_url,
+          fecha_subida: new Date().toISOString(),
+          subido_por_email: user.email,
+          subido_por_iniciales: user.iniciales || user.full_name?.substring(0, 3).toUpperCase()
+        });
+      }
       
       await updateMutation.mutateAsync({
         id: cliente.id,
         data: {
-          informe_final: {
-            nombre: archivo.name,
-            url: file_url,
-            fecha_subida: new Date().toISOString(),
-            subido_por_email: user.email,
-            subido_por_iniciales: user.iniciales || user.full_name?.substring(0, 3).toUpperCase()
-          },
+          informes_finales: informesSubidos,
           comision: parseFloat(comision),
           estado: "Informe listo"
         }
@@ -76,9 +85,9 @@ export default function SubirInformeDialog({ open, onClose, cliente, user }) {
 
       await enviarNotificacionComercial(cliente.nombre_negocio, cliente.propietario_email);
 
-      toast.success("Informe subido correctamente");
+      toast.success("Informe(s) subido(s) correctamente");
       onClose();
-      setArchivo(null);
+      setArchivos([]);
       setComision("");
     } catch (error) {
       toast.error("Error al subir el informe");
@@ -98,42 +107,47 @@ export default function SubirInformeDialog({ open, onClose, cliente, user }) {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-[#666666] mb-2 block">
-                Archivo del informe *
+                Archivos del informe (1-2 archivos) *
               </label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
                 <input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handleFileChange}
+                  multiple
                   className="hidden"
                   id="informe-upload"
                 />
                 <label htmlFor="informe-upload" className="cursor-pointer">
                   <Upload className="w-12 h-12 text-purple-400 mx-auto mb-3" />
                   <p className="text-sm text-[#666666]">
-                    Haz clic para seleccionar el informe
+                    Haz clic para seleccionar 1 o 2 informes
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    PDF, JPG o PNG
+                    PDF, JPG o PNG (máx. 2 archivos)
                   </p>
                 </label>
               </div>
             </div>
 
-            {archivo && (
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-purple-600" />
-                  <span className="text-sm font-medium">{archivo.name}</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setArchivo(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+            {archivos.length > 0 && (
+              <div className="space-y-2">
+                {archivos.map((archivo, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      <span className="text-sm font-medium">{archivo.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setArchivos(archivos.filter((_, i) => i !== index))}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
 
