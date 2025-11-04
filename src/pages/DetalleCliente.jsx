@@ -20,8 +20,9 @@ const estadoColors = {
   "Primer contacto": "bg-gray-500",
   "Esperando facturas": "bg-orange-500",
   "Facturas presentadas": "bg-blue-500",
-  "Informe listo": "bg-purple-500",
-  "Cerrado con éxito": "bg-green-500",
+  "Informe listo": "bg-green-500", // Changed from purple-500
+  "Pendiente de firma": "bg-purple-500", // Added new state
+  "Firmado con éxito": "bg-yellow-600", // Added new state, replaced "Cerrado con éxito"
   "Rechazado": "bg-red-500",
 };
 
@@ -95,15 +96,16 @@ export default function DetalleCliente() {
     }
   };
 
-  const handleMarcarCerrado = () => {
-    if (window.confirm("¿Marcar este cliente como Cerrado con éxito?")) {
+  // Renamed from handleMarcarCerrado to handleMarcarFirmado
+  const handleMarcarFirmado = () => {
+    if (window.confirm("¿Marcar este cliente como Firmado con éxito?")) {
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
       
       updateMutation.mutate({
         id: clienteId,
         data: { 
-          estado: "Cerrado con éxito",
+          estado: "Firmado con éxito", // Changed state
           fecha_cierre: fechaCierre,
           mes_comision: mesComision
         }
@@ -267,7 +269,7 @@ export default function DetalleCliente() {
               </Button>
             )}
 
-            {isAdmin && cliente.estado !== "Cerrado con éxito" && cliente.estado !== "Rechazado" && (
+            {isAdmin && cliente.estado !== "Firmado con éxito" && cliente.estado !== "Rechazado" && ( // Changed "Cerrado con éxito"
               <>
                 <Button
                   variant="outline"
@@ -277,13 +279,15 @@ export default function DetalleCliente() {
                   <X className="w-4 h-4 mr-2" />
                   Rechazar
                 </Button>
-                <Button
-                  onClick={handleMarcarCerrado}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Cerrar con Éxito
-                </Button>
+                {cliente.estado === "Informe listo" && ( // Condition for "Firmado con Éxito"
+                  <Button
+                    onClick={handleMarcarFirmado} // Call new handler
+                    className="bg-yellow-600 hover:bg-yellow-700" // Changed color
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Firmado con Éxito {/* Changed text */}
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -384,7 +388,7 @@ export default function DetalleCliente() {
                     <p className="text-2xl font-bold text-green-600">
                       €{cliente.comision.toFixed(2)}
                     </p>
-                    {cliente.estado === "Cerrado con éxito" && (
+                    {cliente.estado === "Firmado con éxito" && ( // Changed from "Cerrado con éxito"
                       <p className="text-xs text-green-600 mt-1">
                         ✓ Contabilizada en comisiones
                       </p>
