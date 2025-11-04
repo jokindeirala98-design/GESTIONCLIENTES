@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -143,7 +144,7 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
           </div>
         )}
 
-        {(canViewFull && cliente.comision && cliente.estado === "Firmado con éxito") && (
+        {(canViewFull && cliente.comision && cliente.estado === "Firmado con éxito" && cliente.aprobado_admin) && (
           <div className="pt-2 border-t">
             <p className="text-sm font-semibold text-green-600">
               Comisión: €{cliente.comision.toFixed(2)}

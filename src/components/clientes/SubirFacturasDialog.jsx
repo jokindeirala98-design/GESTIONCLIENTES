@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,9 @@ export default function SubirFacturasDialog({ open, onClose, cliente, user }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['cliente', cliente.id]);
       queryClient.invalidateQueries(['clientes']);
+      setArchivos([]); // Reset state
+      setTipoFactura(""); // Reset state
+      onClose(); // Close dialog after success
     },
   });
 
@@ -90,9 +94,6 @@ export default function SubirFacturasDialog({ open, onClose, cliente, user }) {
       await enviarNotificacionAdmins(cliente.nombre_negocio);
 
       toast.success("Facturas subidas correctamente");
-      onClose();
-      setArchivos([]);
-      setTipoFactura("");
     } catch (error) {
       toast.error("Error al subir las facturas");
       console.error(error);

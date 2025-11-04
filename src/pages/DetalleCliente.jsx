@@ -382,17 +382,28 @@ export default function DetalleCliente() {
                     </Button>
                   </a>
                 </div>
-                {cliente.comision && (
+                {cliente.comision && cliente.aprobado_admin && (
                   <div className="p-3 bg-green-50 rounded-lg">
                     <p className="text-sm text-[#666666] mb-1">Comisión</p>
                     <p className="text-2xl font-bold text-green-600">
                       €{cliente.comision.toFixed(2)}
                     </p>
-                    {cliente.estado === "Firmado con éxito" && ( // Changed from "Cerrado con éxito"
+                    {cliente.estado === "Firmado con éxito" && (
                       <p className="text-xs text-green-600 mt-1">
                         ✓ Contabilizada en comisiones
                       </p>
                     )}
+                  </div>
+                )}
+                {cliente.comision && !cliente.aprobado_admin && cliente.estado === "Firmado con éxito" && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-700 mb-1">⏳ Comisión pendiente de aprobación</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      €{cliente.comision.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-yellow-600 mt-1">
+                      Esperando verificación del administrador
+                    </p>
                   </div>
                 )}
               </div>

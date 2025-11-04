@@ -6,13 +6,15 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, X, Building2, MapPin, User, Phone, DollarSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { CheckCircle2, X, Building2, MapPin, User, Phone, DollarSign, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CierresVerificados() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -46,7 +48,17 @@ export default function CierresVerificados() {
 
   if (!user) return null;
 
-  const clientesFirmados = clientes.filter(c => c.estado === "Firmado con éxito");
+  // Solo clientes firmados que NO han sido aprobados aún
+  const clientesFirmados = clientes.filter(c => 
+    c.estado === "Firmado con éxito" && 
+    c.aprobado_admin !== true
+  );
+
+  const clientesFiltrados = clientesFirmados.filter(cliente =>
+    cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.propietario_iniciales?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAprobar = async (cliente) => {
     if (!window.confirm(`¿Aprobar el cierre de "${cliente.nombre_negocio}"?\n\nLa comisión de €${cliente.comision?.toFixed(2) || '0.00'} será contabilizada para ${cliente.propietario_iniciales}.`)) {
@@ -94,7 +106,8 @@ export default function CierresVerificados() {
         estado: "Rechazado",
         comision: null,
         fecha_cierre: null,
-        mes_comision: null
+        mes_comision: null,
+        aprobado_admin: false
       }
     });
 
@@ -117,7 +130,7 @@ export default function CierresVerificados() {
 
   const clientesPorZona = zonas.map(zona => ({
     zona,
-    clientes: clientesFirmados.filter(c => c.zona_id === zona.id)
+    clientes: clientesFiltrados.filter(c => c.zona_id === zona.id)
   })).filter(grupo => grupo.clientes.length > 0)
     .sort((a, b) => b.clientes.length - a.clientes.length);
 
@@ -151,6 +164,20 @@ export default function CierresVerificados() {
         </CardContent>
       </Card>
 
+      {clientesFirmados.length > 0 && (
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Buscar por nombre de cliente o negocio..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      )}
+
       {clientesFirmados.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
@@ -161,6 +188,22 @@ export default function CierresVerificados() {
             <p className="text-gray-400 text-sm mt-2">
               Los clientes aparecerán aquí cuando los comerciales marquen "Firmado con éxito"
             </p>
+          </CardContent>
+        </Card>
+      ) : clientesFiltrados.length === 0 ? (
+        <Card className="border-none shadow-md">
+          <CardContent className="p-12 text-center">
+            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-[#666666] text-lg">
+              No se encontraron clientes
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setSearchTerm("")}
+              className="mt-4"
+            >
+              Limpiar búsqueda
+            </Button>
           </CardContent>
         </Card>
       ) : (
