@@ -96,7 +96,6 @@ export default function DetalleCliente() {
     }
   };
 
-  // Renamed from handleMarcarCerrado to handleMarcarFirmado
   const handleMarcarFirmado = () => {
     if (window.confirm("¿Marcar este cliente como Firmado con éxito?")) {
       const fechaCierre = new Date().toISOString().split('T')[0];
@@ -105,7 +104,7 @@ export default function DetalleCliente() {
       updateMutation.mutate({
         id: clienteId,
         data: { 
-          estado: "Firmado con éxito", // Changed state
+          estado: "Firmado con éxito",
           fecha_cierre: fechaCierre,
           mes_comision: mesComision
         }
@@ -258,18 +257,46 @@ export default function DetalleCliente() {
               </Button>
             )}
 
-            {isOwner && (cliente.estado === "Primer contacto" || cliente.estado === "Esperando facturas" || cliente.estado === "Facturas presentadas") && (
-              <Button
-                variant="outline"
-                onClick={handleMarcarRechazado}
-                className="text-red-600 hover:bg-red-50"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Marcar Rechazado
-              </Button>
+            {/* Comerciales: pueden cambiar estado en diferentes situaciones */}
+            {isOwner && (
+              <>
+                {/* Estados iniciales: Primer contacto, Esperando facturas, Facturas presentadas */}
+                {(cliente.estado === "Primer contacto" || cliente.estado === "Esperando facturas" || cliente.estado === "Facturas presentadas") && (
+                  <Button
+                    variant="outline"
+                    onClick={handleMarcarRechazado}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Marcar Rechazado
+                  </Button>
+                )}
+
+                {/* Pendiente de firma: puede marcar como Firmado o Rechazado */}
+                {cliente.estado === "Pendiente de firma" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleMarcarRechazado}
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Rechazar
+                    </Button>
+                    <Button
+                      onClick={handleMarcarFirmado}
+                      className="bg-yellow-600 hover:bg-yellow-700"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Firmado con Éxito
+                    </Button>
+                  </>
+                )}
+              </>
             )}
 
-            {isAdmin && cliente.estado !== "Firmado con éxito" && cliente.estado !== "Rechazado" && ( // Changed "Cerrado con éxito"
+            {/* Admins: pueden gestionar todos los estados */}
+            {isAdmin && cliente.estado !== "Firmado con éxito" && cliente.estado !== "Rechazado" && (
               <>
                 <Button
                   variant="outline"
@@ -279,13 +306,13 @@ export default function DetalleCliente() {
                   <X className="w-4 h-4 mr-2" />
                   Rechazar
                 </Button>
-                {cliente.estado === "Informe listo" && ( // Condition for "Firmado con Éxito"
+                {(cliente.estado === "Informe listo" || cliente.estado === "Pendiente de firma") && (
                   <Button
-                    onClick={handleMarcarFirmado} // Call new handler
-                    className="bg-yellow-600 hover:bg-yellow-700" // Changed color
+                    onClick={handleMarcarFirmado}
+                    className="bg-yellow-600 hover:bg-yellow-700"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Firmado con Éxito {/* Changed text */}
+                    Firmado con Éxito
                   </Button>
                 )}
               </>
