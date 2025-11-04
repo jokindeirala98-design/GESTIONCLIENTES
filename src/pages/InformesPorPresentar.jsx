@@ -3,10 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Building2, User, Download } from "lucide-react";
+import { FileText, Building2, User, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
+import SubirInformeDialog from "../components/clientes/SubirInformeDialog.jsx";
 
 const tipoFacturaOrder = {
   "6.1": 1,
@@ -23,6 +24,8 @@ const tipoFacturaColors = {
 export default function InformesPorPresentar() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [showInformeDialog, setShowInformeDialog] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -62,6 +65,12 @@ export default function InformesPorPresentar() {
     "6.1": clientesFacturasPresent.filter(c => c.tipo_factura === "6.1").length,
     "3.0": clientesFacturasPresent.filter(c => c.tipo_factura === "3.0").length,
     "2.0": clientesFacturasPresent.filter(c => c.tipo_factura === "2.0").length,
+  };
+
+  const handleSubirInforme = (e, cliente) => {
+    e.stopPropagation();
+    setClienteSeleccionado(cliente);
+    setShowInformeDialog(true);
   };
 
   return (
@@ -181,14 +190,13 @@ export default function InformesPorPresentar() {
 
                     <div className="flex gap-2">
                       <Button
-                        variant="outline"
+                        variant="default"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`));
-                        }}
+                        onClick={(e) => handleSubirInforme(e, cliente)}
+                        className="bg-purple-600 hover:bg-purple-700"
                       >
-                        Ver Detalles
+                        <Upload className="w-4 h-4 mr-2" />
+                        Subir Informe
                       </Button>
                     </div>
                   </div>
@@ -197,6 +205,18 @@ export default function InformesPorPresentar() {
             );
           })}
         </div>
+      )}
+
+      {clienteSeleccionado && (
+        <SubirInformeDialog
+          open={showInformeDialog}
+          onClose={() => {
+            setShowInformeDialog(false);
+            setClienteSeleccionado(null);
+          }}
+          cliente={clienteSeleccionado}
+          user={user}
+        />
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -174,6 +175,7 @@ export default function Zonas() {
         ) : (
           filteredZonas.map((zona) => {
             const clientesCount = getClientesEnZona(zona.id).length;
+            const misClientesCount = getClientesEnZona(zona.id).filter(c => c.propietario_email === user.email).length;
             const informesListos = getClientesInformeListo(zona.id);
             const facturasPresent = getClientesFacturasPresentadas(zona.id);
             const isPriority = isPriorityZone(zona.id);
@@ -203,7 +205,14 @@ export default function Zonas() {
                         </div>
                       )}
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{zona.nombre}</h3>
+                    <h3 className="text-xl font-bold text-white mb-3">{zona.nombre}</h3>
+                    
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 mb-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/90 text-sm">Total clientes:</span>
+                        <span className="font-bold text-white text-xl">{clientesCount}</span>
+                      </div>
+                    </div>
                     
                     {editingUltimaVisita === zona.id ? (
                       <div onClick={(e) => e.stopPropagation()} className="flex gap-2">
@@ -241,8 +250,8 @@ export default function Zonas() {
                 <CardContent className="p-5 bg-white">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Total clientes:</span>
-                      <span className="font-bold text-indigo-600 text-lg">{clientesCount}</span>
+                      <span className="text-gray-600">Mis clientes:</span>
+                      <span className="font-bold text-indigo-600 text-lg">{misClientesCount}</span>
                     </div>
                     
                     <div className="flex items-center justify-between text-sm">
