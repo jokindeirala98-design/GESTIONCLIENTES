@@ -8,6 +8,7 @@ import Comisiones from './pages/Comisiones';
 import GestionUsuarios from './pages/GestionUsuarios';
 import Configuracion from './pages/Configuracion';
 import DetalleZona from './pages/DetalleZona';
+import CierresVerificados from './pages/CierresVerificados';
 import Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "GestionUsuarios": GestionUsuarios,
     "Configuracion": Configuracion,
     "DetalleZona": DetalleZona,
+    "CierresVerificados": CierresVerificados,
 }
 
 export const pagesConfig = {

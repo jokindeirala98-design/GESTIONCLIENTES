@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -90,6 +91,12 @@ export default function Layout({ children }) {
       title: "Informes por Presentar",
       url: createPageUrl("InformesPorPresentar"),
       icon: FileText,
+      show: isAdmin,
+    },
+    {
+      title: "Cierres Verificados",
+      url: createPageUrl("CierresVerificados"),
+      icon: CheckCircle2,
       show: isAdmin,
     },
     {

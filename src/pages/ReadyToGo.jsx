@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,10 +55,25 @@ export default function ReadyToGo() {
 
   const handleCambiarEstado = (e, clienteId, nuevoEstado) => {
     e.stopPropagation();
-    updateMutation.mutate({
-      id: clienteId,
-      data: { estado: nuevoEstado }
-    });
+    
+    if (nuevoEstado === "Firmado con éxito") {
+      const fechaCierre = new Date().toISOString().split('T')[0];
+      const mesComision = fechaCierre.substring(0, 7);
+      
+      updateMutation.mutate({
+        id: clienteId,
+        data: { 
+          estado: nuevoEstado,
+          fecha_cierre: fechaCierre,
+          mes_comision: mesComision
+        }
+      });
+    } else {
+      updateMutation.mutate({
+        id: clienteId,
+        data: { estado: nuevoEstado }
+      });
+    }
   };
 
   const clientesPorZona = zonas.map(zona => ({
@@ -143,6 +159,10 @@ export default function ReadyToGo() {
                                     <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Pendiente de firma")}>
                                       <Edit3 className="w-4 h-4 mr-2 text-purple-600" />
                                       <span className="text-purple-600">✍️ Pendiente de firma</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Firmado con éxito")}>
+                                      <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
+                                      <span className="text-yellow-600">🏆 Firmado con éxito</span>
                                     </DropdownMenuItem>
                                   </>
                                 )}

@@ -68,12 +68,12 @@ export default function Dashboard() {
       color: "from-blue-500 to-blue-600",
       link: isAdmin ? createPageUrl("InformesPorPresentar") : createPageUrl("ReadyToGo"),
     },
-    { // Updated card: "Cerrados con Éxito" is replaced by "Firmado con Éxito"
+    {
       title: "Firmado con Éxito",
       value: clientesPorEstado.firmados,
       icon: CheckCircle2,
       color: "from-green-500 to-green-600",
-      link: createPageUrl("Clientes"),
+      link: isAdmin ? createPageUrl("CierresVerificados") : createPageUrl("Clientes"),
     },
   ];
 
@@ -184,17 +184,31 @@ export default function Dashboard() {
               )}
 
               {isAdmin && (
-                <Link to={createPageUrl("InformesPorPresentar")}>
-                  <div className="p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:border-purple-500 transition-all cursor-pointer group">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
-                      <div>
-                        <p className="font-medium text-purple-700">Informes por Presentar</p>
-                        <p className="text-xs text-purple-600">Subir informes finales</p>
+                <>
+                  <Link to={createPageUrl("InformesPorPresentar")}>
+                    <div className="p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:border-purple-500 transition-all cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
+                        <div>
+                          <p className="font-medium text-purple-700">Informes por Presentar</p>
+                          <p className="text-xs text-purple-600">Subir informes finales</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  
+                  <Link to={createPageUrl("CierresVerificados")}>
+                    <div className="p-4 rounded-lg border-2 border-yellow-200 bg-yellow-50 hover:border-yellow-500 transition-all cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-yellow-600 group-hover:scale-110 transition-transform" />
+                        <div>
+                          <p className="font-medium text-yellow-700">Cierres Verificados</p>
+                          <p className="text-xs text-yellow-600">Aprobar o rechazar cierres</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </>
               )}
             </div>
           </CardContent>
