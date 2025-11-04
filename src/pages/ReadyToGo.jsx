@@ -1,15 +1,22 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, MapPin, FileText } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack:react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, MapPin, Building2, X, Edit3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import ClienteCard from "../components/clientes/ClienteCard.jsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 export default function ReadyToGo() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -30,16 +37,36 @@ export default function ReadyToGo() {
     queryFn: () => base44.entities.Zona.list(),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clientes']);
+      toast.success("Estado actualizado");
+    },
+  });
+
   if (!user) return null;
 
-  const misClientesFacturasPresent = clientes.filter(
-    c => c.propietario_email === user.email && c.estado === "Facturas presentadas"
-  );
+  const isAdmin = user.role === "admin";
+
+  // Todos los clientes con informe listo (de todos los usuarios)
+  const clientesInformeListo = clientes.filter(c => c.estado === "Informe listo");
+
+  const handleCambiarEstado = (e, clienteId, nuevoEstado) => {
+    e.stopPropagation();
+    updateMutation.mutate({
+      id: clienteId,
+      data: { estado: nuevoEstado }
+    });
+  };
 
   const clientesPorZona = zonas.map(zona => ({
     zona,
-    clientes: misClientesFacturasPresent.filter(c => c.zona_id === zona.id)
-  })).filter(grupo => grupo.clientes.length > 0);
+    clientes: clientesInformeListo
+      .filter(c => c.zona_id === zona.id)
+      .sort((a, b) => (b.propietario_email === user.email ? 1 : -1) - (a.propietario_email === user.email ? 1 : -1))
+  })).filter(grupo => grupo.clientes.length > 0)
+    .sort((a, b) => b.clientes.length - a.clientes.length);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -49,19 +76,19 @@ export default function ReadyToGo() {
           Ready to Go
         </h1>
         <p className="text-[#666666]">
-          Clientes con facturas presentadas listos para cerrar
+          Clientes con informe listo para presentar y cerrar
         </p>
       </div>
 
-      {misClientesFacturasPresent.length === 0 ? (
+      {clientesInformeListo.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
             <CheckCircle2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-[#666666] text-lg">
-              No tienes clientes con facturas presentadas
+              No hay clientes con informe listo
             </p>
             <p className="text-gray-400 text-sm mt-2">
-              Los clientes aparecerán aquí una vez hayas subido sus facturas
+              Los clientes aparecerán aquí cuando el admin suba sus informes
             </p>
           </CardContent>
         </Card>
@@ -78,15 +105,89 @@ export default function ReadyToGo() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {clientesZona.map(cliente => (
-                  <ClienteCard
-                    key={cliente.id}
-                    cliente={cliente}
-                    user={user}
-                    zonas={zonas}
-                    onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-                  />
-                ))}
+                {clientesZona.map(cliente => {
+                  const isOwner = cliente.propietario_email === user.email;
+                  const canViewDetails = isOwner || isAdmin;
+
+                  return (
+                    <Card 
+                      key={cliente.id}
+                      className="hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-green-500"
+                      onClick={() => canViewDetails && navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Building2 className="w-5 h-5 text-[#004D9D]" />
+                              <h3 className="font-bold text-[#004D9D]">
+                                {canViewDetails ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
+                              </h3>
+                            </div>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <button className="text-left">
+                                  <Badge className="bg-green-500 text-white text-xs hover:opacity-80 cursor-pointer">
+                                    ✓ Informe listo ▼
+                                  </Badge>
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                {!isAdmin && isOwner && (
+                                  <>
+                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Rechazado")}>
+                                      <X className="w-4 h-4 mr-2 text-red-600" />
+                                      <span className="text-red-600">Rechazado</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Pendiente de firma")}>
+                                      <Edit3 className="w-4 h-4 mr-2 text-purple-600" />
+                                      <span className="text-purple-600">✍️ Pendiente de firma</span>
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {isAdmin && (
+                                  <>
+                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Rechazado")}>
+                                      <X className="w-4 h-4 mr-2 text-red-600" />
+                                      <span className="text-red-600">Rechazado</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => handleCambiarEstado(e, cliente.id, "Firmado con éxito")}>
+                                      <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
+                                      <span className="text-yellow-600">🏆 Firmado con éxito</span>
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">
+                              {cliente.propietario_iniciales}
+                            </span>
+                          </div>
+                        </div>
+
+                        {canViewDetails && (
+                          <>
+                            {cliente.nombre_cliente && (
+                              <p className="text-sm text-[#666666] mb-1">👤 {cliente.nombre_cliente}</p>
+                            )}
+                            {cliente.telefono && (
+                              <p className="text-sm text-[#666666] mb-1">📞 {cliente.telefono}</p>
+                            )}
+                          </>
+                        )}
+
+                        {!canViewDetails && (
+                          <p className="text-sm text-gray-400 italic mt-2">
+                            Solo puedes ver la advertencia de este cliente
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -95,14 +196,14 @@ export default function ReadyToGo() {
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-6 h-6 text-white" />
+                  <CheckCircle2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-green-800 mb-2">
-                    Total: {misClientesFacturasPresent.length} cliente(s) listo(s)
+                    Total: {clientesInformeListo.length} cliente(s) listo(s)
                   </h3>
                   <p className="text-sm text-green-700">
-                    Los administradores están revisando las facturas y pronto subirán los informes finales.
+                    Los informes están preparados. Puedes presentarlos a los clientes para su firma.
                   </p>
                 </div>
               </div>
