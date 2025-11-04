@@ -34,10 +34,12 @@ export default function Comisiones() {
 
   if (!user) return null;
 
+  // Solo mostrar clientes que están firmados con éxito, tienen comisión Y han sido aprobados por el admin
   const misClientesCerrados = clientes.filter(
     c => c.propietario_email === user.email && 
          c.estado === "Firmado con éxito" && 
-         c.comision
+         c.comision &&
+         c.aprobado_admin === true
   );
 
   const clientesDelMes = misClientesCerrados.filter(
