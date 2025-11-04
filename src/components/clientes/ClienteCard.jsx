@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin, Phone, Mail, User } from "lucide-react";
+import { Building2, MapPin, Phone, Mail, User, CheckCircle2, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,14 +45,35 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
   const handleEstadoChange = (e, nuevoEstado) => {
     e.stopPropagation();
     setIsChangingState(true);
-    updateMutation.mutate({
-      id: cliente.id,
-      data: { estado: nuevoEstado }
-    });
+    
+    // Si se cambia a "Firmado con éxito", agregar fecha_cierre y mes_comision
+    if (nuevoEstado === "Firmado con éxito") {
+      const fechaCierre = new Date().toISOString().split('T')[0];
+      const mesComision = fechaCierre.substring(0, 7);
+      
+      updateMutation.mutate({
+        id: cliente.id,
+        data: { 
+          estado: nuevoEstado,
+          fecha_cierre: fechaCierre,
+          mes_comision: mesComision
+        }
+      });
+    } else {
+      updateMutation.mutate({
+        id: cliente.id,
+        data: { estado: nuevoEstado }
+      });
+    }
   };
 
-  const canChangeState = isOwner && 
-    (cliente.estado === "Primer contacto" || cliente.estado === "Esperando facturas");
+  // Los comerciales pueden cambiar estado en estas situaciones:
+  // 1. Entre "Primer contacto" y "Esperando facturas"
+  // 2. Cuando está en "Pendiente de firma" puede marcar como "Firmado con éxito" o "Rechazado"
+  const canChangeState = isOwner && (
+    (cliente.estado === "Primer contacto" || cliente.estado === "Esperando facturas") ||
+    cliente.estado === "Pendiente de firma"
+  );
 
   return (
     <Card 
@@ -79,12 +99,29 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Primer contacto")}>
-                    Primer contacto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Esperando facturas")}>
-                    Esperando facturas
-                  </DropdownMenuItem>
+                  {(cliente.estado === "Primer contacto" || cliente.estado === "Esperando facturas") && (
+                    <>
+                      <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Primer contacto")}>
+                        Primer contacto
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Esperando facturas")}>
+                        Esperando facturas
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  {cliente.estado === "Pendiente de firma" && (
+                    <>
+                      <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Firmado con éxito")}>
+                        <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
+                        <span className="text-yellow-600">🏆 Firmado con éxito</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Rechazado")}>
+                        <X className="w-4 h-4 mr-2 text-red-600" />
+                        <span className="text-red-600">Rechazado</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
