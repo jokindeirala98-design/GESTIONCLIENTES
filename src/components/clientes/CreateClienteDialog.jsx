@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,43 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-// Datos directos de municipios de Navarra
-const municipiosNavarra = [
-  { nombre: "Pamplona", lat: 42.8125, lng: -1.6458, poblacion: 201653 },
-  { nombre: "Tudela", lat: 42.0667, lng: -1.6, poblacion: 35691 },
-  { nombre: "Barañáin", lat: 42.8047, lng: -1.6756, poblacion: 19869 },
-  { nombre: "Burlada", lat: 42.8289, lng: -1.6086, poblacion: 18847 },
-  { nombre: "Zizur Mayor", lat: 42.7833, lng: -1.6833, poblacion: 14926 },
-  { nombre: "Villava", lat: 42.8381, lng: -1.6156, poblacion: 10753 },
-  { nombre: "Ansoáin", lat: 42.8236, lng: -1.6542, poblacion: 10539 },
-  { nombre: "Estella-Lizarra", lat: 42.6717, lng: -2.0264, poblacion: 13892 },
-  { nombre: "Tafalla", lat: 42.5292, lng: -1.6764, poblacion: 10670 },
-  { nombre: "Berriozar", lat: 42.8358, lng: -1.6681, poblacion: 10106 },
-  { nombre: "Huarte", lat: 42.8192, lng: -1.6014, poblacion: 7439 },
-];
-
-function buscarMunicipios(termino = '') {
-  const terminoLower = termino.toLowerCase().trim();
-  if (!terminoLower) return municipiosNavarra;
-  return municipiosNavarra.filter(m => 
-    m.nombre.toLowerCase().includes(terminoLower)
-  );
-}
+import { MUNICIPIOS_NAVARRA } from "../../pages/Rutas";
 
 export default function CreateClienteDialog({ open, onClose, user, zonaPreseleccionada = null }) {
   const queryClient = useQueryClient();
@@ -115,7 +84,6 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
     
     let zonaId = formData.zona_id;
 
-    // Si no hay zona_id pero hay zona_nombre, crear la zona
     if (!zonaId && formData.zona_nombre) {
       const zonaExistente = zonas.find(
         z => z.nombre.toLowerCase() === formData.zona_nombre.toLowerCase()
@@ -124,7 +92,6 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       if (zonaExistente) {
         zonaId = zonaExistente.id;
       } else {
-        // Crear nueva zona
         const nuevaZona = await createZonaMutation.mutateAsync({
           nombre: formData.zona_nombre,
           fecha_creacion_zona: new Date().toISOString().split('T')[0],
@@ -135,7 +102,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
     }
 
     if (!zonaId) {
-      toast.error("Debes seleccionar un municipio");
+      toast.error("Debes seleccionar un pueblo");
       return;
     }
     
@@ -156,7 +123,6 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
   };
 
   const handleSelectMunicipio = (municipioNombre) => {
-    // Buscar si ya existe una zona con este nombre
     const zonaExistente = zonas.find(z => z.nombre === municipioNombre);
     
     setFormData({
@@ -225,7 +191,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
 
             <div>
               <label className="text-sm font-medium text-[#666666] mb-1 block">
-                Municipio *
+                Pueblo *
               </label>
               <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                 <PopoverTrigger asChild>
@@ -235,16 +201,34 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
                     aria-expanded={openCombobox}
                     className="w-full justify-between"
                   >
-                    {formData.zona_nombre || "Buscar municipio..."}
+                    {formData.zona_nombre || "Buscar pueblo..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar municipio (ej: tud)..." />
-                    <CommandEmpty>No se encontró el municipio.</CommandEmpty>
+                    <CommandInput placeholder="Buscar pueblo (ej: pam, tud)..." />
+                    <CommandEmpty>
+                      <div className="p-4 text-sm text-gray-500">
+                        No se encontró el pueblo.
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="block mt-2 text-[#004D9D]"
+                          onClick={() => {
+                            const customValue = prompt("Introduce el nombre del pueblo:");
+                            if (customValue) {
+                              setFormData({ ...formData, zona_nombre: customValue, zona_id: "" });
+                              setOpenCombobox(false);
+                            }
+                          }}
+                        >
+                          ¿Añadir manualmente?
+                        </Button>
+                      </div>
+                    </CommandEmpty>
                     <CommandGroup className="max-h-64 overflow-auto">
-                      {buscarMunicipios().map((municipio) => (
+                      {MUNICIPIOS_NAVARRA.map((municipio) => (
                         <CommandItem
                           key={municipio.nombre}
                           value={municipio.nombre}
@@ -257,9 +241,6 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
                             )}
                           />
                           {municipio.nombre}
-                          <span className="ml-auto text-xs text-gray-500">
-                            {municipio.poblacion.toLocaleString()} hab.
-                          </span>
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -268,7 +249,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
               </Popover>
               {zonaPreseleccionada && formData.zona_id && (
                 <p className="text-xs text-green-600 mt-1">
-                  ✓ Municipio preseleccionado
+                  ✓ Pueblo preseleccionado
                 </p>
               )}
             </div>
