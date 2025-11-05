@@ -9,6 +9,7 @@ import GestionUsuarios from './pages/GestionUsuarios';
 import Configuracion from './pages/Configuracion';
 import DetalleZona from './pages/DetalleZona';
 import CierresVerificados from './pages/CierresVerificados';
+import Rutas from './pages/Rutas';
 import Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "Configuracion": Configuracion,
     "DetalleZona": DetalleZona,
     "CierresVerificados": CierresVerificados,
+    "Rutas": Rutas,
 }
 
 export const pagesConfig = {
