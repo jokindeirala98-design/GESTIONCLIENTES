@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, Users, CheckCircle2, AlertCircle } from "lucide-react";
-import { municipiosNavarra, centroNavarra, obtenerCoordenadasMunicipio } from "@/utils/municipiosNavarra";
+import { municipiosNavarra, centroNavarra, obtenerCoordenadasMunicipio } from "@/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Componente para centrar el mapa cuando cambia la zona seleccionada

@@ -1,16 +1,31 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { municipiosNavarra } from "@/utils/municipiosNavarra";
+import { buscarMunicipios } from "@/utils";
 
 export default function CreateClienteDialog({ open, onClose, user, zonaPreseleccionada = null }) {
   const queryClient = useQueryClient();
@@ -207,7 +222,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
                     <CommandInput placeholder="Buscar municipio (ej: tud)..." />
                     <CommandEmpty>No se encontró el municipio.</CommandEmpty>
                     <CommandGroup className="max-h-64 overflow-auto">
-                      {municipiosNavarra.map((municipio) => (
+                      {buscarMunicipios().map((municipio) => (
                         <CommandItem
                           key={municipio.nombre}
                           value={municipio.nombre}
