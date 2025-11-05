@@ -8,8 +8,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, Users, CheckCircle2, AlertCircle } from "lucide-react";
-import { municipiosNavarra, centroNavarra, obtenerCoordenadasMunicipio } from "@/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+
+// Datos directos de municipios de Navarra
+const municipiosNavarra = [
+  { nombre: "Pamplona", lat: 42.8125, lng: -1.6458, poblacion: 201653 },
+  { nombre: "Tudela", lat: 42.0667, lng: -1.6, poblacion: 35691 },
+  { nombre: "Barañáin", lat: 42.8047, lng: -1.6756, poblacion: 19869 },
+  { nombre: "Burlada", lat: 42.8289, lng: -1.6086, poblacion: 18847 },
+  { nombre: "Zizur Mayor", lat: 42.7833, lng: -1.6833, poblacion: 14926 },
+  { nombre: "Villava", lat: 42.8381, lng: -1.6156, poblacion: 10753 },
+  { nombre: "Ansoáin", lat: 42.8236, lng: -1.6542, poblacion: 10539 },
+  { nombre: "Estella-Lizarra", lat: 42.6717, lng: -2.0264, poblacion: 13892 },
+  { nombre: "Tafalla", lat: 42.5292, lng: -1.6764, poblacion: 10670 },
+  { nombre: "Berriozar", lat: 42.8358, lng: -1.6681, poblacion: 10106 },
+  { nombre: "Huarte", lat: 42.8192, lng: -1.6014, poblacion: 7439 },
+  { nombre: "Valle de Egüés", lat: 42.8156, lng: -1.6506, poblacion: 7301 },
+  { nombre: "Noáin", lat: 42.7697, lng: -1.6167, poblacion: 7979 },
+  { nombre: "Orkoien", lat: 42.8139, lng: -1.6875, poblacion: 3998 },
+  { nombre: "Alsasua", lat: 42.9022, lng: -2.1711, poblacion: 7137 },
+];
+
+const centroNavarra = { lat: 42.6954, lng: -1.6761, zoom: 9 };
 
 // Componente para centrar el mapa cuando cambia la zona seleccionada
 function MapController({ center, zoom }) {

@@ -1,16 +1,53 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Kept Textarea for anotaciones
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select, // Kept Select just in case, though the municipality one is replaced
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { buscarMunicipios } from "@/utils"; // Changed import from municipiosNavarra
+
+// Datos directos de municipios de Navarra
+const municipiosNavarra = [
+  { nombre: "Pamplona", lat: 42.8125, lng: -1.6458, poblacion: 201653 },
+  { nombre: "Tudela", lat: 42.0667, lng: -1.6, poblacion: 35691 },
+  { nombre: "Barañáin", lat: 42.8047, lng: -1.6756, poblacion: 19869 },
+  { nombre: "Burlada", lat: 42.8289, lng: -1.6086, poblacion: 18847 },
+  { nombre: "Zizur Mayor", lat: 42.7833, lng: -1.6833, poblacion: 14926 },
+  { nombre: "Villava", lat: 42.8381, lng: -1.6156, poblacion: 10753 },
+  { nombre: "Ansoáin", lat: 42.8236, lng: -1.6542, poblacion: 10539 },
+  { nombre: "Estella-Lizarra", lat: 42.6717, lng: -2.0264, poblacion: 13892 },
+  { nombre: "Tafalla", lat: 42.5292, lng: -1.6764, poblacion: 10670 },
+  { nombre: "Berriozar", lat: 42.8358, lng: -1.6681, poblacion: 10106 },
+  { nombre: "Huarte", lat: 42.8192, lng: -1.6014, poblacion: 7439 },
+];
+
+function buscarMunicipios(termino = '') {
+  const terminoLower = termino.toLowerCase().trim();
+  if (!terminoLower) return municipiosNavarra;
+  return municipiosNavarra.filter(m =>
+    m.nombre.toLowerCase().includes(terminoLower)
+  );
+}
 
 export default function EditClienteDialog({ open, onClose, cliente }) {
   const queryClient = useQueryClient();
@@ -21,7 +58,7 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
   });
 
   const zonaActual = zonas.find(z => z.id === cliente.zona_id);
-  
+
   const [formData, setFormData] = useState({
     nombre_negocio: cliente.nombre_negocio || "",
     nombre_cliente: cliente.nombre_cliente || "",
@@ -31,6 +68,10 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
     zona_id: cliente.zona_id || "",      // ID of the zone
     anotaciones: cliente.anotaciones || "",
   });
+
+  // State for the new combobox
+  const [openMunicipioSelect, setOpenMunicipioSelect] = useState(false);
+  const [searchMunicipioValue, setSearchMunicipioValue] = useState("");
 
   // UseEffect to update formData if client or zones change after initial render
   useEffect(() => {
@@ -69,7 +110,7 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     let zonaId = formData.zona_id;
 
     // If there's no zona_id but a zona_nombre is selected, check if it's an existing zone or create a new one
@@ -115,8 +156,6 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
       }
     });
   };
-
-  const municipios = buscarMunicipios();
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -172,37 +211,63 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
 
             <div>
               <Label htmlFor="municipio">Municipio *</Label>
-              <Select
-                value={formData.zona_nombre}
-                onValueChange={(selectedMunicipioName) => {
-                  const existingZona = zonas.find(z => z.nombre === selectedMunicipioName);
-                  setFormData(prev => ({
-                    ...prev,
-                    zona_nombre: selectedMunicipioName,
-                    zona_id: existingZona ? existingZona.id : "", // Set ID if it's an existing zone
-                  }));
-                }}
-              >
-                <SelectTrigger id="municipio">
-                  {zonasLoading ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Cargando municipios...</span>
-                    </div>
-                  ) : (
-                    <SelectValue placeholder="Seleccionar municipio">
-                        {formData.zona_nombre || "Seleccionar municipio..."}
-                    </SelectValue>
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {municipios.map((municipio) => (
-                    <SelectItem key={municipio.nombre} value={municipio.nombre}>
-                      {municipio.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openMunicipioSelect} onOpenChange={setOpenMunicipioSelect}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openMunicipioSelect}
+                    className="w-full justify-between"
+                  >
+                    {formData.zona_nombre
+                      ? formData.zona_nombre
+                      : "Seleccionar municipio..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                    <CommandInput
+                      placeholder="Buscar municipio..."
+                      value={searchMunicipioValue}
+                      onValueChange={setSearchMunicipioValue}
+                    />
+                    <CommandEmpty>No municipio found.</CommandEmpty>
+                    <CommandGroup>
+                      {buscarMunicipios(searchMunicipioValue).map((municipio) => (
+                        <CommandItem
+                          key={municipio.nombre}
+                          value={municipio.nombre} // Value for onSelect
+                          onSelect={(currentValue) => {
+                            const selectedName = municipiosNavarra.find(
+                                (m) => m.nombre.toLowerCase() === currentValue.toLowerCase()
+                            )?.nombre || "";
+                            const existingZona = zonas.find(z => z.nombre === selectedName);
+
+                            setFormData(prev => ({
+                              ...prev,
+                              zona_nombre: selectedName,
+                              zona_id: existingZona ? existingZona.id : "",
+                            }));
+                            setOpenMunicipioSelect(false);
+                            setSearchMunicipioValue(""); // Clear search after selection
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.zona_nombre === municipio.nombre
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {municipio.nombre}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
@@ -226,8 +291,8 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
             >
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="bg-[#004D9D] hover:bg-[#00AEEF]"
               disabled={updateMutation.isLoading}
             >

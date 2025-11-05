@@ -25,7 +25,29 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { buscarMunicipios } from "@/utils";
+
+// Datos directos de municipios de Navarra
+const municipiosNavarra = [
+  { nombre: "Pamplona", lat: 42.8125, lng: -1.6458, poblacion: 201653 },
+  { nombre: "Tudela", lat: 42.0667, lng: -1.6, poblacion: 35691 },
+  { nombre: "Barañáin", lat: 42.8047, lng: -1.6756, poblacion: 19869 },
+  { nombre: "Burlada", lat: 42.8289, lng: -1.6086, poblacion: 18847 },
+  { nombre: "Zizur Mayor", lat: 42.7833, lng: -1.6833, poblacion: 14926 },
+  { nombre: "Villava", lat: 42.8381, lng: -1.6156, poblacion: 10753 },
+  { nombre: "Ansoáin", lat: 42.8236, lng: -1.6542, poblacion: 10539 },
+  { nombre: "Estella-Lizarra", lat: 42.6717, lng: -2.0264, poblacion: 13892 },
+  { nombre: "Tafalla", lat: 42.5292, lng: -1.6764, poblacion: 10670 },
+  { nombre: "Berriozar", lat: 42.8358, lng: -1.6681, poblacion: 10106 },
+  { nombre: "Huarte", lat: 42.8192, lng: -1.6014, poblacion: 7439 },
+];
+
+function buscarMunicipios(termino = '') {
+  const terminoLower = termino.toLowerCase().trim();
+  if (!terminoLower) return municipiosNavarra;
+  return municipiosNavarra.filter(m => 
+    m.nombre.toLowerCase().includes(terminoLower)
+  );
+}
 
 export default function CreateClienteDialog({ open, onClose, user, zonaPreseleccionada = null }) {
   const queryClient = useQueryClient();
