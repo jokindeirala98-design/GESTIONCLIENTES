@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +49,7 @@ export const MUNICIPIOS_NAVARRA = [
   { nombre: "Funes", lat: 42.3833, lng: -1.75 },
   { nombre: "Fitero", lat: 42.0583, lng: -1.8667 },
   { nombre: "Marcilla", lat: 42.3333, lng: -1.7 },
-  { nombre: "Mélida", lat: 42.3667, lng: -1.5833 }, // Corrected: removed duplicate 'lng'
+  { nombre: "Mélida", lat: 42.3667, lng: -1.5833 },
   { nombre: "Baztan", lat: 43.1167, lng: -1.5 },
   { nombre: "Cadreita", lat: 42.2, lng: -1.6333 },
   { nombre: "Carcastillo", lat: 42.3667, lng: -1.5167 },
@@ -216,7 +215,7 @@ export default function Rutas() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#666666]">Cargando mapa...</p>
@@ -226,76 +225,78 @@ export default function Rutas() {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="fixed inset-0 md:relative md:inset-auto md:h-[calc(100vh-4rem)]">
       {/* Mapa */}
-      <MapContainer
-        center={centroMapa}
-        zoom={zoomMapa}
-        style={{ height: "100%", width: "100%" }}
-        scrollWheelZoom={true}
-        zoomControl={false}
-      >
-        {/* Tile layer minimalista - CartoDB Positron (sin relieves, ríos, etc.) */}
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
-        
-        <MapController center={centroMapa} zoom={zoomMapa} />
-        
-        {/* Oficinas Voltis */}
-        <CircleMarker
-          center={[42.8156, -1.6506]}
-          radius={12}
-          pathOptions={{ 
-            color: "#004D9D", 
-            fillColor: "#004D9D", 
-            fillOpacity: 1,
-            weight: 3
-          }}
+      <div className="h-full w-full">
+        <MapContainer
+          center={centroMapa}
+          zoom={zoomMapa}
+          style={{ height: "100%", width: "100%" }}
+          scrollWheelZoom={true}
+          zoomControl={true}
         >
-          <Popup>
-            <div className="text-center font-semibold">
-              📍 Oficinas Voltis
-              <br />
-              <span className="text-xs">Parque Empresarial Ansoáin</span>
-            </div>
-          </Popup>
-        </CircleMarker>
-        
-        {/* Pueblos */}
-        {pueblosConDatos.map((pueblo, idx) => (
+          {/* Tile layer minimalista - CartoDB Positron (sin relieves, ríos, etc.) */}
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          />
+          
+          <MapController center={centroMapa} zoom={zoomMapa} />
+          
+          {/* Oficinas Voltis */}
           <CircleMarker
-            key={idx}
-            center={[pueblo.lat, pueblo.lng]}
-            radius={getRadio(pueblo.clientes.length)}
-            pathOptions={{
-              color: pueblo.color,
-              fillColor: pueblo.color,
-              fillOpacity: 0.8,
-              weight: 2
-            }}
-            eventHandlers={{
-              click: () => handleClickPueblo(pueblo)
+            center={[42.8156, -1.6506]}
+            radius={12}
+            pathOptions={{ 
+              color: "#004D9D", 
+              fillColor: "#004D9D", 
+              fillOpacity: 1,
+              weight: 3
             }}
           >
             <Popup>
-              <div className="text-center">
-                <strong className="text-sm">{pueblo.nombre}</strong>
+              <div className="text-center font-semibold">
+                📍 Oficinas Voltis
                 <br />
-                {pueblo.clientes.length > 0 && (
-                  <span className="text-xs text-gray-600">
-                    {pueblo.clientes.length} cliente(s)
-                  </span>
-                )}
+                <span className="text-xs">Parque Empresarial Ansoáin</span>
               </div>
             </Popup>
           </CircleMarker>
-        ))}
-      </MapContainer>
+          
+          {/* Pueblos */}
+          {pueblosConDatos.map((pueblo, idx) => (
+            <CircleMarker
+              key={idx}
+              center={[pueblo.lat, pueblo.lng]}
+              radius={getRadio(pueblo.clientes.length)}
+              pathOptions={{
+                color: pueblo.color,
+                fillColor: pueblo.color,
+                fillOpacity: 0.8,
+                weight: 2
+              }}
+              eventHandlers={{
+                click: () => handleClickPueblo(pueblo)
+              }}
+            >
+              <Popup>
+                <div className="text-center">
+                  <strong className="text-sm">{pueblo.nombre}</strong>
+                  <br />
+                  {pueblo.clientes.length > 0 && (
+                    <span className="text-xs text-gray-600">
+                      {pueblo.clientes.length} cliente(s)
+                    </span>
+                  )}
+                </div>
+              </Popup>
+            </CircleMarker>
+          ))}
+        </MapContainer>
+      </div>
 
       {/* Leyenda flotante */}
-      <Card className="absolute top-4 left-4 z-[1000] shadow-xl border-2 hidden md:block">
+      <Card className="absolute top-4 left-4 z-[1000] shadow-xl border-2 hidden md:block bg-white">
         <CardContent className="p-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.verde }} />
@@ -326,7 +327,7 @@ export default function Rutas() {
           />
           
           <Card className={`
-            fixed z-[1000] shadow-2xl border-2 overflow-auto
+            fixed z-[1000] shadow-2xl border-2 overflow-auto bg-white
             md:top-4 md:right-4 md:bottom-4 md:w-[400px]
             bottom-0 left-0 right-0 max-h-[80vh] rounded-t-3xl md:rounded-2xl
           `}>
