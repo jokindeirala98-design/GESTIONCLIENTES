@@ -225,9 +225,9 @@ export default function Rutas() {
   }
 
   return (
-    <div className="fixed inset-0 md:relative md:inset-auto md:h-[calc(100vh-4rem)]">
+    <div className="relative w-full" style={{ height: 'calc(100vh - 80px)' }}>
       {/* Mapa */}
-      <div className="h-full w-full">
+      <div className="absolute inset-0">
         <MapContainer
           center={centroMapa}
           zoom={zoomMapa}
@@ -235,7 +235,6 @@ export default function Rutas() {
           scrollWheelZoom={true}
           zoomControl={true}
         >
-          {/* Tile layer minimalista - CartoDB Positron (sin relieves, ríos, etc.) */}
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -326,11 +325,7 @@ export default function Rutas() {
             onClick={cerrarPanel}
           />
           
-          <Card className={`
-            fixed z-[1000] shadow-2xl border-2 overflow-auto bg-white
-            md:top-4 md:right-4 md:bottom-4 md:w-[400px]
-            bottom-0 left-0 right-0 max-h-[80vh] rounded-t-3xl md:rounded-2xl
-          `}>
+          <Card className="fixed z-[1000] shadow-2xl border-2 overflow-auto bg-white md:top-4 md:right-4 md:bottom-4 md:w-[400px] bottom-0 left-0 right-0 max-h-[80vh] rounded-t-3xl md:rounded-2xl">
             <CardHeader className="border-b bg-gradient-to-r from-[#004D9D] to-[#00AEEF] sticky top-0 z-10">
               <div className="flex items-start justify-between">
                 <div>
