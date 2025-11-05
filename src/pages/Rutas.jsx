@@ -1,42 +1,78 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Users, CheckCircle2, AlertCircle } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { MapPin, Users, X, TrendingUp, AlertCircle, FileCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// Datos directos de municipios de Navarra
-const municipiosNavarra = [
-  { nombre: "Pamplona", lat: 42.8125, lng: -1.6458, poblacion: 201653 },
-  { nombre: "Tudela", lat: 42.0667, lng: -1.6, poblacion: 35691 },
-  { nombre: "Barañáin", lat: 42.8047, lng: -1.6756, poblacion: 19869 },
-  { nombre: "Burlada", lat: 42.8289, lng: -1.6086, poblacion: 18847 },
-  { nombre: "Zizur Mayor", lat: 42.7833, lng: -1.6833, poblacion: 14926 },
-  { nombre: "Villava", lat: 42.8381, lng: -1.6156, poblacion: 10753 },
-  { nombre: "Ansoáin", lat: 42.8236, lng: -1.6542, poblacion: 10539 },
-  { nombre: "Estella-Lizarra", lat: 42.6717, lng: -2.0264, poblacion: 13892 },
-  { nombre: "Tafalla", lat: 42.5292, lng: -1.6764, poblacion: 10670 },
-  { nombre: "Berriozar", lat: 42.8358, lng: -1.6681, poblacion: 10106 },
-  { nombre: "Huarte", lat: 42.8192, lng: -1.6014, poblacion: 7439 },
-  { nombre: "Valle de Egüés", lat: 42.8156, lng: -1.6506, poblacion: 7301 },
-  { nombre: "Noáin", lat: 42.7697, lng: -1.6167, poblacion: 7979 },
-  { nombre: "Orkoien", lat: 42.8139, lng: -1.6875, poblacion: 3998 },
-  { nombre: "Alsasua", lat: 42.9022, lng: -2.1711, poblacion: 7137 },
+// Lista completa de municipios de Navarra (principales)
+export const MUNICIPIOS_NAVARRA = [
+  { nombre: "Pamplona", lat: 42.8125, lng: -1.6458 },
+  { nombre: "Tudela", lat: 42.0667, lng: -1.6 },
+  { nombre: "Barañáin", lat: 42.8047, lng: -1.6756 },
+  { nombre: "Burlada", lat: 42.8289, lng: -1.6086 },
+  { nombre: "Zizur Mayor", lat: 42.7833, lng: -1.6833 },
+  { nombre: "Villava", lat: 42.8381, lng: -1.6156 },
+  { nombre: "Ansoáin", lat: 42.8236, lng: -1.6542 },
+  { nombre: "Estella-Lizarra", lat: 42.6717, lng: -2.0264 },
+  { nombre: "Tafalla", lat: 42.5292, lng: -1.6764 },
+  { nombre: "Berriozar", lat: 42.8358, lng: -1.6681 },
+  { nombre: "Huarte", lat: 42.8192, lng: -1.6014 },
+  { nombre: "Valle de Egüés", lat: 42.8156, lng: -1.6506 },
+  { nombre: "Noáin", lat: 42.7697, lng: -1.6167 },
+  { nombre: "Orkoien", lat: 42.8139, lng: -1.6875 },
+  { nombre: "Alsasua", lat: 42.9022, lng: -2.1711 },
+  { nombre: "Sangüesa", lat: 42.5753, lng: -1.2817 },
+  { nombre: "Peralta", lat: 42.3469, lng: -1.8158 },
+  { nombre: "Irurtzun", lat: 42.9103, lng: -1.8167 },
+  { nombre: "Puente la Reina", lat: 42.6719, lng: -1.8128 },
+  { nombre: "Lodosa", lat: 42.4167, lng: -2.0833 },
+  { nombre: "Corella", lat: 42.1167, lng: -1.7833 },
+  { nombre: "Villafranca", lat: 42.6667, lng: -1.95 },
+  { nombre: "Aoiz", lat: 42.7878, lng: -1.3578 },
+  { nombre: "Cintruénigo", lat: 42.0531, lng: -1.7853 },
+  { nombre: "Vera de Bidasoa", lat: 43.2547, lng: -1.6583 },
+  { nombre: "Cascante", lat: 41.9833, lng: -1.6833 },
+  { nombre: "Andosilla", lat: 42.3833, lng: -1.9667 },
+  { nombre: "Beriáin", lat: 42.7167, lng: -1.6333 },
+  { nombre: "Falces", lat: 42.3831, lng: -1.7972 },
+  { nombre: "Caparroso", lat: 42.3397, lng: -1.6569 },
+  { nombre: "Lesaka", lat: 43.2369, lng: -1.6917 },
+  { nombre: "Viana", lat: 42.5167, lng: -2.3667 },
+  { nombre: "Mendavia", lat: 42.4833, lng: -2.2167 },
+  { nombre: "Lekunberri", lat: 43.0167, lng: -1.85 },
+  { nombre: "Olite", lat: 42.4833, lng: -1.65 },
+  { nombre: "Castejón", lat: 42.1833, lng: -1.6833 },
+  { nombre: "Funes", lat: 42.3833, lng: -1.75 },
+  { nombre: "Fitero", lat: 42.0583, lng: -1.8667 },
+  { nombre: "Marcilla", lat: 42.3333, lng: -1.7 },
+  { nombre: "Mélida", lat: 42.3667, lng lng: -1.5833 },
+  { nombre: "Baztan", lat: 43.1167, lng: -1.5 },
+  { nombre: "Cadreita", lat: 42.2, lng: -1.6333 },
+  { nombre: "Carcastillo", lat: 42.3667, lng: -1.5167 },
+  { nombre: "Fontellas", lat: 42.0333, lng: -1.5833 },
+  { nombre: "Los Arcos", lat: 42.5667, lng: -2.1833 },
+  { nombre: "Larraga", lat: 42.5667, lng: -1.8333 },
+  { nombre: "Milagro", lat: 42.25, lng: -1.75 },
+  { nombre: "Murillo el Fruto", lat: 42.2667, lng: -1.6 },
+  { nombre: "Ribaforada", lat: 42.0667, lng: -1.5 },
+  { nombre: "Santacara", lat: 42.4, lng: -1.55 },
+  { nombre: "Sesma", lat: 42.5333, lng: -2.0833 },
+  { nombre: "Urdax", lat: 43.2333, lng: -1.4667 },
+  { nombre: "Valtierra", lat: 42.2333, lng: -1.6 },
 ];
 
 const centroNavarra = { lat: 42.6954, lng: -1.6761, zoom: 9 };
 
-// Componente para centrar el mapa cuando cambia la zona seleccionada
 function MapController({ center, zoom }) {
   const map = useMap();
   
   useEffect(() => {
-    if (center) {
-      map.setView(center, zoom || 12, { animate: true });
+    if (center && zoom) {
+      map.setView(center, zoom, { animate: true });
     }
   }, [center, zoom, map]);
   
@@ -45,9 +81,7 @@ function MapController({ center, zoom }) {
 
 export default function Rutas() {
   const [user, setUser] = useState(null);
-  const [municipioSeleccionado, setMunicipioSeleccionado] = useState(null);
-  const [municipiosRuta, setMunicipiosRuta] = useState([]);
-  const [mostrandoRuta, setMostrandoRuta] = useState(false);
+  const [puebloSeleccionado, setPuebloSeleccionado] = useState(null);
   const [centroMapa, setCentroMapa] = useState([centroNavarra.lat, centroNavarra.lng]);
   const [zoomMapa, setZoomMapa] = useState(centroNavarra.zoom);
 
@@ -71,33 +105,33 @@ export default function Rutas() {
 
   const isAdmin = user?.role === "admin";
 
-  // Agrupar clientes por municipio (zona.nombre)
-  const clientesPorMunicipio = useMemo(() => {
+  // Agrupar clientes por pueblo (zona.nombre)
+  const clientesPorPueblo = useMemo(() => {
     const agrupacion = {};
     
     clientes.forEach(cliente => {
       const zona = zonas.find(z => z.id === cliente.zona_id);
       if (!zona) return;
       
-      const municipio = zona.nombre;
-      if (!agrupacion[municipio]) {
-        agrupacion[municipio] = [];
+      const pueblo = zona.nombre;
+      if (!agrupacion[pueblo]) {
+        agrupacion[pueblo] = [];
       }
-      agrupacion[municipio].push(cliente);
+      agrupacion[pueblo].push(cliente);
     });
     
     return agrupacion;
   }, [clientes, zonas]);
 
-  // Calcular estado de cada municipio según la lógica especificada
-  const getEstadoMunicipio = (clientesMunicipio) => {
-    if (!clientesMunicipio || clientesMunicipio.length === 0) {
-      return "blanco";
+  // Calcular estado de cada pueblo según la lógica especificada
+  const getEstadoPueblo = (clientesPueblo) => {
+    if (!clientesPueblo || clientesPueblo.length === 0) {
+      return "gris";
     }
 
-    const total = clientesMunicipio.length;
-    const informesListos = clientesMunicipio.filter(c => c.estado === "Informe listo").length;
-    const firmadosRechazados = clientesMunicipio.filter(
+    const total = clientesPueblo.length;
+    const informesListos = clientesPueblo.filter(c => c.estado === "Informe listo").length;
+    const firmadosRechazados = clientesPueblo.filter(
       c => c.estado === "Firmado con éxito" || c.estado === "Rechazado"
     ).length;
     
@@ -109,7 +143,7 @@ export default function Rutas() {
       return "rojo";
     }
     
-    const enProceso = clientesMunicipio.filter(
+    const enProceso = clientesPueblo.filter(
       c => c.estado === "Primer contacto" || 
            c.estado === "Esperando facturas" || 
            c.estado === "Facturas presentadas"
@@ -119,71 +153,65 @@ export default function Rutas() {
       return "amarillo";
     }
     
-    return "blanco";
+    return "gris";
   };
 
   const coloresEstado = {
-    verde: "#2ECC71",
-    amarillo: "#F1C40F",
-    blanco: "#CCCCCC",
-    rojo: "#E74C3C"
+    verde: "#10B981",
+    amarillo: "#F59E0B",
+    gris: "#D1D5DB",
+    rojo: "#EF4444"
   };
 
-  const municipiosConDatos = municipiosNavarra.map(muni => {
-    const clientesMuni = clientesPorMunicipio[muni.nombre] || [];
-    const estado = getEstadoMunicipio(clientesMuni);
+  const pueblosConDatos = MUNICIPIOS_NAVARRA.map(pueblo => {
+    const clientesPueblo = clientesPorPueblo[pueblo.nombre] || [];
+    const estado = getEstadoPueblo(clientesPueblo);
+    const misClientes = clientesPueblo.filter(c => c.propietario_email === user?.email);
     
     return {
-      ...muni,
-      clientes: clientesMuni,
+      ...pueblo,
+      clientes: clientesPueblo,
+      misClientes: misClientes.length,
       estado,
       color: coloresEstado[estado]
     };
   });
 
-  const handleClickMunicipio = (municipio) => {
-    setMunicipioSeleccionado(municipio);
-    setMostrandoRuta(false);
-    setMunicipiosRuta([]);
-    setCentroMapa([municipio.lat, municipio.lng]);
-    setZoomMapa(12);
+  const handleClickPueblo = (pueblo) => {
+    setPuebloSeleccionado(pueblo);
+    setCentroMapa([pueblo.lat, pueblo.lng]);
+    setZoomMapa(13);
   };
 
-  const toggleMunicipioRuta = (municipio) => {
-    if (municipiosRuta.find(m => m.nombre === municipio.nombre)) {
-      setMunicipiosRuta(municipiosRuta.filter(m => m.nombre !== municipio.nombre));
-    } else {
-      setMunicipiosRuta([...municipiosRuta, municipio]);
-    }
+  const cerrarPanel = () => {
+    setPuebloSeleccionado(null);
+    setCentroMapa([centroNavarra.lat, centroNavarra.lng]);
+    setZoomMapa(centroNavarra.zoom);
   };
 
-  const calcularRutaOptima = () => {
-    if (municipiosRuta.length === 0) return;
-    
-    const origen = { lat: 42.8156, lng: -1.6506 };
-    
-    const rutaOrdenada = [...municipiosRuta].sort((a, b) => {
-      const distA = Math.sqrt(
-        Math.pow(a.lat - origen.lat, 2) + Math.pow(a.lng - origen.lng, 2)
-      );
-      const distB = Math.sqrt(
-        Math.pow(b.lat - origen.lat, 2) + Math.pow(b.lng - origen.lng, 2)
-      );
-      return distA - distB;
-    });
-    
-    setMunicipiosRuta(rutaOrdenada);
-    setMostrandoRuta(true);
+  // Calcular radio del círculo según número de clientes
+  const getRadio = (numClientes) => {
+    if (numClientes === 0) return 4;
+    if (numClientes <= 2) return 6;
+    if (numClientes <= 5) return 8;
+    if (numClientes <= 10) return 11;
+    return 14;
   };
 
-  const municipiosConClientes = municipiosConDatos.filter(m => m.clientes.length > 0);
-
-  const coordenadasRuta = mostrandoRuta && municipiosRuta.length > 0
-    ? [
-        [42.8156, -1.6506],
-        ...municipiosRuta.map(m => [m.lat, m.lng])
-      ]
-    : [];
+  // Estadísticas por estado en el pueblo seleccionado
+  const getEstadisticasPueblo = (pueblo) => {
+    const clientesPueblo = pueblo.clientes;
+    return {
+      total: clientesPueblo.length,
+      primerContacto: clientesPueblo.filter(c => c.estado === "Primer contacto").length,
+      esperandoFacturas: clientesPueblo.filter(c => c.estado === "Esperando facturas").length,
+      facturasPresent: clientesPueblo.filter(c => c.estado === "Facturas presentadas").length,
+      informeListo: clientesPueblo.filter(c => c.estado === "Informe listo").length,
+      pendienteFirma: clientesPueblo.filter(c => c.estado === "Pendiente de firma").length,
+      firmados: clientesPueblo.filter(c => c.estado === "Firmado con éxito").length,
+      rechazados: clientesPueblo.filter(c => c.estado === "Rechazado").length,
+    };
+  };
 
   if (!user) {
     return (
@@ -197,234 +225,240 @@ export default function Rutas() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-full mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-          <MapPin className="w-8 h-8" />
-          Planificación de Rutas
-        </h1>
-        <p className="text-[#666666]">
-          Visualiza clientes en el mapa y planifica tus visitas
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="border-none shadow-md">
-            <CardHeader className="border-b bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
-              <CardTitle className="text-white">Mapa de Navarra</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div style={{ height: "600px", width: "100%" }}>
-                <MapContainer
-                  center={centroMapa}
-                  zoom={zoomMapa}
-                  style={{ height: "100%", width: "100%" }}
-                  scrollWheelZoom={true}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  
-                  <MapController center={centroMapa} zoom={zoomMapa} />
-                  
-                  <CircleMarker
-                    center={[42.8156, -1.6506]}
-                    radius={10}
-                    pathOptions={{ color: "#004D9D", fillColor: "#004D9D", fillOpacity: 0.8 }}
-                  >
-                    <Popup>
-                      <strong>📍 Oficinas Voltis</strong>
-                      <br />
-                      Parque Empresarial Ansoáin
-                    </Popup>
-                  </CircleMarker>
-                  
-                  {municipiosConDatos.map((municipio, idx) => (
-                    <CircleMarker
-                      key={idx}
-                      center={[municipio.lat, municipio.lng]}
-                      radius={municipio.clientes.length > 0 ? 8 : 5}
-                      pathOptions={{
-                        color: municipio.color,
-                        fillColor: municipio.color,
-                        fillOpacity: 0.7,
-                        weight: 2
-                      }}
-                      eventHandlers={{
-                        click: () => handleClickMunicipio(municipio)
-                      }}
-                    >
-                      <Popup>
-                        <div className="text-center">
-                          <strong>{municipio.nombre}</strong>
-                          <br />
-                          {municipio.clientes.length > 0 ? (
-                            <>
-                              <Badge className="mt-2" style={{ backgroundColor: municipio.color }}>
-                                {municipio.clientes.length} cliente(s)
-                              </Badge>
-                            </>
-                          ) : (
-                            <span className="text-xs text-gray-500">Sin clientes</span>
-                          )}
-                        </div>
-                      </Popup>
-                    </CircleMarker>
-                  ))}
-                  
-                  {mostrandoRuta && coordenadasRuta.length > 0 && (
-                    <Polyline
-                      positions={coordenadasRuta}
-                      pathOptions={{ color: "#1F78B4", weight: 4, dashArray: "10, 10" }}
-                    />
-                  )}
-                </MapContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="mt-4 border-none shadow-md">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-4 items-center justify-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.verde }} />
-                  <span className="text-sm text-[#666666]">🟢 Pendientes de firmar (más del 70% informe listo)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.amarillo }} />
-                  <span className="text-sm text-[#666666]">🟡 Facturas recogidas (en proceso)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.blanco }} />
-                  <span className="text-sm text-[#666666]">⚪ Por visitar (sin clientes)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.rojo }} />
-                  <span className="text-sm text-[#666666]">🔴 Cerrado (más del 50% finalizados)</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="border-none shadow-md">
-            <CardHeader className="border-b bg-gradient-to-r from-green-500 to-green-600">
-              <CardTitle className="text-white flex items-center gap-2">
-                <Navigation className="w-5 h-5" />
-                Planificar Ruta
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                <p className="text-sm text-[#666666]">
-                  Selecciona los municipios que quieres visitar:
-                </p>
-                
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {municipiosConClientes.map((municipio) => (
-                    <div
-                      key={municipio.nombre}
-                      className="flex items-center gap-3 p-2 rounded hover:bg-gray-50"
-                    >
-                      <Checkbox
-                        checked={municipiosRuta.some(m => m.nombre === municipio.nombre)}
-                        onCheckedChange={() => toggleMunicipioRuta(municipio)}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: municipio.color }}
-                          />
-                          <span className="text-sm font-medium">{municipio.nombre}</span>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {municipio.clientes.length} cliente(s)
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={calcularRutaOptima}
-                  disabled={municipiosRuta.length === 0}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <Navigation className="w-4 h-4 mr-2" />
-                  Calcular Ruta Óptima ({municipiosRuta.length})
-                </Button>
-
-                {mostrandoRuta && municipiosRuta.length > 0 && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm font-semibold text-green-700 mb-2">
-                      📍 Ruta sugerida:
-                    </p>
-                    <ol className="text-xs space-y-1 text-green-600">
-                      <li>0. Oficinas Voltis (Ansoáin)</li>
-                      {municipiosRuta.map((m, idx) => (
-                        <li key={idx}>{idx + 1}. {m.nombre}</li>
-                      ))}
-                    </ol>
-                  </div>
+    <div className="relative h-screen overflow-hidden">
+      {/* Mapa */}
+      <MapContainer
+        center={centroMapa}
+        zoom={zoomMapa}
+        style={{ height: "100%", width: "100%" }}
+        scrollWheelZoom={true}
+        zoomControl={false}
+      >
+        {/* Tile layer minimalista - CartoDB Positron (sin relieves, ríos, etc.) */}
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        />
+        
+        <MapController center={centroMapa} zoom={zoomMapa} />
+        
+        {/* Oficinas Voltis */}
+        <CircleMarker
+          center={[42.8156, -1.6506]}
+          radius={12}
+          pathOptions={{ 
+            color: "#004D9D", 
+            fillColor: "#004D9D", 
+            fillOpacity: 1,
+            weight: 3
+          }}
+        >
+          <Popup>
+            <div className="text-center font-semibold">
+              📍 Oficinas Voltis
+              <br />
+              <span className="text-xs">Parque Empresarial Ansoáin</span>
+            </div>
+          </Popup>
+        </CircleMarker>
+        
+        {/* Pueblos */}
+        {pueblosConDatos.map((pueblo, idx) => (
+          <CircleMarker
+            key={idx}
+            center={[pueblo.lat, pueblo.lng]}
+            radius={getRadio(pueblo.clientes.length)}
+            pathOptions={{
+              color: pueblo.color,
+              fillColor: pueblo.color,
+              fillOpacity: 0.8,
+              weight: 2
+            }}
+            eventHandlers={{
+              click: () => handleClickPueblo(pueblo)
+            }}
+          >
+            <Popup>
+              <div className="text-center">
+                <strong className="text-sm">{pueblo.nombre}</strong>
+                <br />
+                {pueblo.clientes.length > 0 && (
+                  <span className="text-xs text-gray-600">
+                    {pueblo.clientes.length} cliente(s)
+                  </span>
                 )}
               </div>
+            </Popup>
+          </CircleMarker>
+        ))}
+      </MapContainer>
+
+      {/* Leyenda flotante */}
+      <Card className="absolute top-4 left-4 z-[1000] shadow-xl border-2 hidden md:block">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.verde }} />
+            <span className="text-xs text-[#666666]">🟢 Ready (>70% informe listo)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.amarillo }} />
+            <span className="text-xs text-[#666666]">🟡 En proceso</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.gris }} />
+            <span className="text-xs text-[#666666]">⚪ Sin clientes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.rojo }} />
+            <span className="text-xs text-[#666666]">🔴 Cerrado (>50%)</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Panel lateral flotante */}
+      {puebloSeleccionado && (
+        <>
+          {/* Overlay para cerrar en móvil */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-[999] md:hidden"
+            onClick={cerrarPanel}
+          />
+          
+          <Card className={`
+            fixed z-[1000] shadow-2xl border-2 overflow-auto
+            md:top-4 md:right-4 md:bottom-4 md:w-[400px]
+            bottom-0 left-0 right-0 max-h-[80vh] rounded-t-3xl md:rounded-2xl
+          `}>
+            <CardHeader className="border-b bg-gradient-to-r from-[#004D9D] to-[#00AEEF] sticky top-0 z-10">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-white text-xl flex items-center gap-2">
+                    <MapPin className="w-5 h-5" />
+                    {puebloSeleccionado.nombre}
+                  </CardTitle>
+                  <Badge 
+                    className="mt-2"
+                    style={{ backgroundColor: puebloSeleccionado.color }}
+                  >
+                    {puebloSeleccionado.estado.toUpperCase()}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={cerrarPanel}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-4 space-y-4">
+              {/* Resumen de clientes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <Users className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-blue-600">
+                    {puebloSeleccionado.clientes.length}
+                  </p>
+                  <p className="text-xs text-blue-700">Total clientes</p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-3 text-center">
+                  <TrendingUp className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-green-600">
+                    {puebloSeleccionado.misClientes}
+                  </p>
+                  <p className="text-xs text-green-700">Mis clientes</p>
+                </div>
+              </div>
+
+              {/* Estadísticas por estado */}
+              {puebloSeleccionado.clientes.length > 0 && (
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold text-[#004D9D] mb-3 text-sm">
+                    📊 Estados
+                  </h3>
+                  <div className="space-y-2">
+                    {(() => {
+                      const stats = getEstadisticasPueblo(puebloSeleccionado);
+                      return [
+                        { label: "Primer contacto", value: stats.primerContacto, color: "bg-gray-400" },
+                        { label: "Esperando facturas", value: stats.esperandoFacturas, color: "bg-orange-500" },
+                        { label: "Facturas presentadas", value: stats.facturasPresent, color: "bg-blue-500" },
+                        { label: "Informe listo", value: stats.informeListo, color: "bg-green-500" },
+                        { label: "Pendiente de firma", value: stats.pendienteFirma, color: "bg-purple-500" },
+                        { label: "Firmado con éxito", value: stats.firmados, color: "bg-yellow-600" },
+                        { label: "Rechazado", value: stats.rechazados, color: "bg-red-500" },
+                      ].map((item) => item.value > 0 && (
+                        <div key={item.label} className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                            <span className="text-gray-600">{item.label}</span>
+                          </div>
+                          <span className="font-semibold text-[#004D9D]">{item.value}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de clientes */}
+              {puebloSeleccionado.clientes.length > 0 ? (
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold text-[#004D9D] mb-3 text-sm">
+                    👥 Clientes en este pueblo
+                  </h3>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {puebloSeleccionado.clientes.map((cliente) => {
+                      const esMio = cliente.propietario_email === user.email;
+                      const puedoVer = esMio || isAdmin;
+                      
+                      return (
+                        <div
+                          key={cliente.id}
+                          className={`p-3 rounded-lg text-xs ${
+                            esMio ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-[#004D9D] truncate">
+                                {puedoVer ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
+                              </p>
+                              <p className="text-gray-600 mt-1 flex items-center gap-1">
+                                {cliente.estado === "Informe listo" && <FileCheck className="w-3 h-3 text-green-600" />}
+                                {cliente.estado === "Rechazado" && <AlertCircle className="w-3 h-3 text-red-600" />}
+                                {cliente.estado}
+                              </p>
+                            </div>
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center flex-shrink-0">
+                              <span className="text-white font-bold text-[10px]">
+                                {cliente.propietario_iniciales}
+                              </span>
+                            </div>
+                          </div>
+                          {esMio && (
+                            <Badge className="mt-2 text-[10px] bg-green-600">
+                              Tu cliente
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Sin clientes en este pueblo</p>
+                </div>
+              )}
             </CardContent>
           </Card>
-
-          {municipioSeleccionado && (
-            <Card className="border-none shadow-md">
-              <CardHeader className="border-b bg-gradient-to-r from-purple-500 to-purple-600">
-                <CardTitle className="text-white flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  {municipioSeleccionado.nombre}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#666666]">Total clientes:</span>
-                    <Badge>{municipioSeleccionado.clientes.length}</Badge>
-                  </div>
-
-                  {municipioSeleccionado.clientes.length > 0 ? (
-                    <>
-                      <div className="pt-3 border-t space-y-2">
-                        <p className="text-xs font-semibold text-[#666666]">Clientes:</p>
-                        {municipioSeleccionado.clientes.map((cliente) => {
-                          const canView = isAdmin || cliente.propietario_email === user.email;
-                          return (
-                            <div
-                              key={cliente.id}
-                              className="p-2 bg-gray-50 rounded text-xs"
-                            >
-                              <div className="font-medium text-[#004D9D]">
-                                {canView ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
-                              </div>
-                              <div className="text-gray-500 flex items-center gap-1 mt-1">
-                                {cliente.estado === "Informe listo" && <CheckCircle2 className="w-3 h-3 text-green-600" />}
-                                {cliente.estado === "Rechazado" && <AlertCircle className="w-3 h-3 text-red-600" />}
-                                <span>{cliente.estado}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No hay clientes en este municipio
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
