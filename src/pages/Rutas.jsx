@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -272,7 +273,7 @@ export default function Rutas() {
               <div className="flex flex-wrap gap-4 items-center justify-center">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.verde }} />
-                  <span className="text-sm text-[#666666]">🟢 Pendientes de firmar (>70% informe listo)</span>
+                  <span className="text-sm text-[#666666]">🟢 Pendientes de firmar (más del 70% informe listo)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.amarillo }} />
@@ -284,7 +285,7 @@ export default function Rutas() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: coloresEstado.rojo }} />
-                  <span className="text-sm text-[#666666]">🔴 Cerrado (>50% finalizados)</span>
+                  <span className="text-sm text-[#666666]">🔴 Cerrado (más del 50% finalizados)</span>
                 </div>
               </div>
             </CardContent>
