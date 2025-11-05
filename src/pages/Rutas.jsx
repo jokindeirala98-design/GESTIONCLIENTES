@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -49,7 +50,7 @@ export const MUNICIPIOS_NAVARRA = [
   { nombre: "Funes", lat: 42.3833, lng: -1.75 },
   { nombre: "Fitero", lat: 42.0583, lng: -1.8667 },
   { nombre: "Marcilla", lat: 42.3333, lng: -1.7 },
-  { nombre: "Mélida", lat: 42.3667, lng lng: -1.5833 },
+  { nombre: "Mélida", lat: 42.3667, lng: -1.5833 }, // Corrected: removed duplicate 'lng'
   { nombre: "Baztan", lat: 43.1167, lng: -1.5 },
   { nombre: "Cadreita", lat: 42.2, lng: -1.6333 },
   { nombre: "Carcastillo", lat: 42.3667, lng: -1.5167 },
