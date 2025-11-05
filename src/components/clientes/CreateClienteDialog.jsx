@@ -1,29 +1,55 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { municipiosNavarra } from "@/utils/municipiosNavarra";
 
-export default function CreateClienteDialog({ open, onClose, user, zonas, zonaPreseleccionada = null }) {
+export default function CreateClienteDialog({ open, onClose, user, zonaPreseleccionada = null }) {
   const queryClient = useQueryClient();
+  const [openCombobox, setOpenCombobox] = useState(false);
   const [formData, setFormData] = useState({
     nombre_negocio: "",
     nombre_cliente: "",
     telefono: "",
     email: "",
-    zona_id: zonaPreseleccionada || "",
+    zona_nombre: "",
+    zona_id: "",
     anotaciones: "",
+  });
+
+  const { data: zonas = [] } = useQuery({
+    queryKey: ['zonas'],
+    queryFn: () => base44.entities.Zona.list(),
   });
 
   useEffect(() => {
     if (zonaPreseleccionada) {
-      setFormData(prev => ({ ...prev, zona_id: zonaPreseleccionada }));
+      const zona = zonas.find(z => z.id === zonaPreseleccionada);
+      if (zona) {
+        setFormData(prev => ({
+          ...prev,
+          zona_id: zonaPreseleccionada,
+          zona_nombre: zona.nombre
+        }));
+      }
     }
-  }, [zonaPreseleccionada]);
+  }, [zonaPreseleccionada, zonas]);
+
+  const createZonaMutation = useMutation({
+    mutationFn: (data) => base44.entities.Zona.create(data),
+    onSuccess: (nuevaZona) => {
+      queryClient.invalidateQueries(['zonas']);
+      return nuevaZona;
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Cliente.create(data),
@@ -41,16 +67,48 @@ export default function CreateClienteDialog({ open, onClose, user, zonas, zonaPr
       nombre_cliente: "",
       telefono: "",
       email: "",
-      zona_id: zonaPreseleccionada || "",
+      zona_nombre: "",
+      zona_id: "",
       anotaciones: "",
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
+    let zonaId = formData.zona_id;
+
+    // Si no hay zona_id pero hay zona_nombre, crear la zona
+    if (!zonaId && formData.zona_nombre) {
+      const zonaExistente = zonas.find(
+        z => z.nombre.toLowerCase() === formData.zona_nombre.toLowerCase()
+      );
+
+      if (zonaExistente) {
+        zonaId = zonaExistente.id;
+      } else {
+        // Crear nueva zona
+        const nuevaZona = await createZonaMutation.mutateAsync({
+          nombre: formData.zona_nombre,
+          fecha_creacion_zona: new Date().toISOString().split('T')[0],
+          creador_email: user?.email,
+        });
+        zonaId = nuevaZona.id;
+      }
+    }
+
+    if (!zonaId) {
+      toast.error("Debes seleccionar un municipio");
+      return;
+    }
+    
     const dataToSave = {
-      ...formData,
+      nombre_negocio: formData.nombre_negocio,
+      nombre_cliente: formData.nombre_cliente,
+      telefono: formData.telefono,
+      email: formData.email,
+      zona_id: zonaId,
+      anotaciones: formData.anotaciones,
       propietario_email: user.email,
       propietario_iniciales: user.iniciales || user.full_name?.substring(0, 3).toUpperCase(),
       estado: "Primer contacto",
@@ -58,6 +116,18 @@ export default function CreateClienteDialog({ open, onClose, user, zonas, zonaPr
     };
 
     createMutation.mutate(dataToSave);
+  };
+
+  const handleSelectMunicipio = (municipioNombre) => {
+    // Buscar si ya existe una zona con este nombre
+    const zonaExistente = zonas.find(z => z.nombre === municipioNombre);
+    
+    setFormData({
+      ...formData,
+      zona_nombre: municipioNombre,
+      zona_id: zonaExistente ? zonaExistente.id : ""
+    });
+    setOpenCombobox(false);
   };
 
   return (
@@ -118,25 +188,50 @@ export default function CreateClienteDialog({ open, onClose, user, zonas, zonaPr
 
             <div>
               <label className="text-sm font-medium text-[#666666] mb-1 block">
-                Zona *
+                Municipio *
               </label>
-              <Select 
-                value={formData.zona_id} 
-                onValueChange={(value) => setFormData({ ...formData, zona_id: value })} 
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una zona" />
-                </SelectTrigger>
-                <SelectContent>
-                  {zonas.map(zona => (
-                    <SelectItem key={zona.id} value={zona.id}>{zona.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {zonaPreseleccionada && (
+              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox}
+                    className="w-full justify-between"
+                  >
+                    {formData.zona_nombre || "Buscar municipio..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar municipio (ej: tud)..." />
+                    <CommandEmpty>No se encontró el municipio.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {municipiosNavarra.map((municipio) => (
+                        <CommandItem
+                          key={municipio.nombre}
+                          value={municipio.nombre}
+                          onSelect={() => handleSelectMunicipio(municipio.nombre)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.zona_nombre === municipio.nombre ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {municipio.nombre}
+                          <span className="ml-auto text-xs text-gray-500">
+                            {municipio.poblacion.toLocaleString()} hab.
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {zonaPreseleccionada && formData.zona_id && (
                 <p className="text-xs text-green-600 mt-1">
-                  ✓ Zona preseleccionada
+                  ✓ Municipio preseleccionado
                 </p>
               )}
             </div>
