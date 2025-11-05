@@ -64,6 +64,12 @@ export default function Layout({ children }) {
 
   const navigationItems = [
     {
+      title: "Rutas",
+      url: createPageUrl("Rutas"),
+      icon: MapPin,
+      show: true,
+    },
+    {
       title: "Inicio",
       url: createPageUrl("Dashboard"),
       icon: Home,
