@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -70,9 +69,7 @@ export default function Rutas() {
     queryFn: () => base44.entities.Zona.list(),
   });
 
-  if (!user) return null;
-
-  const isAdmin = user.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   // Agrupar clientes por municipio (zona.nombre)
   const clientesPorMunicipio = useMemo(() => {
@@ -95,7 +92,7 @@ export default function Rutas() {
   // Calcular estado de cada municipio según la lógica especificada
   const getEstadoMunicipio = (clientesMunicipio) => {
     if (!clientesMunicipio || clientesMunicipio.length === 0) {
-      return "blanco"; // Sin visitar, no hay clientes
+      return "blanco";
     }
 
     const total = clientesMunicipio.length;
@@ -104,17 +101,14 @@ export default function Rutas() {
       c => c.estado === "Firmado con éxito" || c.estado === "Rechazado"
     ).length;
     
-    // Verde: más del 70% con informe listo
     if (informesListos / total > 0.7) {
       return "verde";
     }
     
-    // Rojo: más del 50% firmados o rechazados
     if (firmadosRechazados / total > 0.5) {
       return "rojo";
     }
     
-    // Amarillo: hay clientes en proceso
     const enProceso = clientesMunicipio.filter(
       c => c.estado === "Primer contacto" || 
            c.estado === "Esperando facturas" || 
@@ -135,7 +129,6 @@ export default function Rutas() {
     rojo: "#E74C3C"
   };
 
-  // Datos para el mapa
   const municipiosConDatos = municipiosNavarra.map(muni => {
     const clientesMuni = clientesPorMunicipio[muni.nombre] || [];
     const estado = getEstadoMunicipio(clientesMuni);
@@ -167,8 +160,7 @@ export default function Rutas() {
   const calcularRutaOptima = () => {
     if (municipiosRuta.length === 0) return;
     
-    // Algoritmo greedy simple: ordenar por distancia desde punto de origen
-    const origen = { lat: 42.8156, lng: -1.6506 }; // Ansoáin (oficinas)
+    const origen = { lat: 42.8156, lng: -1.6506 };
     
     const rutaOrdenada = [...municipiosRuta].sort((a, b) => {
       const distA = Math.sqrt(
@@ -186,13 +178,23 @@ export default function Rutas() {
 
   const municipiosConClientes = municipiosConDatos.filter(m => m.clientes.length > 0);
 
-  // Coordenadas para la polilínea de ruta
   const coordenadasRuta = mostrandoRuta && municipiosRuta.length > 0
     ? [
-        [42.8156, -1.6506], // Oficinas Ansoáin
+        [42.8156, -1.6506],
         ...municipiosRuta.map(m => [m.lat, m.lng])
       ]
     : [];
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#666666]">Cargando mapa...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-full mx-auto">
@@ -207,7 +209,6 @@ export default function Rutas() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Mapa */}
         <div className="lg:col-span-2">
           <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
@@ -228,7 +229,6 @@ export default function Rutas() {
                   
                   <MapController center={centroMapa} zoom={zoomMapa} />
                   
-                  {/* Marcador oficinas */}
                   <CircleMarker
                     center={[42.8156, -1.6506]}
                     radius={10}
@@ -241,7 +241,6 @@ export default function Rutas() {
                     </Popup>
                   </CircleMarker>
                   
-                  {/* Municipios */}
                   {municipiosConDatos.map((municipio, idx) => (
                     <CircleMarker
                       key={idx}
@@ -275,7 +274,6 @@ export default function Rutas() {
                     </CircleMarker>
                   ))}
                   
-                  {/* Línea de ruta */}
                   {mostrandoRuta && coordenadasRuta.length > 0 && (
                     <Polyline
                       positions={coordenadasRuta}
@@ -287,7 +285,6 @@ export default function Rutas() {
             </CardContent>
           </Card>
 
-          {/* Leyenda */}
           <Card className="mt-4 border-none shadow-md">
             <CardContent className="p-4">
               <div className="flex flex-wrap gap-4 items-center justify-center">
@@ -312,9 +309,7 @@ export default function Rutas() {
           </Card>
         </div>
 
-        {/* Panel lateral */}
         <div className="space-y-4">
-          {/* Planificador de ruta */}
           <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-gradient-to-r from-green-500 to-green-600">
               <CardTitle className="text-white flex items-center gap-2">
@@ -380,7 +375,6 @@ export default function Rutas() {
             </CardContent>
           </Card>
 
-          {/* Detalles del municipio seleccionado */}
           {municipioSeleccionado && (
             <Card className="border-none shadow-md">
               <CardHeader className="border-b bg-gradient-to-r from-purple-500 to-purple-600">
