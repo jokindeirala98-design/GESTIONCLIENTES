@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -114,6 +115,13 @@ export default function Zonas() {
     return getClientesEnZona(zonaId).filter(c => c.estado === "Facturas presentadas").length;
   };
 
+  const getPorcentajeInformesListos = (zonaId) => {
+    const clientesZona = getClientesEnZona(zonaId);
+    if (clientesZona.length === 0) return 0;
+    const informesListos = getClientesInformeListo(zonaId);
+    return Math.round((informesListos / clientesZona.length) * 100);
+  };
+
   const isPriorityZone = (zonaId) => {
     const clientesZona = getClientesEnZona(zonaId);
     if (clientesZona.length === 0) return false;
@@ -190,6 +198,7 @@ export default function Zonas() {
             const misClientesCount = getClientesEnZona(zona.id).filter(c => c.propietario_email === user.email).length;
             const informesListos = getClientesInformeListo(zona.id);
             const facturasPresent = getClientesFacturasPresentadas(zona.id);
+            const porcentajeReady = getPorcentajeInformesListos(zona.id);
             const isPriority = isPriorityZone(zona.id);
 
             return (
@@ -213,7 +222,9 @@ export default function Zonas() {
                       {isPriority && (
                         <div className="flex items-center gap-1 bg-yellow-400/90 backdrop-blur-sm px-2 py-1 rounded-full">
                           <Sparkles className="w-3 h-3 text-yellow-900" />
-                          <span className="text-xs font-bold text-yellow-900">50% Ready ¡Visita recomendada!</span>
+                          <span className="text-xs font-bold text-yellow-900">
+                            {porcentajeReady}% Ready ¡Visita recomendada!
+                          </span>
                         </div>
                       )}
                     </div>
