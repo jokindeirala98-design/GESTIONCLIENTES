@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +17,19 @@ import {
   MessageSquare,
   Calendar,
   Route,
-  ExternalLink
+  ExternalLink,
+  CheckCircle2,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function PlanificadorRutas() {
   const [user, setUser] = useState(null);
@@ -29,6 +38,13 @@ export default function PlanificadorRutas() {
   const [conversationId, setConversationId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  
+  // Estado para confirmación de ruta
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [routeToConfirm, setRouteToConfirm] = useState(null);
+  const [messageWithRoute, setMessageWithRoute] = useState(null);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -68,6 +84,20 @@ export default function PlanificadorRutas() {
 
     return () => unsubscribe();
   }, [conversationId]);
+
+  const saveRouteMutation = useMutation({
+    mutationFn: (routeData) => base44.entities.Ruta.create(routeData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['rutas']);
+      toast.success("✅ Ruta guardada correctamente");
+      setShowConfirmDialog(false);
+      setRouteToConfirm(null);
+      setMessageWithRoute(null);
+    },
+    onError: () => {
+      toast.error("Error al guardar la ruta");
+    }
+  });
 
   const createConversation = async () => {
     try {
@@ -123,12 +153,22 @@ export default function PlanificadorRutas() {
   };
 
   const extractRouteForExport = (messageContent) => {
-    const pueblosMatch = messageContent.match(/📍.*?(?=\n|$)/g);
-    if (!pueblosMatch) return null;
+    // Buscar líneas que contengan "📍" seguido del nombre del pueblo
+    const regex = /📍\s*(?:Nombre:\s*)?([A-Za-záéíóúÁÉÍÓÚñÑ\s\-]+?)(?:\s*\(|\s*-|\n|$)/g;
+    const matches = [...messageContent.matchAll(regex)];
     
-    const pueblos = pueblosMatch
-      .map(p => p.replace(/📍|Nombre:|PUEBLO/gi, '').trim())
-      .filter(p => p.length > 0);
+    if (matches.length === 0) return null;
+    
+    const pueblos = matches
+      .map(match => {
+        let pueblo = match[1].trim();
+        // Limpiar cualquier texto extra (habitantes, etc)
+        pueblo = pueblo.replace(/\d+[\.,]?\d*k?\s*hab.*$/i, '');
+        pueblo = pueblo.replace(/\(.*\)$/, '');
+        pueblo = pueblo.trim();
+        return pueblo;
+      })
+      .filter(p => p.length > 0 && p.length < 50); // Filtrar nombres muy largos
     
     return pueblos.length > 0 ? pueblos : null;
   };
@@ -138,12 +178,66 @@ export default function PlanificadorRutas() {
     
     const origin = "Ansoáin, Navarra";
     const destination = "Pamplona, Navarra";
-    const waypoints = pueblos.slice(0, -1).join('|');
+    const waypoints = pueblos.map(p => `${p}, Navarra`).join('|');
     
     const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
     
     window.open(url, '_blank');
     toast.success("Ruta abierta en Google Maps");
+  };
+
+  const handleConfirmRoute = (message) => {
+    const pueblos = extractRouteForExport(message.content);
+    if (!pueblos || pueblos.length === 0) {
+      toast.error("No se pudo extraer la ruta del mensaje");
+      return;
+    }
+
+    // Extraer información adicional del mensaje
+    const timeMatch = message.content.match(/Tiempo.*?:\s*([^\n]+)/i);
+    const distanceMatch = message.content.match(/Distancia.*?:\s*([^\n]+)/i);
+    const clientesMatch = message.content.match(/Total clientes:\s*(\d+)/i);
+    const prioridadMatch = message.content.match(/Prioridad:\s*(ALTA|MEDIA|BAJA)/i);
+
+    setRouteToConfirm({
+      pueblos,
+      tiempo: timeMatch ? timeMatch[1].trim() : "No especificado",
+      distancia: distanceMatch ? distanceMatch[1].trim() : "No especificado",
+      numClientes: clientesMatch ? parseInt(clientesMatch[1]) : 0,
+      prioridad: prioridadMatch ? prioridadMatch[1] : "MEDIA"
+    });
+    setMessageWithRoute(message);
+    setShowConfirmDialog(true);
+  };
+
+  const handleSaveRoute = () => {
+    if (!routeToConfirm || !user) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const titulo = `Ruta ${routeToConfirm.pueblos[0] || 'Navarra'} - ${new Date().toLocaleDateString()}`;
+
+    const routeData = {
+      titulo,
+      fecha: today,
+      comercial_email: user.email,
+      comercial_iniciales: user.iniciales || user.full_name?.substring(0, 2).toUpperCase(),
+      pueblos: routeToConfirm.pueblos,
+      clientes_ids: [], // Podrías extraer IDs si están en el mensaje
+      descripcion_completa: messageWithRoute?.content || "",
+      tiempo_estimado: routeToConfirm.tiempo,
+      distancia_estimada: routeToConfirm.distancia,
+      num_clientes: routeToConfirm.numClientes,
+      prioridad: routeToConfirm.prioridad
+    };
+
+    saveRouteMutation.mutate(routeData);
+  };
+
+  const handleRejectRoute = () => {
+    setShowConfirmDialog(false);
+    setRouteToConfirm(null);
+    setMessageWithRoute(null);
+    toast.info("Puedes pedir otra ruta en el chat");
   };
 
   const isAdmin = user?.role === "admin";
@@ -156,7 +250,6 @@ export default function PlanificadorRutas() {
   const clientes30Ready = clientesReadyToGo.filter(c => c.tipo_factura === "3.0").length;
   const clientes20Ready = clientesReadyToGo.filter(c => c.tipo_factura === "2.0").length;
   
-  // Calcular pueblos sin trabajar (prospección)
   const zonasExistentes = zonas.map(z => z.nombre.toLowerCase());
   const MUNICIPIOS_GRANDES = [
     "Tudela", "Estella-Lizarra", "Tafalla", "Sangüesa", "Corella", "Cintruénigo",
@@ -192,7 +285,7 @@ export default function PlanificadorRutas() {
         </p>
       </div>
 
-      {/* Stats por tipo de factura + prospección */}
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <Card className="border-none shadow-md bg-gradient-to-br from-red-50 to-red-100">
           <CardContent className="p-4 text-center">
@@ -366,22 +459,14 @@ export default function PlanificadorRutas() {
                     )}
 
                     {message.role === "assistant" && message.content.includes("📍") && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const pueblos = extractRouteForExport(message.content);
-                            if (pueblos) {
-                              exportToGoogleMaps(pueblos);
-                            } else {
-                              toast.error("No se pudo extraer la ruta");
-                            }
-                          }}
-                          className="w-full text-xs"
+                          onClick={() => handleConfirmRoute(message)}
+                          className="w-full text-xs bg-green-600 hover:bg-green-700"
                         >
-                          <ExternalLink className="w-3 h-3 mr-2" />
-                          Exportar a Google Maps
+                          <CheckCircle2 className="w-3 h-3 mr-2" />
+                          Confirmar y Guardar Ruta
                         </Button>
                       </div>
                     )}
@@ -440,6 +525,85 @@ export default function PlanificadorRutas() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de Confirmación de Ruta */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D] text-xl flex items-center gap-2">
+              <Route className="w-6 h-6" />
+              ¿Confirmar esta ruta?
+            </DialogTitle>
+            <DialogDescription>
+              La ruta se guardará y será visible para todos los comerciales en la página de Rutas
+            </DialogDescription>
+          </DialogHeader>
+
+          {routeToConfirm && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="font-semibold text-[#004D9D] mb-2">📍 Pueblos a visitar:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {routeToConfirm.pueblos.map((pueblo, idx) => (
+                    <Badge key={idx} variant="outline" className="text-sm">
+                      {idx + 1}. {pueblo}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">⏱️ Tiempo estimado</p>
+                  <p className="font-semibold text-[#004D9D]">{routeToConfirm.tiempo}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">🚗 Distancia</p>
+                  <p className="font-semibold text-[#004D9D]">{routeToConfirm.distancia}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">👥 Clientes</p>
+                  <p className="font-semibold text-[#004D9D]">{routeToConfirm.numClientes}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">🎯 Prioridad</p>
+                  <Badge className={
+                    routeToConfirm.prioridad === "ALTA" ? "bg-red-600" :
+                    routeToConfirm.prioridad === "MEDIA" ? "bg-orange-600" : "bg-blue-600"
+                  }>
+                    {routeToConfirm.prioridad}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800">
+                  ✅ <strong>Al confirmar:</strong> La ruta se guardará y podrás exportarla a Google Maps desde la página de Rutas
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRejectRoute}
+              className="flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              No, buscar otra ruta
+            </Button>
+            <Button
+              onClick={handleSaveRoute}
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              disabled={saveRouteMutation.isLoading}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Sí, guardar ruta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

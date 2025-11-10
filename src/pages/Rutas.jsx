@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, X, TrendingUp, AlertCircle, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MapPin, Users, X, TrendingUp, AlertCircle, FileCheck, ExternalLink, Route, Trash2, Calendar } from "lucide-react";
+import { toast } from "sonner";
 
 // Lista completa de municipios de Navarra (principales)
 export const MUNICIPIOS_NAVARRA = [
@@ -85,6 +87,8 @@ export default function Rutas() {
   const [centroMapa, setCentroMapa] = useState([centroNavarra.lat, centroNavarra.lng]);
   const [zoomMapa, setZoomMapa] = useState(centroNavarra.zoom);
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     const loadUser = async () => {
       const currentUser = await base44.auth.me();
@@ -102,6 +106,32 @@ export default function Rutas() {
     queryKey: ['zonas'],
     queryFn: () => base44.entities.Zona.list(),
   });
+
+  const { data: rutasGuardadas = [] } = useQuery({
+    queryKey: ['rutas'],
+    queryFn: () => base44.entities.Ruta.list('-created_date'),
+  });
+
+  const deleteRutaMutation = useMutation({
+    mutationFn: (id) => base44.entities.Ruta.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['rutas']);
+      toast.success("Ruta eliminada");
+    },
+  });
+
+  const exportToGoogleMaps = (pueblos) => {
+    if (!pueblos || pueblos.length === 0) return;
+    
+    const origin = "Ansoáin, Navarra"; // Assuming Voltis office
+    const destination = "Pamplona, Navarra"; // A central point to end the route
+    const waypoints = pueblos.map(p => `${p}, Navarra`).join('|');
+    
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
+    
+    window.open(url, '_blank');
+    toast.success("Ruta abierta en Google Maps");
+  };
 
   const isAdmin = user?.role === "admin";
 
@@ -225,237 +255,309 @@ export default function Rutas() {
   }
 
   return (
-    <div className="relative w-full" style={{ height: 'calc(100vh - 80px)' }}>
+    <div className="flex flex-col h-screen">
+      {/* Rutas Guardadas - Barra superior */}
+      {rutasGuardadas.length > 0 && (
+        <div className="bg-white border-b border-gray-200 p-4 overflow-x-auto">
+          <div className="flex items-center gap-3 min-w-max">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Route className="w-5 h-5 text-[#004D9D]" />
+              <h3 className="font-bold text-[#004D9D]">Rutas Planificadas:</h3>
+            </div>
+            {rutasGuardadas.map((ruta) => (
+              <Card key={ruta.id} className="flex-shrink-0 w-80 border-2 border-[#004D9D]">
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge className="bg-[#004D9D] text-white flex-shrink-0">
+                          {ruta.comercial_iniciales}
+                        </Badge>
+                        <span className="text-sm font-semibold text-gray-900 truncate">
+                          {ruta.titulo}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(ruta.fecha).toLocaleDateString()}
+                      </div>
+                    </div>
+                    {(isAdmin || ruta.comercial_email === user.email) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => deleteRutaMutation.mutate(ruta.id)}
+                        className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
+                    <div>
+                      <span className="text-gray-500">Pueblos:</span>
+                      <span className="font-semibold ml-1">{ruta.pueblos?.length || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Clientes:</span>
+                      <span className="font-semibold ml-1">{ruta.num_clientes || 0}</span>
+                    </div>
+                    <div>
+                      <Badge className={
+                        ruta.prioridad === "ALTA" ? "bg-red-600" :
+                        ruta.prioridad === "MEDIA" ? "bg-orange-600" : "bg-blue-600"
+                      }>
+                        {ruta.prioridad}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={() => exportToGoogleMaps(ruta.pueblos)}
+                    className="w-full h-8 text-xs bg-[#004D9D] hover:bg-[#00AEEF]"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Abrir en Maps
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Mapa */}
-      <div className="absolute inset-0">
-        <MapContainer
-          center={centroMapa}
-          zoom={zoomMapa}
-          style={{ height: "100%", width: "100%" }}
-          scrollWheelZoom={true}
-          zoomControl={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          />
-          
-          <MapController center={centroMapa} zoom={zoomMapa} />
-          
-          {/* Oficinas Voltis */}
-          <CircleMarker
-            center={[42.8156, -1.6506]}
-            radius={12}
-            pathOptions={{ 
-              color: "#004D9D", 
-              fillColor: "#004D9D", 
-              fillOpacity: 1,
-              weight: 3
-            }}
+      <div className="relative flex-1">
+        <div className="absolute inset-0">
+          <MapContainer
+            center={centroMapa}
+            zoom={zoomMapa}
+            style={{ height: "100%", width: "100%" }}
+            scrollWheelZoom={true}
+            zoomControl={true}
           >
-            <Popup>
-              <div className="text-center font-semibold">
-                📍 Oficinas Voltis
-                <br />
-                <span className="text-xs">Parque Empresarial Ansoáin</span>
-              </div>
-            </Popup>
-          </CircleMarker>
-          
-          {/* Pueblos */}
-          {pueblosConDatos.map((pueblo, idx) => (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            />
+            
+            <MapController center={centroMapa} zoom={zoomMapa} />
+            
+            {/* Oficinas Voltis */}
             <CircleMarker
-              key={idx}
-              center={[pueblo.lat, pueblo.lng]}
-              radius={getRadio(pueblo.clientes.length)}
-              pathOptions={{
-                color: pueblo.color,
-                fillColor: pueblo.color,
-                fillOpacity: 0.8,
-                weight: 2
-              }}
-              eventHandlers={{
-                click: () => handleClickPueblo(pueblo)
+              center={[42.8156, -1.6506]}
+              radius={12}
+              pathOptions={{ 
+                color: "#004D9D", 
+                fillColor: "#004D9D", 
+                fillOpacity: 1,
+                weight: 3
               }}
             >
               <Popup>
-                <div className="text-center">
-                  <strong className="text-sm">{pueblo.nombre}</strong>
+                <div className="text-center font-semibold">
+                  📍 Oficinas Voltis
                   <br />
-                  {pueblo.clientes.length > 0 && (
-                    <span className="text-xs text-gray-600">
-                      {pueblo.clientes.length} cliente(s)
-                    </span>
-                  )}
+                  <span className="text-xs">Parque Empresarial Ansoáin</span>
                 </div>
               </Popup>
             </CircleMarker>
-          ))}
-        </MapContainer>
-      </div>
+            
+            {/* Pueblos */}
+            {pueblosConDatos.map((pueblo, idx) => (
+              <CircleMarker
+                key={idx}
+                center={[pueblo.lat, pueblo.lng]}
+                radius={getRadio(pueblo.clientes.length)}
+                pathOptions={{
+                  color: pueblo.color,
+                  fillColor: pueblo.color,
+                  fillOpacity: 0.8,
+                  weight: 2
+                }}
+                eventHandlers={{
+                  click: () => handleClickPueblo(pueblo)
+                }}
+              >
+                <Popup>
+                  <div className="text-center">
+                    <strong className="text-sm">{pueblo.nombre}</strong>
+                    <br />
+                    {pueblo.clientes.length > 0 && (
+                      <span className="text-xs text-gray-600">
+                        {pueblo.clientes.length} cliente(s)
+                      </span>
+                    )}
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
+          </MapContainer>
+        </div>
 
-      {/* Leyenda flotante */}
-      <Card className="absolute top-4 left-4 z-[1000] shadow-xl border-2 hidden md:block bg-white">
-        <CardContent className="p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.verde }} />
-            <span className="text-xs text-[#666666]">🟢 Ready (>70% informe listo)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.amarillo }} />
-            <span className="text-xs text-[#666666]">🟡 En proceso</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.gris }} />
-            <span className="text-xs text-[#666666]">⚪ Sin clientes</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.rojo }} />
-            <span className="text-xs text-[#666666]">🔴 Cerrado (>50%)</span>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Leyenda flotante */}
+        <Card className="absolute top-4 left-4 z-[1000] shadow-xl border-2 hidden md:block bg-white">
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.verde }} />
+              <span className="text-xs text-[#666666]">🟢 Ready (>70% informe listo)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.amarillo }} />
+              <span className="text-xs text-[#666666]">🟡 En proceso</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.gris }} />
+              <span className="text-xs text-[#666666]">⚪ Sin clientes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: coloresEstado.rojo }} />
+              <span className="text-xs text-[#666666]">🔴 Cerrado (>50%)</span>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Panel lateral flotante */}
-      {puebloSeleccionado && (
-        <>
-          {/* Overlay para cerrar en móvil */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-[999] md:hidden"
-            onClick={cerrarPanel}
-          />
-          
-          <Card className="fixed z-[1000] shadow-2xl border-2 overflow-auto bg-white md:top-4 md:right-4 md:bottom-4 md:w-[400px] bottom-0 left-0 right-0 max-h-[80vh] rounded-t-3xl md:rounded-2xl">
-            <CardHeader className="border-b bg-gradient-to-r from-[#004D9D] to-[#00AEEF] sticky top-0 z-10">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-white text-xl flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    {puebloSeleccionado.nombre}
-                  </CardTitle>
-                  <Badge 
-                    className="mt-2"
-                    style={{ backgroundColor: puebloSeleccionado.color }}
+        {/* Panel lateral flotante */}
+        {puebloSeleccionado && (
+          <>
+            {/* Overlay para cerrar en móvil */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-[999] md:hidden"
+              onClick={cerrarPanel}
+            />
+            
+            <Card className="fixed z-[1000] shadow-2xl border-2 overflow-auto bg-white md:top-4 md:right-4 md:bottom-4 md:w-[400px] bottom-0 left-0 right-0 max-h-[80vh] rounded-t-3xl md:rounded-2xl">
+              <CardHeader className="border-b bg-gradient-to-r from-[#004D9D] to-[#00AEEF] sticky top-0 z-10">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-white text-xl flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      {puebloSeleccionado.nombre}
+                    </CardTitle>
+                    <Badge 
+                      className="mt-2"
+                      style={{ backgroundColor: puebloSeleccionado.color }}
+                    >
+                      {puebloSeleccionado.estado.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={cerrarPanel}
+                    className="text-white hover:bg-white/20"
                   >
-                    {puebloSeleccionado.estado.toUpperCase()}
-                  </Badge>
+                    <X className="w-5 h-5" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={cerrarPanel}
-                  className="text-white hover:bg-white/20"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </CardHeader>
+              </CardHeader>
 
-            <CardContent className="p-4 space-y-4">
-              {/* Resumen de clientes */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-blue-50 rounded-lg p-3 text-center">
-                  <Users className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-blue-600">
-                    {puebloSeleccionado.clientes.length}
-                  </p>
-                  <p className="text-xs text-blue-700">Total clientes</p>
+              <CardContent className="p-4 space-y-4">
+                {/* Resumen de clientes */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <Users className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-blue-600">
+                      {puebloSeleccionado.clientes.length}
+                    </p>
+                    <p className="text-xs text-blue-700">Total clientes</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3 text-center">
+                    <TrendingUp className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-green-600">
+                      {puebloSeleccionado.misClientes}
+                    </p>
+                    <p className="text-xs text-green-700">Mis clientes</p>
+                  </div>
                 </div>
-                <div className="bg-green-50 rounded-lg p-3 text-center">
-                  <TrendingUp className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-green-600">
-                    {puebloSeleccionado.misClientes}
-                  </p>
-                  <p className="text-xs text-green-700">Mis clientes</p>
-                </div>
-              </div>
 
-              {/* Estadísticas por estado */}
-              {puebloSeleccionado.clientes.length > 0 && (
-                <div className="border-t pt-4">
-                  <h3 className="font-semibold text-[#004D9D] mb-3 text-sm">
-                    📊 Estados
-                  </h3>
-                  <div className="space-y-2">
-                    {(() => {
-                      const stats = getEstadisticasPueblo(puebloSeleccionado);
-                      return [
-                        { label: "Primer contacto", value: stats.primerContacto, color: "bg-gray-400" },
-                        { label: "Esperando facturas", value: stats.esperandoFacturas, color: "bg-orange-500" },
-                        { label: "Facturas presentadas", value: stats.facturasPresent, color: "bg-blue-500" },
-                        { label: "Informe listo", value: stats.informeListo, color: "bg-green-500" },
-                        { label: "Pendiente de firma", value: stats.pendienteFirma, color: "bg-purple-500" },
-                        { label: "Firmado con éxito", value: stats.firmados, color: "bg-yellow-600" },
-                        { label: "Rechazado", value: stats.rechazados, color: "bg-red-500" },
-                      ].map((item) => item.value > 0 && (
-                        <div key={item.label} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
+                {/* Estadísticas por estado */}
+                {puebloSeleccionado.clientes.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold text-[#004D9D] mb-3 text-sm">
+                      📊 Estados
+                    </h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        const stats = getEstadisticasPueblo(puebloSeleccionado);
+                        return [
+                          { label: "Primer contacto", value: stats.primerContacto, color: "bg-gray-400" },
+                          { label: "Esperando facturas", value: stats.esperandoFacturas, color: "bg-orange-500" },
+                          { label: "Facturas presentadas", value: stats.facturasPresent, color: "bg-blue-500" },
+                          { label: "Informe listo", value: stats.informeListo, color: "bg-green-500" },
+                          { label: "Pendiente de firma", value: stats.pendienteFirma, color: "bg-purple-500" },
+                          { label: "Firmado con éxito", value: stats.firmados, color: "bg-yellow-600" },
+                          { label: "Rechazado", value: stats.rechazados, color: "bg-red-500" },
+                        ].map((item) => item.value > 0 && (
+                          <div key={item.label} className="flex items-center justify-between text-sm">
                             <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
                             <span className="text-gray-600">{item.label}</span>
+                            <span className="font-semibold text-[#004D9D]">{item.value}</span>
                           </div>
-                          <span className="font-semibold text-[#004D9D]">{item.value}</span>
-                        </div>
-                      ));
-                    })()}
+                        ));
+                      })()}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Lista de clientes */}
-              {puebloSeleccionado.clientes.length > 0 ? (
-                <div className="border-t pt-4">
-                  <h3 className="font-semibold text-[#004D9D] mb-3 text-sm">
-                    👥 Clientes en este pueblo
-                  </h3>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                    {puebloSeleccionado.clientes.map((cliente) => {
-                      const esMio = cliente.propietario_email === user.email;
-                      const puedoVer = esMio || isAdmin;
-                      
-                      return (
-                        <div
-                          key={cliente.id}
-                          className={`p-3 rounded-lg text-xs ${
-                            esMio ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-[#004D9D] truncate">
-                                {puedoVer ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
-                              </p>
-                              <p className="text-gray-600 mt-1 flex items-center gap-1">
-                                {cliente.estado === "Informe listo" && <FileCheck className="w-3 h-3 text-green-600" />}
-                                {cliente.estado === "Rechazado" && <AlertCircle className="w-3 h-3 text-red-600" />}
-                                {cliente.estado}
-                              </p>
+                {/* Lista de clientes */}
+                {puebloSeleccionado.clientes.length > 0 ? (
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold text-[#004D9D] mb-3 text-sm">
+                      👥 Clientes en este pueblo
+                    </h3>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {puebloSeleccionado.clientes.map((cliente) => {
+                        const esMio = cliente.propietario_email === user.email;
+                        const puedoVer = esMio || isAdmin;
+                        
+                        return (
+                          <div
+                            key={cliente.id}
+                            className={`p-3 rounded-lg text-xs ${
+                              esMio ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-[#004D9D] truncate">
+                                  {puedoVer ? cliente.nombre_negocio : `Cliente de ${cliente.propietario_iniciales}`}
+                                </p>
+                                <p className="text-gray-600 mt-1 flex items-center gap-1">
+                                  {cliente.estado === "Informe listo" && <FileCheck className="w-3 h-3 text-green-600" />}
+                                  {cliente.estado === "Rechazado" && <AlertCircle className="w-3 h-3 text-red-600" />}
+                                  {cliente.estado}
+                                </p>
+                              </div>
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center flex-shrink-0">
+                                <span className="text-white font-bold text-[10px]">
+                                  {cliente.propietario_iniciales}
+                                </span>
+                              </div>
                             </div>
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center flex-shrink-0">
-                              <span className="text-white font-bold text-[10px]">
-                                {cliente.propietario_iniciales}
-                              </span>
-                            </div>
+                            {esMio && (
+                              <Badge className="mt-2 text-[10px] bg-green-600">
+                                Tu cliente
+                              </Badge>
+                            )}
                           </div>
-                          {esMio && (
-                            <Badge className="mt-2 text-[10px] bg-green-600">
-                              Tu cliente
-                            </Badge>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Sin clientes en este pueblo</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Sin clientes en este pueblo</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
     </div>
   );
 }
