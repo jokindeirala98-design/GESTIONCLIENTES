@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -152,28 +151,42 @@ export default function PlanificadorRutas() {
     }, 100);
   };
 
+  // Función mejorada para extraer nombres de áreas/pueblos
   const extractRouteForExport = (messageContent) => {
-    const regex = /📍\s*(?:Nombre:\s*)?([A-Za-záéíóúÁÉÍÓÚñÑ\s\-]+?)(?:\s*\(|\s*-|\n|$)/g;
-    const matches = [...messageContent.matchAll(regex)];
+    // Buscar todos los nombres después de 📍
+    const matches = messageContent.match(/📍\s*([A-Za-záéíóúÁÉÍÓÚñÑ\s\-]+?)(?:\n|$)/g);
     
-    if (matches.length === 0) return null;
+    if (!matches || matches.length === 0) {
+      // Intento alternativo: buscar nombres de zonas conocidas
+      const zonasEnMensaje = [];
+      zonas.forEach(zona => {
+        if (messageContent.includes(zona.nombre)) {
+          zonasEnMensaje.push(zona.nombre);
+        }
+      });
+      return zonasEnMensaje.length > 0 ? zonasEnMensaje : null;
+    }
     
     const pueblos = matches
       .map(match => {
-        let pueblo = match[1].trim();
-        pueblo = pueblo.replace(/\d+[\.,]?\d*k?\s*hab.*$/i, '');
-        pueblo = pueblo.replace(/\(.*\)$/, '');
-        pueblo = pueblo.trim();
+        // Extraer el nombre después de 📍
+        let pueblo = match.replace('📍', '').trim();
+        // Tomar solo la primera línea
+        pueblo = pueblo.split('\n')[0].trim();
+        // Limpiar paréntesis y datos extra
+        pueblo = pueblo.split('(')[0].trim();
+        pueblo = pueblo.split('-')[0].trim();
         return pueblo;
       })
-      .filter(p => p.length > 0 && p.length < 50);
+      .filter(p => p.length > 0 && p.length < 50)
+      .filter((value, index, self) => self.indexOf(value) === index); // Eliminar duplicados
     
     return pueblos.length > 0 ? pueblos : null;
   };
 
   const exportToGoogleMaps = (pueblos) => {
     if (!pueblos || pueblos.length === 0) {
-      toast.error("No se pudo extraer la ruta");
+      toast.error("No se pudieron extraer las ubicaciones de la ruta");
       return;
     }
     
@@ -184,12 +197,17 @@ export default function PlanificadorRutas() {
     const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
     
     window.open(url, '_blank');
-    toast.success("Ruta abierta en Google Maps");
+    toast.success(`Ruta abierta en Google Maps con ${pueblos.length} parada(s)`);
   };
 
   const handleOpenInMaps = (message) => {
     const pueblos = extractRouteForExport(message.content);
-    exportToGoogleMaps(pueblos);
+    if (pueblos && pueblos.length > 0) {
+      console.log("Pueblos extraídos para Maps:", pueblos);
+      exportToGoogleMaps(pueblos);
+    } else {
+      toast.error("No se pudieron identificar las ubicaciones en la ruta");
+    }
   };
 
   const handleConfirmRoute = (message) => {
@@ -199,9 +217,10 @@ export default function PlanificadorRutas() {
       return;
     }
 
-    const timeMatch = message.content.match(/Tiempo.*?:\s*([^\n]+)/i);
+    // Extraer información del mensaje
+    const timeMatch = message.content.match(/(?:Tiempo|Total).*?:\s*(\d+h?\s*\d*m?i?n?)/i);
     const distanceMatch = message.content.match(/Distancia.*?:\s*([^\n]+)/i);
-    const clientesMatch = message.content.match(/(?:Total clientes|Clientes):\s*(\d+)/i); // Updated regex
+    const clientesMatch = message.content.match(/Clientes?:\s*(\d+)/i);
     const prioridadMatch = message.content.match(/Prioridad:\s*(ALTA|MEDIA|BAJA)/i);
 
     setRouteToConfirm({
@@ -246,25 +265,11 @@ export default function PlanificadorRutas() {
     toast.info("Puedes pedir otra ruta en el chat");
   };
 
-  // Función mejorada para detectar si un mensaje contiene una ruta
+  // Detectar si un mensaje contiene una ruta planificada (solo cuando tiene emoji 📍)
   const messageHasRoute = (message) => {
     if (!message || !message.content) return false;
-    const content = message.content.toLowerCase();
-    
-    // Detectar palabras clave de ruta
-    const hasRouteKeywords = 
-      content.includes('ruta') || 
-      content.includes('📍') ||
-      content.includes('pueblo') ||
-      content.includes('visitar') ||
-      (content.includes('lunes') && content.includes('martes')) || // Planificación semanal
-      content.includes('salida:');
-    
-    // Detectar lista de pueblos (al menos 2 menciones de ubicaciones)
-    const locationMatches = content.match(/📍|pueblo|zona|visita/g);
-    const hasMutipleLocations = locationMatches && locationMatches.length >= 2;
-    
-    return hasRouteKeywords || hasMutipleLocations;
+    // Solo mostrar botones si el mensaje tiene el emoji 📍 (indica planificación de ruta)
+    return message.content.includes('📍');
   };
 
   const isAdmin = user?.role === "admin";
@@ -312,7 +317,7 @@ export default function PlanificadorRutas() {
         </p>
       </div>
 
-      {/* Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <Card className="border-none shadow-md bg-gradient-to-br from-red-50 to-red-100">
           <CardContent className="p-4 text-center">
@@ -578,7 +583,7 @@ export default function PlanificadorRutas() {
           {routeToConfirm && (
             <div className="space-y-4">
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="font-semibold text-[#004D9D] mb-2">📍 Pueblos a visitar:</h3>
+                <h3 className="font-semibold text-[#004D9D] mb-2">📍 Áreas a visitar:</h3>
                 <div className="flex flex-wrap gap-2">
                   {routeToConfirm.pueblos.map((pueblo, idx) => (
                     <Badge key={idx} variant="outline" className="text-sm">
