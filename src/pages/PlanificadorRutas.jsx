@@ -14,7 +14,10 @@ import {
   TrendingUp,
   Zap,
   Users,
-  MessageSquare
+  MessageSquare,
+  Calendar,
+  Route,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,19 +47,16 @@ export default function PlanificadorRutas() {
     queryFn: () => base44.entities.Zona.list(),
   });
 
-  // Crear conversación al cargar
   useEffect(() => {
     if (user) {
       createConversation();
     }
   }, [user]);
 
-  // Auto-scroll a último mensaje
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Suscribirse a actualizaciones de la conversación
   useEffect(() => {
     if (!conversationId) return;
 
@@ -79,10 +79,9 @@ export default function PlanificadorRutas() {
       });
       setConversationId(conversation.id);
       
-      // Mensaje de bienvenida
       setMessages([{
         role: "assistant",
-        content: `¡Hola! 👋 Soy tu asistente de planificación de rutas.\n\nPuedo ayudarte a:\n✅ Generar rutas optimizadas para hoy\n✅ Identificar pueblos con clientes ready to go\n✅ Calcular distancias y tiempos de viaje\n✅ Priorizar visitas según estado de clientes\n\n**Tu disponibilidad:** 8:00 AM - 2:00 PM (6 horas)\n**Punto de partida:** Oficinas Voltis, Ansoáin\n\n¿Qué ruta quieres planificar hoy?`
+        content: `¡Hola! 👋 Soy tu asistente inteligente de planificación de rutas.\n\n**Mi especialidad:**\n✅ Priorizar clientes tipo 6.1 (máxima rentabilidad)\n✅ Optimizar rutas circulares desde Ansoáin\n✅ Maximizar cierres con "Informe listo"\n✅ Planificar rutas realistas (6 horas máximo)\n\n**Prioridades de clientes:**\n🔴 Tipo 6.1 con informe listo (20 min/visita)\n🟠 Tipo 3.0 con informe listo (15 min/visita)  \n🟡 Tipo 2.0 con informe listo (15 min/visita)\n\n⚠️ NO visitamos "Pendiente de firma" (esperando respuesta)\n\n¿Qué tipo de ruta necesitas planificar?`
       }]);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -98,10 +97,7 @@ export default function PlanificadorRutas() {
     setIsLoading(true);
 
     try {
-      // Obtener conversación actual
       const conversation = await base44.agents.getConversation(conversationId);
-      
-      // Enviar mensaje
       await base44.agents.addMessage(conversation, {
         role: "user",
         content: userMessage
@@ -115,7 +111,33 @@ export default function PlanificadorRutas() {
 
   const handleQuickAction = (prompt) => {
     setInputMessage(prompt);
-    setTimeout(() => handleSendMessage(), 100);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
+  };
+
+  const extractRouteForExport = (messageContent) => {
+    const pueblosMatch = messageContent.match(/📍.*?(?=\n|$)/g);
+    if (!pueblosMatch) return null;
+    
+    const pueblos = pueblosMatch
+      .map(p => p.replace(/📍|Nombre:|PUEBLO/gi, '').trim())
+      .filter(p => p.length > 0);
+    
+    return pueblos.length > 0 ? pueblos : null;
+  };
+
+  const exportToGoogleMaps = (pueblos) => {
+    if (!pueblos || pueblos.length === 0) return;
+    
+    const origin = "Ansoáin, Navarra";
+    const destination = "Pamplona, Navarra";
+    const waypoints = pueblos.slice(0, -1).join('|');
+    
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
+    
+    window.open(url, '_blank');
+    toast.success("Ruta abierta en Google Maps");
   };
 
   const isAdmin = user?.role === "admin";
@@ -123,10 +145,10 @@ export default function PlanificadorRutas() {
     ? clientes 
     : clientes.filter(c => c.propietario_email === user?.email);
 
-  const clientesReadyToGo = misClientes.filter(c => c.estado === "Informe listo").length;
-  const clientesPendientes = misClientes.filter(
-    c => c.estado === "Pendiente de firma" || c.estado === "Facturas presentadas"
-  ).length;
+  const clientesReadyToGo = misClientes.filter(c => c.estado === "Informe listo");
+  const clientes61Ready = clientesReadyToGo.filter(c => c.tipo_factura === "6.1").length;
+  const clientes30Ready = clientesReadyToGo.filter(c => c.tipo_factura === "3.0").length;
+  const clientes20Ready = clientesReadyToGo.filter(c => c.tipo_factura === "2.0").length;
 
   if (!user) {
     return (
@@ -141,54 +163,62 @@ export default function PlanificadorRutas() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl md:text-4xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
           <Navigation className="w-8 h-8" />
           Planificador de Rutas IA
         </h1>
         <p className="text-[#666666]">
-          Optimiza tus visitas con inteligencia artificial
+          Optimiza tus visitas maximizando clientes tipo 6.1
         </p>
       </div>
 
-      {/* Stats rápidas */}
+      {/* Stats por tipo de factura */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="border-none shadow-md bg-gradient-to-br from-green-50 to-green-100">
+        <Card className="border-none shadow-md bg-gradient-to-br from-red-50 to-red-100">
           <CardContent className="p-4 text-center">
-            <Sparkles className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-green-600">{clientesReadyToGo}</p>
-            <p className="text-xs text-green-700">Ready to Go</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-blue-100">
-          <CardContent className="p-4 text-center">
-            <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-blue-600">6h</p>
-            <p className="text-xs text-blue-700">Disponibles</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-none shadow-md bg-gradient-to-br from-purple-50 to-purple-100">
-          <CardContent className="p-4 text-center">
-            <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-purple-600">{clientesPendientes}</p>
-            <p className="text-xs text-purple-700">En Proceso</p>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-red-600" />
+              <Badge className="bg-red-600 text-white">6.1</Badge>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{clientes61Ready}</p>
+            <p className="text-xs text-red-700">PRIORIDAD MÁXIMA</p>
           </CardContent>
         </Card>
         
         <Card className="border-none shadow-md bg-gradient-to-br from-orange-50 to-orange-100">
           <CardContent className="p-4 text-center">
-            <Users className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-orange-600">{misClientes.length}</p>
-            <p className="text-xs text-orange-700">Total Clientes</p>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <TrendingUp className="w-5 h-5 text-orange-600" />
+              <Badge className="bg-orange-600 text-white">3.0</Badge>
+            </div>
+            <p className="text-2xl font-bold text-orange-600">{clientes30Ready}</p>
+            <p className="text-xs text-orange-700">Alta Prioridad</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-blue-100">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <Badge className="bg-blue-600 text-white">2.0</Badge>
+            </div>
+            <p className="text-2xl font-bold text-blue-600">{clientes20Ready}</p>
+            <p className="text-xs text-blue-700">Prioridad Media</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-none shadow-md bg-gradient-to-br from-green-50 to-green-100">
+          <CardContent className="p-4 text-center">
+            <Users className="w-6 h-6 text-green-600 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-green-600">{clientesReadyToGo.length}</p>
+            <p className="text-xs text-green-700">Total Ready to Go</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Panel de Acciones Rápidas */}
+        {/* Panel de Acciones Rápidas - SOLO 3 */}
         <Card className="border-none shadow-md md:col-span-1">
           <CardHeader className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
             <CardTitle className="text-white text-lg flex items-center gap-2">
@@ -198,62 +228,60 @@ export default function PlanificadorRutas() {
           </CardHeader>
           <CardContent className="p-4 space-y-3">
             <Button
-              onClick={() => handleQuickAction("Dame una ruta óptima para hoy priorizando clientes con informe listo")}
-              className="w-full bg-green-600 hover:bg-green-700 text-white justify-start"
+              onClick={() => handleQuickAction("Dame la planificación de toda la semana (lunes a viernes). Organiza los días brevemente explicando por qué cada día.")}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white justify-start h-auto py-3"
               disabled={isLoading}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Ruta Óptima Hoy
+              <Calendar className="w-5 h-5 mr-2 flex-shrink-0" />
+              <div className="text-left">
+                <div className="font-bold">Planificación de Semana</div>
+                <div className="text-xs opacity-90">Lunes-Viernes organizado</div>
+              </div>
             </Button>
 
             <Button
-              onClick={() => handleQuickAction("¿Qué pueblos tienen más clientes con informe listo? Dame los top 5")}
-              variant="outline"
-              className="w-full justify-start"
+              onClick={() => handleQuickAction("Dame la ruta óptima para HOY. Necesito el plan completo con horarios, pueblos, clientes específicos y tiempos.")}
+              className="w-full bg-green-600 hover:bg-green-700 text-white justify-start h-auto py-3"
               disabled={isLoading}
             >
-              <MapPin className="w-4 h-4 mr-2" />
-              Pueblos Ready to Go
+              <Route className="w-5 h-5 mr-2 flex-shrink-0" />
+              <div className="text-left">
+                <div className="font-bold">Ruta para Hoy</div>
+                <div className="text-xs opacity-90">Plan completo del día</div>
+              </div>
             </Button>
 
             <Button
-              onClick={() => handleQuickAction("Dame una ruta cercana a las oficinas que pueda completar en 3 horas")}
-              variant="outline"
-              className="w-full justify-start"
+              onClick={() => handleQuickAction("Necesito una ruta express. ¿Cuánto tiempo tengo disponible?")}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white justify-start h-auto py-3"
               disabled={isLoading}
             >
-              <Clock className="w-4 h-4 mr-2" />
-              Ruta Corta (3h)
-            </Button>
-
-            <Button
-              onClick={() => handleQuickAction("¿Compensa hacer una ruta a Tudela y zona sur hoy?")}
-              variant="outline"
-              className="w-full justify-start"
-              disabled={isLoading}
-            >
-              <Navigation className="w-4 h-4 mr-2" />
-              Analizar Zona Sur
-            </Button>
-
-            <Button
-              onClick={() => handleQuickAction("Dame estadísticas de mis clientes por estado y pueblo")}
-              variant="outline"
-              className="w-full justify-start"
-              disabled={isLoading}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Ver Estadísticas
+              <Clock className="w-5 h-5 mr-2 flex-shrink-0" />
+              <div className="text-left">
+                <div className="font-bold">Ruta Express</div>
+                <div className="text-xs opacity-90">Tiempo limitado</div>
+              </div>
             </Button>
 
             <div className="pt-3 border-t">
-              <p className="text-xs text-gray-500 mb-2">💡 Consejos:</p>
+              <p className="text-xs text-gray-500 mb-2 font-semibold">🎯 Sistema de Prioridades:</p>
               <ul className="text-xs text-gray-600 space-y-1">
-                <li>• Prioriza pueblos con >70% ready</li>
-                <li>• Agrupa visitas por zona</li>
-                <li>• ~30-45 min por cliente</li>
-                <li>• Sal a las 8:00 AM</li>
+                <li className="flex items-center gap-2">
+                  <Badge className="bg-red-600 text-white text-[10px]">6.1</Badge>
+                  <span>Máxima prioridad</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Badge className="bg-orange-600 text-white text-[10px]">3.0</Badge>
+                  <span>Después de 6.1</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Badge className="bg-blue-600 text-white text-[10px]">2.0</Badge>
+                  <span>Prioridad media</span>
+                </li>
               </ul>
+              <p className="text-xs text-gray-500 mt-3">
+                💡 <strong>Regla de oro:</strong> 1 cliente 6.1 vale más que cualquier cantidad de 3.0 o 2.0
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -267,7 +295,6 @@ export default function PlanificadorRutas() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {/* Área de mensajes */}
             <div className="h-[500px] overflow-y-auto p-4 space-y-4 bg-gray-50">
               {messages.map((message, idx) => (
                 <div
@@ -283,7 +310,7 @@ export default function PlanificadorRutas() {
                   )}
                   
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                       message.role === "user"
                         ? "bg-[#004D9D] text-white"
                         : "bg-white border border-gray-200 text-gray-800"
@@ -293,7 +320,6 @@ export default function PlanificadorRutas() {
                       {message.content}
                     </p>
                     
-                    {/* Tool calls (funciones ejecutadas) */}
                     {message.tool_calls && message.tool_calls.length > 0 && (
                       <div className="mt-3 space-y-1">
                         {message.tool_calls.map((tool, toolIdx) => (
@@ -302,9 +328,31 @@ export default function PlanificadorRutas() {
                             variant="outline"
                             className="text-xs bg-blue-50 text-blue-700"
                           >
-                            🔧 {tool.name || "Consultando datos"}
+                            🔧 {tool.name?.replace('entities.', '').replace('.read', '') || "Consultando datos"}
                           </Badge>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Botón exportar ruta si es mensaje del asistente con ruta */}
+                    {message.role === "assistant" && message.content.includes("📍") && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const pueblos = extractRouteForExport(message.content);
+                            if (pueblos) {
+                              exportToGoogleMaps(pueblos);
+                            } else {
+                              toast.error("No se pudo extraer la ruta");
+                            }
+                          }}
+                          className="w-full text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-2" />
+                          Exportar a Google Maps
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -337,14 +385,13 @@ export default function PlanificadorRutas() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input de mensaje */}
             <div className="p-4 border-t bg-white">
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                  placeholder="Pregunta sobre rutas, pueblos, clientes..."
+                  placeholder="Ej: Necesito visitar solo zona norte hoy..."
                   className="flex-1"
                   disabled={isLoading}
                 />
@@ -357,7 +404,7 @@ export default function PlanificadorRutas() {
                 </Button>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                💡 Ejemplo: "Dame una ruta para visitar 5 pueblos con clientes ready to go"
+                💬 Puedes añadir condiciones: "solo mis clientes", "evita Tudela", "máximo 3 horas"...
               </p>
             </div>
           </CardContent>
