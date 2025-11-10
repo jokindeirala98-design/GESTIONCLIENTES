@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -116,7 +117,7 @@ export default function PlanificadorRutas() {
       
       setMessages([{
         role: "assistant",
-        content: `¡Hola! 👋 Soy tu asistente inteligente de planificación de rutas.\n\n**⏰ Hora actual:** ${horaFormateada}\n**⌛ Tiempo disponible:** ${tiempoDisponible}h hasta las 14:00\n\n**Mi especialidad:**\n✅ Priorizar clientes tipo 6.1 (máxima rentabilidad)\n✅ Optimizar rutas circulares desde Ansoáin\n✅ Maximizar cierres con "Informe listo"\n✅ Identificar pueblos nuevos para prospectar\n\n**🔥 Prioridades:**\n🔴 Tipo 6.1 + Informe listo (20 min/visita) - MÁXIMA\n🟠 Tipo 3.0 + Informe listo (15 min/visita)\n🟡 Tipo 2.0 + Informe listo (15 min/visita)\n🆕 Pueblos sin clientes (30 min prospección)\n\n💡 **Si hay tiempo libre**, te sugiero pueblos cercanos para prospectar (comercios, polígonos, oficinas...)\n\n¿Qué tipo de ruta necesitas planificar?`
+        content: `¡Hola! 👋 Soy tu asistente de rutas.\n\n⏰ ${horaFormateada} | ⌛ ${tiempoDisponible}h disponibles\n\n🔥 Prioridades: 6.1 > 3.0 > 2.0\n🆕 Sugiero pueblos nuevos si hay tiempo\n\n¿Qué ruta necesitas?`
       }]);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -200,7 +201,7 @@ export default function PlanificadorRutas() {
 
     const timeMatch = message.content.match(/Tiempo.*?:\s*([^\n]+)/i);
     const distanceMatch = message.content.match(/Distancia.*?:\s*([^\n]+)/i);
-    const clientesMatch = message.content.match(/Total clientes:\s*(\d+)/i);
+    const clientesMatch = message.content.match(/(?:Total clientes|Clientes):\s*(\d+)/i); // Updated regex
     const prioridadMatch = message.content.match(/Prioridad:\s*(ALTA|MEDIA|BAJA)/i);
 
     setRouteToConfirm({
@@ -243,6 +244,27 @@ export default function PlanificadorRutas() {
     setRouteToConfirm(null);
     setMessageWithRoute(null);
     toast.info("Puedes pedir otra ruta en el chat");
+  };
+
+  // Función mejorada para detectar si un mensaje contiene una ruta
+  const messageHasRoute = (message) => {
+    if (!message || !message.content) return false;
+    const content = message.content.toLowerCase();
+    
+    // Detectar palabras clave de ruta
+    const hasRouteKeywords = 
+      content.includes('ruta') || 
+      content.includes('📍') ||
+      content.includes('pueblo') ||
+      content.includes('visitar') ||
+      (content.includes('lunes') && content.includes('martes')) || // Planificación semanal
+      content.includes('salida:');
+    
+    // Detectar lista de pueblos (al menos 2 menciones de ubicaciones)
+    const locationMatches = content.match(/📍|pueblo|zona|visita/g);
+    const hasMutipleLocations = locationMatches && locationMatches.length >= 2;
+    
+    return hasRouteKeywords || hasMutipleLocations;
   };
 
   const isAdmin = user?.role === "admin";
@@ -316,7 +338,7 @@ export default function PlanificadorRutas() {
         
         <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-blue-100">
           <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="flex items-center gap-2 justify-center mb-2">
               <Clock className="w-5 h-5 text-blue-600" />
               <Badge className="bg-blue-600 text-white">2.0</Badge>
             </div>
@@ -463,7 +485,7 @@ export default function PlanificadorRutas() {
                       </div>
                     )}
 
-                    {message.role === "assistant" && message.content.includes("📍") && (
+                    {message.role === "assistant" && messageHasRoute(message) && (
                       <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-2 gap-2">
                         <Button
                           size="sm"

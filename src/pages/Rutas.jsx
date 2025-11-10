@@ -118,13 +118,45 @@ export default function Rutas() {
 
   const { data: rutasGuardadas = [] } = useQuery({
     queryKey: ['rutas'],
-    queryFn: () => base44.entities.Ruta.list('-created_date'),
+    queryFn: async () => {
+      const todasRutas = await base44.entities.Ruta.list('-created_date');
+      
+      // Get today's date in YYYY-MM-DD format for comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to start of day
+      const hoy = today.toISOString().split('T')[0]; // e.g., "2023-10-27"
+      
+      const rutasHoy = [];
+      const rutasAntiguasPromises = [];
+
+      todasRutas.forEach(ruta => {
+        // Assuming ruta.fecha is stored in a format New Date() can parse, e.g., ISO string or "YYYY-MM-DD"
+        const rutaDate = new Date(ruta.fecha);
+        rutaDate.setHours(0, 0, 0, 0); // Normalize to start of day
+        const rutaFechaString = rutaDate.toISOString().split('T')[0];
+
+        if (rutaFechaString === hoy) {
+          rutasHoy.push(ruta);
+        } else {
+          rutasAntiguasPromises.push(base44.entities.Ruta.delete(ruta.id));
+        }
+      });
+      
+      // Await all deletions. This cleans up old routes.
+      // This operation should not automatically invalidate the 'rutas' query itself if implemented correctly.
+      await Promise.all(rutasAntiguasPromises);
+      
+      return rutasHoy;
+    },
+    // Adding staleTime to prevent unnecessary re-fetches if not invalidated by manual deletion
+    // and to ensure cleanup only runs when data is truly stale.
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const deleteRutaMutation = useMutation({
     mutationFn: (id) => base44.entities.Ruta.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['rutas']);
+      queryClient.invalidateQueries(['rutas']); // Invalidate to re-fetch today's routes (and re-run cleanup logic if necessary)
       toast.success("Ruta eliminada");
     },
   });
@@ -132,6 +164,8 @@ export default function Rutas() {
   const exportToGoogleMaps = (pueblos) => {
     if (!pueblos || pueblos.length === 0) return;
     
+    // Assuming a fixed origin and destination for simplicity in this context.
+    // In a real application, these might be dynamically determined.
     const origin = "Ansoáin, Navarra"; 
     const destination = "Pamplona, Navarra"; 
     const waypoints = pueblos.map(p => `${p}, Navarra`).join('|');
@@ -276,7 +310,7 @@ export default function Rutas() {
           <div className="flex items-center gap-3 min-w-max">
             <div className="flex items-center gap-2 flex-shrink-0">
               <Route className="w-5 h-5 text-[#004D9D]" />
-              <h3 className="font-bold text-[#004D9D]">Rutas Planificadas:</h3>
+              <h3 className="font-bold text-[#004D9D]">Rutas de Hoy:</h3>
             </div>
             {rutasGuardadas.map((ruta) => (
               <Card 
@@ -293,28 +327,24 @@ export default function Rutas() {
                           {ruta.comercial_nombre || ruta.comercial_iniciales}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(ruta.fecha).toLocaleDateString()}
-                      </div>
                       <p className="text-xs text-gray-600 truncate">
                         {ruta.pueblos?.slice(0, 3).join(', ')}
                         {ruta.pueblos?.length > 3 && '...'}
                       </p>
                     </div>
-                    {(isAdmin || ruta.comercial_email === user.email) && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('¿Estás seguro de que quieres eliminar esta ruta?')) {
                           deleteRutaMutation.mutate(ruta.id);
-                        }}
-                        className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    )}
+                        }
+                      }}
+                      className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 text-xs">
