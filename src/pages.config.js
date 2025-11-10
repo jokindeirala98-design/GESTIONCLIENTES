@@ -10,6 +10,7 @@ import Configuracion from './pages/Configuracion';
 import DetalleZona from './pages/DetalleZona';
 import CierresVerificados from './pages/CierresVerificados';
 import Rutas from './pages/Rutas';
+import PlanificadorRutas from './pages/PlanificadorRutas';
 import Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "DetalleZona": DetalleZona,
     "CierresVerificados": CierresVerificados,
     "Rutas": Rutas,
+    "PlanificadorRutas": PlanificadorRutas,
 }
 
 export const pagesConfig = {

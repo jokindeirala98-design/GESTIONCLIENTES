@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   LogOut,
-  UserCircle2
+  UserCircle2,
+  Sparkles
 } from "lucide-react";
 import {
   Sidebar,
@@ -67,6 +68,12 @@ export default function Layout({ children }) {
       title: "Rutas",
       url: createPageUrl("Rutas"),
       icon: MapPin,
+      show: true,
+    },
+    {
+      title: "Planificador IA",
+      url: createPageUrl("PlanificadorRutas"),
+      icon: Sparkles,
       show: true,
     },
     {
