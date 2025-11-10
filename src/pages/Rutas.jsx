@@ -7,8 +7,15 @@ import "leaflet/dist/leaflet.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Users, X, TrendingUp, AlertCircle, FileCheck, ExternalLink, Route, Trash2, Calendar } from "lucide-react";
+import { MapPin, Users, X, TrendingUp, AlertCircle, FileCheck, ExternalLink, Route, Trash2, Calendar, User } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Lista completa de municipios de Navarra (principales)
 export const MUNICIPIOS_NAVARRA = [
@@ -86,6 +93,8 @@ export default function Rutas() {
   const [puebloSeleccionado, setPuebloSeleccionado] = useState(null);
   const [centroMapa, setCentroMapa] = useState([centroNavarra.lat, centroNavarra.lng]);
   const [zoomMapa, setZoomMapa] = useState(centroNavarra.zoom);
+  const [rutaSeleccionada, setRutaSeleccionada] = useState(null);
+  const [showRutaDialog, setShowRutaDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -123,14 +132,19 @@ export default function Rutas() {
   const exportToGoogleMaps = (pueblos) => {
     if (!pueblos || pueblos.length === 0) return;
     
-    const origin = "Ansoáin, Navarra"; // Assuming Voltis office
-    const destination = "Pamplona, Navarra"; // A central point to end the route
+    const origin = "Ansoáin, Navarra"; 
+    const destination = "Pamplona, Navarra"; 
     const waypoints = pueblos.map(p => `${p}, Navarra`).join('|');
     
     const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
     
     window.open(url, '_blank');
     toast.success("Ruta abierta en Google Maps");
+  };
+
+  const handleVerRuta = (ruta) => {
+    setRutaSeleccionada(ruta);
+    setShowRutaDialog(true);
   };
 
   const isAdmin = user?.role === "admin";
@@ -265,28 +279,37 @@ export default function Rutas() {
               <h3 className="font-bold text-[#004D9D]">Rutas Planificadas:</h3>
             </div>
             {rutasGuardadas.map((ruta) => (
-              <Card key={ruta.id} className="flex-shrink-0 w-80 border-2 border-[#004D9D]">
+              <Card 
+                key={ruta.id} 
+                className="flex-shrink-0 w-64 border-2 border-[#004D9D] cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => handleVerRuta(ruta)}
+              >
                 <CardContent className="p-3">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge className="bg-[#004D9D] text-white flex-shrink-0">
-                          {ruta.comercial_iniciales}
-                        </Badge>
-                        <span className="text-sm font-semibold text-gray-900 truncate">
-                          {ruta.titulo}
+                        <User className="w-4 h-4 text-[#004D9D] flex-shrink-0" />
+                        <span className="text-sm font-bold text-[#004D9D] truncate">
+                          {ruta.comercial_nombre || ruta.comercial_iniciales}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                         <Calendar className="w-3 h-3" />
                         {new Date(ruta.fecha).toLocaleDateString()}
                       </div>
+                      <p className="text-xs text-gray-600 truncate">
+                        {ruta.pueblos?.slice(0, 3).join(', ')}
+                        {ruta.pueblos?.length > 3 && '...'}
+                      </p>
                     </div>
                     {(isAdmin || ruta.comercial_email === user.email) && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => deleteRutaMutation.mutate(ruta.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteRutaMutation.mutate(ruta.id);
+                        }}
                         className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -294,33 +317,18 @@ export default function Rutas() {
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
-                    <div>
-                      <span className="text-gray-500">Pueblos:</span>
-                      <span className="font-semibold ml-1">{ruta.pueblos?.length || 0}</span>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-gray-500">Clientes:</span>
                       <span className="font-semibold ml-1">{ruta.num_clientes || 0}</span>
                     </div>
-                    <div>
-                      <Badge className={
-                        ruta.prioridad === "ALTA" ? "bg-red-600" :
-                        ruta.prioridad === "MEDIA" ? "bg-orange-600" : "bg-blue-600"
-                      }>
-                        {ruta.prioridad}
-                      </Badge>
-                    </div>
+                    <Badge className={
+                      ruta.prioridad === "ALTA" ? "bg-red-600" :
+                      ruta.prioridad === "MEDIA" ? "bg-orange-600" : "bg-blue-600"
+                    }>
+                      {ruta.prioridad}
+                    </Badge>
                   </div>
-
-                  <Button
-                    size="sm"
-                    onClick={() => exportToGoogleMaps(ruta.pueblos)}
-                    className="w-full h-8 text-xs bg-[#004D9D] hover:bg-[#00AEEF]"
-                  >
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Abrir en Maps
-                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -492,8 +500,10 @@ export default function Rutas() {
                           { label: "Rechazado", value: stats.rechazados, color: "bg-red-500" },
                         ].map((item) => item.value > 0 && (
                           <div key={item.label} className="flex items-center justify-between text-sm">
-                            <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-                            <span className="text-gray-600">{item.label}</span>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                              <span className="text-gray-600">{item.label}</span>
+                            </div>
                             <span className="font-semibold text-[#004D9D]">{item.value}</span>
                           </div>
                         ));
@@ -558,6 +568,76 @@ export default function Rutas() {
           </>
         )}
       </div>
+
+      {/* Dialog de Detalles de Ruta */}
+      <Dialog open={showRutaDialog} onOpenChange={setShowRutaDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D] text-xl flex items-center gap-2">
+              <Route className="w-6 h-6" />
+              Ruta de {rutaSeleccionada?.comercial_nombre || rutaSeleccionada?.comercial_iniciales}
+            </DialogTitle>
+          </DialogHeader>
+
+          {rutaSeleccionada && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">📅 Fecha</p>
+                  <p className="font-semibold text-sm">{new Date(rutaSeleccionada.fecha).toLocaleDateString()}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">⏱️ Tiempo</p>
+                  <p className="font-semibold text-sm">{rutaSeleccionada.tiempo_estimado}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">🚗 Distancia</p>
+                  <p className="font-semibold text-sm">{rutaSeleccionada.distancia_estimada}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">👥 Clientes</p>
+                  <p className="font-semibold text-sm">{rutaSeleccionada.num_clientes || 0}</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="font-semibold text-[#004D9D] mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Pueblos a visitar:
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {rutaSeleccionada.pueblos?.map((pueblo, idx) => (
+                    <Badge key={idx} variant="outline" className="text-sm">
+                      {idx + 1}. {pueblo}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {rutaSeleccionada.descripcion_completa && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-[#004D9D] mb-2">📋 Descripción de la ruta:</h3>
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-96 overflow-y-auto">
+                    {rutaSeleccionada.descripcion_completa}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                exportToGoogleMaps(rutaSeleccionada.pueblos);
+              }}
+              className="bg-[#004D9D] hover:bg-[#00AEEF] w-full"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Abrir en Google Maps
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

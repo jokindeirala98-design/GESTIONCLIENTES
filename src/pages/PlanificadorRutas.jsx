@@ -39,7 +39,6 @@ export default function PlanificadorRutas() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   
-  // Estado para confirmación de ruta
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [routeToConfirm, setRouteToConfirm] = useState(null);
   const [messageWithRoute, setMessageWithRoute] = useState(null);
@@ -153,7 +152,6 @@ export default function PlanificadorRutas() {
   };
 
   const extractRouteForExport = (messageContent) => {
-    // Buscar líneas que contengan "📍" seguido del nombre del pueblo
     const regex = /📍\s*(?:Nombre:\s*)?([A-Za-záéíóúÁÉÍÓÚñÑ\s\-]+?)(?:\s*\(|\s*-|\n|$)/g;
     const matches = [...messageContent.matchAll(regex)];
     
@@ -162,19 +160,21 @@ export default function PlanificadorRutas() {
     const pueblos = matches
       .map(match => {
         let pueblo = match[1].trim();
-        // Limpiar cualquier texto extra (habitantes, etc)
         pueblo = pueblo.replace(/\d+[\.,]?\d*k?\s*hab.*$/i, '');
         pueblo = pueblo.replace(/\(.*\)$/, '');
         pueblo = pueblo.trim();
         return pueblo;
       })
-      .filter(p => p.length > 0 && p.length < 50); // Filtrar nombres muy largos
+      .filter(p => p.length > 0 && p.length < 50);
     
     return pueblos.length > 0 ? pueblos : null;
   };
 
   const exportToGoogleMaps = (pueblos) => {
-    if (!pueblos || pueblos.length === 0) return;
+    if (!pueblos || pueblos.length === 0) {
+      toast.error("No se pudo extraer la ruta");
+      return;
+    }
     
     const origin = "Ansoáin, Navarra";
     const destination = "Pamplona, Navarra";
@@ -186,6 +186,11 @@ export default function PlanificadorRutas() {
     toast.success("Ruta abierta en Google Maps");
   };
 
+  const handleOpenInMaps = (message) => {
+    const pueblos = extractRouteForExport(message.content);
+    exportToGoogleMaps(pueblos);
+  };
+
   const handleConfirmRoute = (message) => {
     const pueblos = extractRouteForExport(message.content);
     if (!pueblos || pueblos.length === 0) {
@@ -193,7 +198,6 @@ export default function PlanificadorRutas() {
       return;
     }
 
-    // Extraer información adicional del mensaje
     const timeMatch = message.content.match(/Tiempo.*?:\s*([^\n]+)/i);
     const distanceMatch = message.content.match(/Distancia.*?:\s*([^\n]+)/i);
     const clientesMatch = message.content.match(/Total clientes:\s*(\d+)/i);
@@ -221,8 +225,9 @@ export default function PlanificadorRutas() {
       fecha: today,
       comercial_email: user.email,
       comercial_iniciales: user.iniciales || user.full_name?.substring(0, 2).toUpperCase(),
+      comercial_nombre: user.full_name,
       pueblos: routeToConfirm.pueblos,
-      clientes_ids: [], // Podrías extraer IDs si están en el mensaje
+      clientes_ids: [],
       descripcion_completa: messageWithRoute?.content || "",
       tiempo_estimado: routeToConfirm.tiempo,
       distancia_estimada: routeToConfirm.distancia,
@@ -459,14 +464,23 @@ export default function PlanificadorRutas() {
                     )}
 
                     {message.role === "assistant" && message.content.includes("📍") && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                      <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-2 gap-2">
                         <Button
                           size="sm"
                           onClick={() => handleConfirmRoute(message)}
-                          className="w-full text-xs bg-green-600 hover:bg-green-700"
+                          className="text-xs bg-green-600 hover:bg-green-700"
                         >
-                          <CheckCircle2 className="w-3 h-3 mr-2" />
-                          Confirmar y Guardar Ruta
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Confirmar Ruta
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenInMaps(message)}
+                          className="text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Abrir en Maps
                         </Button>
                       </div>
                     )}
@@ -578,7 +592,7 @@ export default function PlanificadorRutas() {
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <p className="text-sm text-green-800">
-                  ✅ <strong>Al confirmar:</strong> La ruta se guardará y podrás exportarla a Google Maps desde la página de Rutas
+                  ✅ <strong>Al confirmar:</strong> La ruta se guardará con tu nombre y podrás acceder a ella desde la página de Rutas
                 </p>
               </div>
             </div>
