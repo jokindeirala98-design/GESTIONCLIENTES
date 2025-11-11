@@ -9,12 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Users, X, TrendingUp, AlertCircle, FileCheck, ExternalLink, Route, Trash2, Calendar, User } from "lucide-react";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 // Lista completa de municipios de Navarra (principales)
@@ -95,6 +97,9 @@ export default function Rutas() {
   const [zoomMapa, setZoomMapa] = useState(centroNavarra.zoom);
   const [rutaSeleccionada, setRutaSeleccionada] = useState(null);
   const [showRutaDialog, setShowRutaDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackRuta, setFeedbackRuta] = useState(null);
+  const [feedbackText, setFeedbackText] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -161,6 +166,17 @@ export default function Rutas() {
     },
   });
 
+  const updateFeedbackMutation = useMutation({
+    mutationFn: ({ id, feedback }) => base44.entities.Ruta.update(id, { feedback }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['rutas']);
+      toast.success("Feedback guardado");
+      setShowFeedbackDialog(false);
+      setFeedbackRuta(null);
+      setFeedbackText("");
+    },
+  });
+
   const exportToGoogleMaps = (pueblos) => {
     if (!pueblos || pueblos.length === 0) return;
     
@@ -179,6 +195,20 @@ export default function Rutas() {
   const handleVerRuta = (ruta) => {
     setRutaSeleccionada(ruta);
     setShowRutaDialog(true);
+  };
+
+  const handleOpenFeedback = (ruta) => {
+    setFeedbackRuta(ruta);
+    setFeedbackText(ruta.feedback || "");
+    setShowFeedbackDialog(true);
+  };
+
+  const handleSaveFeedback = () => {
+    if (!feedbackText.trim()) {
+      toast.error("Escribe tu feedback");
+      return;
+    }
+    updateFeedbackMutation.mutate({ id: feedbackRuta.id, feedback: feedbackText });
   };
 
   const isAdmin = user?.role === "admin";
@@ -312,56 +342,75 @@ export default function Rutas() {
               <Route className="w-5 h-5 text-[#004D9D]" />
               <h3 className="font-bold text-[#004D9D]">Rutas de Hoy:</h3>
             </div>
-            {rutasGuardadas.map((ruta) => (
-              <Card 
-                key={ruta.id} 
-                className="flex-shrink-0 w-64 border-2 border-[#004D9D] cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => handleVerRuta(ruta)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <User className="w-4 h-4 text-[#004D9D] flex-shrink-0" />
-                        <span className="text-sm font-bold text-[#004D9D] truncate">
-                          {ruta.comercial_nombre || ruta.comercial_iniciales}
-                        </span>
+            {rutasGuardadas.map((ruta) => {
+              const esMiRuta = ruta.comercial_email === user?.email;
+              return (
+                <Card 
+                  key={ruta.id} 
+                  className="flex-shrink-0 w-64 border-2 border-[#004D9D] cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => handleVerRuta(ruta)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <User className="w-4 h-4 text-[#004D9D] flex-shrink-0" />
+                          <span className="text-sm font-bold text-[#004D9D] truncate">
+                            {ruta.comercial_nombre || ruta.comercial_iniciales}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 truncate">
+                          {ruta.pueblos?.slice(0, 3).join(', ')}
+                          {ruta.pueblos?.length > 3 && '...'}
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-600 truncate">
-                        {ruta.pueblos?.slice(0, 3).join(', ')}
-                        {ruta.pueblos?.length > 3 && '...'}
-                      </p>
+                      {esMiRuta && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('¿Estás seguro de que quieres eliminar esta ruta?')) {
+                              deleteRutaMutation.mutate(ruta.id);
+                            }
+                          }}
+                          className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
                     </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm('¿Estás seguro de que quieres eliminar esta ruta?')) {
-                          deleteRutaMutation.mutate(ruta.id);
-                        }
-                      }}
-                      className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-gray-500">Clientes:</span>
-                      <span className="font-semibold ml-1">{ruta.num_clientes || 0}</span>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                      <div>
+                        <span className="text-gray-500">Clientes:</span>
+                        <span className="font-semibold ml-1">{ruta.num_clientes || 0}</span>
+                      </div>
+                      <Badge className={
+                        ruta.prioridad === "ALTA" ? "bg-red-600" :
+                        ruta.prioridad === "MEDIA" ? "bg-orange-600" : "bg-blue-600"
+                      }>
+                        {ruta.prioridad}
+                      </Badge>
                     </div>
-                    <Badge className={
-                      ruta.prioridad === "ALTA" ? "bg-red-600" :
-                      ruta.prioridad === "MEDIA" ? "bg-orange-600" : "bg-blue-600"
-                    }>
-                      {ruta.prioridad}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    {esMiRuta && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenFeedback(ruta);
+                        }}
+                        className="w-full text-xs"
+                      >
+                        {ruta.feedback ? "Ver/Editar Feedback" : "Dar Feedback"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
@@ -664,6 +713,33 @@ export default function Rutas() {
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Abrir en Google Maps
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Feedback */}
+      <Dialog open={showFeedbackDialog} onOpenChange={setShowFeedbackDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D]">Feedback de la Ruta</DialogTitle>
+            <DialogDescription>
+              Comparte cómo fue tu ruta para mejorar futuras planificaciones
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            placeholder="Ej: La ruta fue eficiente, pero el tiempo en Tudela se extendió más de lo esperado por tráfico. Los clientes en Cabanillas fueron muy receptivos..."
+            rows={8}
+            className="resize-none"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFeedbackDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveFeedback} className="bg-[#004D9D] hover:bg-[#00AEEF]">
+              Guardar Feedback
             </Button>
           </DialogFooter>
         </DialogContent>
