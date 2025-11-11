@@ -78,6 +78,23 @@ export default function DetalleCliente() {
     },
   });
 
+  // Inicializar eventos si no existen - usando useEffect para evitar bucle infinito
+  useEffect(() => {
+    if (cliente && (!cliente.eventos || cliente.eventos.length === 0)) {
+      updateMutation.mutate({
+        id: clienteId,
+        data: {
+          eventos: [{
+            id: Date.now().toString(),
+            fecha: new Date().toISOString().split('T')[0],
+            descripcion: "Primer contacto",
+            color: "verde"
+          }]
+        }
+      });
+    }
+  }, [cliente?.id]); // Solo ejecutar cuando cambie el ID del cliente
+
   const handleUpdate = (data) => {
     // Verificar si todos los suministros tienen al menos 1 factura
     if (data.suministros) {
@@ -164,21 +181,6 @@ export default function DetalleCliente() {
         </Card>
       </div>
     );
-  }
-
-  // Inicializar eventos si no existen
-  if (!cliente.eventos || cliente.eventos.length === 0) {
-    updateMutation.mutate({
-      id: clienteId,
-      data: {
-        eventos: [{
-          id: Date.now().toString(),
-          fecha: new Date().toISOString().split('T')[0],
-          descripcion: "Primer contacto",
-          color: "verde"
-        }]
-      }
-    });
   }
 
   return (
