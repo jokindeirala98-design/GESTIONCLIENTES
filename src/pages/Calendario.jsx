@@ -53,6 +53,14 @@ export default function Calendario() {
       }));
   });
 
+  // Función para convertir fecha a string local (sin zona horaria)
+  const dateToLocalString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Obtener días del mes
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -97,7 +105,7 @@ export default function Calendario() {
   };
 
   const getEventosForDay = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = dateToLocalString(date);
     return eventosRelevantes.filter(e => e.fecha === dateStr);
   };
 
