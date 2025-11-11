@@ -114,7 +114,7 @@ export default function ReadyToGo() {
     }, "2.0");
   };
 
-  // ORDENAR POR PRIORIDAD: Pendiente aprobación > 6.1 > 3.0 > 2.0, luego por estado
+  // ORDENAR POR PRIORIDAD: Pendiente de aprobación primero, luego 6.1 > 3.0 > 2.0, luego por estado
   const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
   const estadoOrder = { 
     "Pendiente de aprobación": 0,
@@ -123,16 +123,14 @@ export default function ReadyToGo() {
   };
   
   const clientesOrdenados = [...misClientesReady].sort((a, b) => {
-    // Primero por estado (Pendiente de aprobación al inicio)
-    const estadoA = estadoOrder[a.estado] || 999;
-    const estadoB = estadoOrder[b.estado] || 999;
-    
+    // Primero ordenar por estado (Pendiente de aprobación primero)
+    const estadoA = estadoOrder[a.estado];
+    const estadoB = estadoOrder[b.estado];
     if (estadoA !== estadoB) return estadoA - estadoB;
-    
+
     // Luego por tipo de factura
     const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
     const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
-    
     return orderA - orderB;
   });
 
@@ -203,15 +201,15 @@ export default function ReadyToGo() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-yellow-500">
+        <Card className="border-l-4 border-emerald-500">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#666666] mb-1">🎉 Firmados (pendientes)</p>
-                <p className="text-4xl font-bold text-yellow-600">{pendientesAprobacion}</p>
+                <p className="text-sm text-[#666666] mb-1">✅ Firmados (pendiente admin)</p>
+                <p className="text-4xl font-bold text-emerald-600">{pendientesAprobacion}</p>
               </div>
-              <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-yellow-600" />
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-emerald-600" />
               </div>
             </div>
           </CardContent>
@@ -243,14 +241,13 @@ export default function ReadyToGo() {
                 const esMio = cliente.propietario_email === user.email;
                 const puedoActualizar = esMio || isAdmin;
                 const tipoMax = getTipoMaximo(cliente);
-                const isPendienteAprobacion = cliente.estado === "Pendiente de aprobación";
                 const isPendienteFirma = cliente.estado === "Pendiente de firma";
+                const isPendienteAprobacion = cliente.estado === "Pendiente de aprobación";
                 const isInformeListo = cliente.estado === "Informe listo";
                 
-                // Colores según estado
-                const borderColor = isPendienteAprobacion ? "border-yellow-500" : 
+                const borderColor = isPendienteAprobacion ? "border-emerald-500" : 
                                    isPendienteFirma ? "border-orange-500" : "border-green-500";
-                const bgColor = isPendienteAprobacion ? "bg-yellow-50" : 
+                const bgColor = isPendienteAprobacion ? "bg-emerald-50" : 
                                isPendienteFirma ? "bg-orange-50" : "bg-green-50";
 
                 return (
@@ -275,8 +272,8 @@ export default function ReadyToGo() {
                                 
                                 {/* Badge de estado */}
                                 {isPendienteAprobacion ? (
-                                  <Badge className="bg-yellow-600 text-white">
-                                    🎉 Firmado - Pendiente de aprobación
+                                  <Badge className="bg-emerald-600 text-white">
+                                    ✅ Firmado - Pendiente admin
                                   </Badge>
                                 ) : isPendienteFirma ? (
                                   <Badge className="bg-orange-600 text-white">
@@ -306,25 +303,16 @@ export default function ReadyToGo() {
                             </div>
                           </div>
 
-                          {/* Mensaje especial para pendientes de aprobación */}
-                          {isPendienteAprobacion && (
-                            <div className="mb-3 bg-yellow-100 border-l-4 border-yellow-500 p-3 rounded">
-                              <p className="text-sm text-yellow-800 font-semibold">
-                                ⏳ Esperando aprobación del administrador
-                              </p>
-                            </div>
-                          )}
-
                           {/* Suministros con informes */}
                           {cliente.suministros && cliente.suministros.length > 0 && (
                             <div className="mt-4 space-y-2">
                               <div className="flex items-center gap-2 mb-2">
                                 <FileText className={`w-4 h-4 ${
-                                  isPendienteAprobacion ? "text-yellow-600" :
+                                  isPendienteAprobacion ? "text-emerald-600" :
                                   isPendienteFirma ? "text-orange-600" : "text-green-600"
                                 }`} />
                                 <p className={`text-sm font-semibold ${
-                                  isPendienteAprobacion ? "text-yellow-700" :
+                                  isPendienteAprobacion ? "text-emerald-700" :
                                   isPendienteFirma ? "text-orange-700" : "text-green-700"
                                 }`}>
                                   Informes disponibles:
@@ -332,7 +320,7 @@ export default function ReadyToGo() {
                               </div>
                               {cliente.suministros.map(suministro => (
                                 <div key={suministro.id} className={`${bgColor} border ${
-                                  isPendienteAprobacion ? "border-yellow-200" :
+                                  isPendienteAprobacion ? "border-emerald-200" :
                                   isPendienteFirma ? "border-orange-200" : "border-green-200"
                                 } rounded-lg p-3`}>
                                   <div className="flex items-center justify-between gap-3">
@@ -343,7 +331,7 @@ export default function ReadyToGo() {
                                       <span className="text-sm font-medium text-gray-700 truncate">{suministro.nombre}</span>
                                       {suministro.comision && (
                                         <span className={`text-sm font-semibold ${
-                                          isPendienteAprobacion ? "text-yellow-600" :
+                                          isPendienteAprobacion ? "text-emerald-600" :
                                           isPendienteFirma ? "text-orange-600" : "text-green-600"
                                         }`}>
                                           ({suministro.comision}€)
@@ -358,9 +346,8 @@ export default function ReadyToGo() {
                                           window.open(suministro.informe_final.url, '_blank');
                                         }}
                                         className={
-                                          isPendienteAprobacion ? "bg-yellow-600 hover:bg-yellow-700" :
-                                          isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : 
-                                          "bg-green-600 hover:bg-green-700"
+                                          isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                          isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
                                         }
                                       >
                                         <Download className="w-4 h-4 mr-1" />
@@ -383,12 +370,13 @@ export default function ReadyToGo() {
                           )}
                         </div>
 
-                        {puedoActualizar && !isPendienteAprobacion && (
+                        {puedoActualizar && (
                           <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                             <p className="text-sm font-semibold text-gray-600 mb-1">Cambiar estado:</p>
                             <Select
                               value={cliente.estado}
                               onValueChange={(value) => handleCambiarEstado(cliente, value)}
+                              disabled={isPendienteAprobacion && !isAdmin}
                             >
                               <SelectTrigger className="w-[220px]">
                                 <SelectValue />
@@ -404,6 +392,12 @@ export default function ReadyToGo() {
                             {isPendienteFirma && (
                               <p className="text-xs text-orange-600 mt-1">
                                 💡 Esperando firma del cliente
+                              </p>
+                            )}
+                            
+                            {isPendienteAprobacion && (
+                              <p className="text-xs text-emerald-600 mt-1">
+                                ⏳ Esperando aprobación del admin
                               </p>
                             )}
                           </div>
