@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,7 +15,8 @@ import {
   LogOut,
   UserCircle2,
   Sparkles,
-  Calendar as CalendarIcon // Added CalendarIcon import
+  Calendar as CalendarIcon,
+  Route
 } from "lucide-react";
 import {
   Sidebar,
@@ -64,80 +64,95 @@ export default function Layout({ children }) {
 
   const isAdmin = user.role === "admin";
 
-  const navigationItems = [
-    {
-      title: "Rutas",
-      url: createPageUrl("Rutas"),
-      icon: MapPin,
-      show: true,
-    },
-    {
-      title: "Planificador IA",
-      url: createPageUrl("PlanificadorRutas"),
-      icon: Sparkles,
-      show: true,
-    },
-    {
-      title: "Inicio",
-      url: createPageUrl("Dashboard"),
-      icon: Home,
-      show: true,
-    },
-    {
-      title: "Calendario",
-      url: createPageUrl("Calendario"),
-      icon: CalendarIcon,
-      show: true,
-    },
+  // Menú para comerciales
+  const menuComercial = [
     {
       title: "Zonas",
       url: createPageUrl("Zonas"),
       icon: MapPin,
-      show: true,
     },
     {
       title: "Clientes",
       url: createPageUrl("Clientes"),
       icon: UsersIcon,
-      show: true,
+    },
+    {
+      title: "Calendario",
+      url: createPageUrl("Calendario"),
+      icon: CalendarIcon,
+    },
+    {
+      title: "Planificador IA",
+      url: createPageUrl("PlanificadorRutas"),
+      icon: Sparkles,
     },
     {
       title: "Ready to Go",
       url: createPageUrl("ReadyToGo"),
       icon: CheckCircle2,
-      show: !isAdmin,
-    },
-    {
-      title: "Informes por Presentar",
-      url: createPageUrl("InformesPorPresentar"),
-      icon: FileText,
-      show: isAdmin,
-    },
-    {
-      title: "Cierres Verificados",
-      url: createPageUrl("CierresVerificados"),
-      icon: CheckCircle2,
-      show: isAdmin,
     },
     {
       title: "Comisiones",
       url: createPageUrl("Comisiones"),
       icon: DollarSign,
-      show: !isAdmin,
-    },
-    {
-      title: "Gestión de Usuarios",
-      url: createPageUrl("GestionUsuarios"),
-      icon: UserCircle2,
-      show: isAdmin,
     },
     {
       title: "Configuración",
       url: createPageUrl("Configuracion"),
       icon: Settings,
-      show: true,
     },
-  ].filter(item => item.show);
+  ];
+
+  // Menú para administradores
+  const menuAdmin = [
+    {
+      title: "Calendario",
+      url: createPageUrl("Calendario"),
+      icon: CalendarIcon,
+    },
+    {
+      title: "Informes por Presentar",
+      url: createPageUrl("InformesPorPresentar"),
+      icon: FileText,
+    },
+    {
+      title: "Zonas",
+      url: createPageUrl("Zonas"),
+      icon: MapPin,
+    },
+    {
+      title: "Clientes",
+      url: createPageUrl("Clientes"),
+      icon: UsersIcon,
+    },
+    {
+      title: "Cierres Verificados",
+      url: createPageUrl("CierresVerificados"),
+      icon: CheckCircle2,
+    },
+    {
+      title: "Planificador IA",
+      url: createPageUrl("PlanificadorRutas"),
+      icon: Sparkles,
+    },
+    {
+      title: "Rutas",
+      url: createPageUrl("Rutas"),
+      icon: Route,
+    },
+    {
+      title: "Gestión de Usuarios",
+      url: createPageUrl("GestionUsuarios"),
+      icon: UserCircle2,
+    },
+    {
+      title: "Configuración",
+      url: createPageUrl("Configuracion"),
+      icon: Settings,
+    },
+  ];
+
+  const navigationItems = isAdmin ? menuAdmin : menuComercial;
 
   const handleLogout = () => {
     base44.auth.logout();
