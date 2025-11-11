@@ -78,7 +78,7 @@ export default function DetalleCliente() {
     },
   });
 
-  // Inicializar eventos si no existen - usando useEffect para evitar bucle infinito
+  // Inicializar eventos si no existen
   useEffect(() => {
     if (cliente && (!cliente.eventos || cliente.eventos.length === 0)) {
       updateMutation.mutate({
@@ -93,27 +93,40 @@ export default function DetalleCliente() {
         }
       });
     }
-  }, [cliente?.id]); // Solo ejecutar cuando cambie el ID del cliente
+  }, [cliente?.id]);
 
   const handleUpdate = (data) => {
     // Verificar si todos los suministros tienen al menos 1 factura
     if (data.suministros) {
-      const suministrosConFacturas = data.suministros.every(s => 
+      const todosConFacturas = data.suministros.length > 0 && data.suministros.every(s => 
         s.facturas && s.facturas.length > 0
       );
       
-      if (suministrosConFacturas && cliente.estado === "Esperando facturas") {
-        // Cambiar automáticamente a "Facturas presentadas"
+      // Solo cambiar a "Facturas presentadas" si está en "Esperando facturas"
+      if (todosConFacturas && cliente.estado === "Esperando facturas") {
         updateMutation.mutate({
           id: clienteId,
           data: { ...data, estado: "Facturas presentadas" }
         });
-      } else {
-        updateMutation.mutate({ id: clienteId, data });
+        return;
       }
-    } else {
-      updateMutation.mutate({ id: clienteId, data });
+
+      // Verificar si todos los suministros tienen informe final
+      const todosConInforme = data.suministros.length > 0 && data.suministros.every(s =>
+        s.informe_final && s.informe_final.url
+      );
+
+      // Cambiar a "Informe listo" si todos tienen informe y está en "Facturas presentadas"
+      if (todosConInforme && cliente.estado === "Facturas presentadas") {
+        updateMutation.mutate({
+          id: clienteId,
+          data: { ...data, estado: "Informe listo" }
+        });
+        return;
+      }
     }
+
+    updateMutation.mutate({ id: clienteId, data });
   };
 
   const handleDelete = () => {
@@ -183,6 +196,15 @@ export default function DetalleCliente() {
     );
   }
 
+  // Calcular tipo de factura máximo para mostrar prioridad
+  const tipoFacturaMaximo = cliente.suministros?.reduce((max, s) => {
+    if (!s.tipo_factura) return max;
+    const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
+    const actual = orden[s.tipo_factura] || 0;
+    const maxActual = orden[max] || 0;
+    return actual > maxActual ? s.tipo_factura : max;
+  }, "2.0");
+
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <Button
@@ -202,9 +224,19 @@ export default function DetalleCliente() {
                 <Building2 className="w-7 h-7" />
                 {cliente.nombre_negocio}
               </CardTitle>
-              <Badge className={`${estadoColors[cliente.estado]} text-white`}>
-                {cliente.estado}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className={`${estadoColors[cliente.estado]} text-white`}>
+                  {cliente.estado}
+                </Badge>
+                {tipoFacturaMaximo && (
+                  <Badge className={
+                    tipoFacturaMaximo === "6.1" ? "bg-red-600 text-white" :
+                    tipoFacturaMaximo === "3.0" ? "bg-orange-600 text-white" : "bg-blue-600 text-white"
+                  }>
+                    Prioridad: {tipoFacturaMaximo}
+                  </Badge>
+                )}
+              </div>
             </div>
             <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
               <span className="text-white font-bold text-lg">
@@ -242,11 +274,6 @@ export default function DetalleCliente() {
                 <div className="flex items-center gap-3 text-[#666666]">
                   <MapPin className="w-5 h-5" />
                   <span>{zona.nombre}</span>
-                </div>
-              )}
-              {cliente.tipo_factura && (
-                <div className="text-[#666666]">
-                  <strong>Tipo de factura:</strong> {cliente.tipo_factura}
                 </div>
               )}
             </div>

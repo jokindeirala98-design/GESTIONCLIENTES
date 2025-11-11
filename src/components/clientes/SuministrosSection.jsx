@@ -6,24 +6,56 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Upload, FileText, Edit2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }) {
   const [suministros, setSuministros] = useState(cliente.suministros || []);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [nuevoSuministro, setNuevoSuministro] = useState({
+    nombre: "",
+    tipo_factura: "3.0"
+  });
 
-  const handleAddSuministro = () => {
+  const handleOpenCreateDialog = () => {
+    setNuevoSuministro({ nombre: "", tipo_factura: "3.0" });
+    setShowCreateDialog(true);
+  };
+
+  const handleCreateSuministro = () => {
+    if (!nuevoSuministro.nombre.trim()) {
+      toast.error("El nombre del suministro es obligatorio");
+      return;
+    }
+
     const nuevoId = Date.now().toString();
     const nuevosSuministros = [
       ...suministros,
       {
         id: nuevoId,
-        nombre: `Suministro ${suministros.length + 1}`,
+        nombre: nuevoSuministro.nombre,
+        tipo_factura: nuevoSuministro.tipo_factura,
         facturas: []
       }
     ];
     setSuministros(nuevosSuministros);
     onUpdate({ suministros: nuevosSuministros });
+    setShowCreateDialog(false);
+    toast.success("Suministro añadido");
   };
 
   const handleDeleteSuministro = (suministroId) => {
@@ -91,6 +123,15 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     toast.success("Factura eliminada");
   };
 
+  const getTipoColor = (tipo) => {
+    switch(tipo) {
+      case "6.1": return "bg-red-600 text-white";
+      case "3.0": return "bg-orange-600 text-white";
+      case "2.0": return "bg-blue-600 text-white";
+      default: return "bg-gray-600 text-white";
+    }
+  };
+
   return (
     <Card className="border-2 border-blue-200 bg-blue-50">
       <CardHeader>
@@ -152,6 +193,9 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <Badge className={getTipoColor(suministro.tipo_factura)}>
+                      {suministro.tipo_factura}
+                    </Badge>
                     <Badge variant="outline">
                       {(suministro.facturas || []).length}/3 facturas
                     </Badge>
@@ -249,7 +293,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
 
         {isOwnerOrAdmin && (
           <Button
-            onClick={handleAddSuministro}
+            onClick={handleOpenCreateDialog}
             variant="outline"
             className="w-full border-dashed border-2 border-blue-300 text-[#004D9D]"
           >
@@ -258,6 +302,63 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
           </Button>
         )}
       </CardContent>
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D]">Nuevo Suministro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Nombre del suministro *</label>
+              <Input
+                value={nuevoSuministro.nombre}
+                onChange={(e) => setNuevoSuministro({ ...nuevoSuministro, nombre: e.target.value })}
+                placeholder="Ej: Casa, Restaurante, Local 1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Tipo de factura *</label>
+              <Select
+                value={nuevoSuministro.tipo_factura}
+                onValueChange={(value) => setNuevoSuministro({ ...nuevoSuministro, tipo_factura: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6.1">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-red-600 text-white text-xs">6.1</Badge>
+                      <span>Máxima prioridad</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="3.0">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-orange-600 text-white text-xs">3.0</Badge>
+                      <span>Alta prioridad</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="2.0">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-600 text-white text-xs">2.0</Badge>
+                      <span>Prioridad media</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateSuministro} className="bg-[#004D9D] hover:bg-[#00AEEF]">
+              Crear Suministro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
