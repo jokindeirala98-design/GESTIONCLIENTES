@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, MapPin, FileText, Download } from "lucide-react";
+import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -153,16 +153,18 @@ export default function ReadyToGo() {
                 return (
                   <Card 
                     key={cliente.id}
-                    className="hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-green-500"
-                    onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                    className="hover:shadow-lg transition-all duration-300 border-l-4 border-green-500"
                   >
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-start gap-4">
                         <div className="flex-1">
-                          <div className="flex items-start gap-3 mb-3">
+                          <div 
+                            className="flex items-start gap-3 mb-3 cursor-pointer"
+                            onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                          >
                             <Building2 className="w-6 h-6 text-[#004D9D] flex-shrink-0 mt-1" />
                             <div className="flex-1">
-                              <h3 className="font-bold text-[#004D9D] text-lg mb-1">
+                              <h3 className="font-bold text-[#004D9D] text-lg mb-1 hover:underline">
                                 {cliente.nombre_negocio}
                               </h3>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -175,6 +177,12 @@ export default function ReadyToGo() {
                                 <Badge variant="outline">
                                   {cliente.suministros?.length || 0} suministro(s)
                                 </Badge>
+                                {cliente.comision && (
+                                  <Badge className="bg-yellow-600 text-white">
+                                    <DollarSign className="w-3 h-3 mr-1" />
+                                    {cliente.comision}€
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -182,29 +190,47 @@ export default function ReadyToGo() {
                           {/* Suministros con informes */}
                           {cliente.suministros && cliente.suministros.length > 0 && (
                             <div className="mt-4 space-y-2">
-                              <p className="text-sm font-semibold text-gray-600 mb-2">Informes por suministro:</p>
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="w-4 h-4 text-green-600" />
+                                <p className="text-sm font-semibold text-green-700">Informes disponibles:</p>
+                              </div>
                               {cliente.suministros.map(suministro => (
-                                <div key={suministro.id} className="bg-gray-50 rounded-lg p-3">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
+                                <div key={suministro.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
                                       <Badge className={tipoColors[suministro.tipo_factura]} variant="outline">
                                         {suministro.tipo_factura}
                                       </Badge>
-                                      <span className="text-sm font-medium">{suministro.nombre}</span>
+                                      <span className="text-sm font-medium text-gray-700 truncate">{suministro.nombre}</span>
+                                      {suministro.comision && (
+                                        <span className="text-sm text-green-600 font-semibold">
+                                          ({suministro.comision}€)
+                                        </span>
+                                      )}
                                     </div>
-                                    {suministro.informe_final && (
-                                      <a
-                                        href={suministro.informe_final.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="flex items-center gap-1 text-sm text-green-600 hover:text-green-700"
+                                    {suministro.informe_final ? (
+                                      <Button
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(suministro.informe_final.url, '_blank');
+                                        }}
+                                        className="bg-green-600 hover:bg-green-700 flex-shrink-0"
                                       >
-                                        <Download className="w-4 h-4" />
-                                        Descargar informe
-                                      </a>
+                                        <Download className="w-4 h-4 mr-1" />
+                                        Descargar
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
+                                        Sin informe
+                                      </Badge>
                                     )}
                                   </div>
+                                  {suministro.informe_final && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      📄 {suministro.informe_final.nombre}
+                                    </p>
+                                  )}
                                 </div>
                               ))}
                             </div>
