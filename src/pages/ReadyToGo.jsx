@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tantml:react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign } from "lucide-react";
+import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -40,47 +40,67 @@ export default function ReadyToGo() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ clienteId, nuevoEstado }) => 
-      base44.entities.Cliente.update(clienteId, { estado: nuevoEstado }),
+    mutationFn: async ({ clienteId, nuevoEstado, cliente }) => {
+      const updateData = { estado: nuevoEstado };
+      
+      // Si es "Firmado con éxito", añadir fecha y mes de comisión
+      if (nuevoEstado === "Firmado con éxito") {
+        const fechaCierre = new Date().toISOString().split('T')[0];
+        const mesComision = fechaCierre.substring(0, 7);
+        updateData.fecha_cierre = fechaCierre;
+        updateData.mes_comision = mesComision;
+      }
+      
+      await base44.entities.Cliente.update(clienteId, updateData);
+      
+      // Si es "Firmado con éxito", notificar a admins
+      if (nuevoEstado === "Firmado con éxito") {
+        await base44.integrations.Core.SendEmail({
+          to: "admin@voltis.com", // Aquí deberías obtener emails de admins de la BD
+          subject: `🎉 Nuevo cierre para verificar: ${cliente.nombre_negocio}`,
+          body: `El comercial ${cliente.propietario_iniciales} ha marcado como "Firmado con éxito" al cliente "${cliente.nombre_negocio}".\n\nComisión total: ${cliente.comision}€\n\nPor favor, verifica y aprueba este cierre en: ${window.location.origin}${createPageUrl("CierresVerificados")}`
+        });
+      }
+      
+      return updateData;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
       toast.success("Estado actualizado");
     },
   });
 
-  const handleCambiarEstado = (clienteId, nuevoEstado) => {
-    updateStatusMutation.mutate({ clienteId, nuevoEstado });
+  const handleCambiarEstado = (cliente, nuevoEstado) => {
+    if (nuevoEstado === "Firmado con éxito") {
+      if (!window.confirm(`¿Confirmas que "${cliente.nombre_negocio}" ha firmado con éxito? Esto enviará el cierre a verificación por los administradores.`)) {
+        return;
+      }
+    }
+    
+    if (nuevoEstado === "Rechazado") {
+      if (!window.confirm(`¿Marcar "${cliente.nombre_negocio}" como rechazado? El cliente desaparecerá de Ready to Go.`)) {
+        return;
+      }
+    }
+    
+    updateStatusMutation.mutate({ clienteId: cliente.id, nuevoEstado, cliente });
   };
 
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
 
-  // Clientes con informes listos
-  const clientesReady = clientes.filter(c => c.estado === "Informe listo");
+  // Clientes con "Informe listo" O "Pendiente de firma"
+  const clientesReady = clientes.filter(c => 
+    c.estado === "Informe listo" || c.estado === "Pendiente de firma"
+  );
 
   // Filtrar por propietario si no es admin
   const misClientesReady = isAdmin 
     ? clientesReady 
     : clientesReady.filter(c => c.propietario_email === user.email);
 
-  // Agrupar por zona
-  const clientesPorZona = misClientesReady.reduce((acc, cliente) => {
-    const zona = zonas.find(z => z.id === cliente.zona_id);
-    const zonaNombre = zona?.nombre || "Sin zona";
-    
-    if (!acc[zonaNombre]) {
-      acc[zonaNombre] = [];
-    }
-    acc[zonaNombre].push(cliente);
-    return acc;
-  }, {});
-
-  // Ordenar zonas por número de clientes (descendente)
-  const zonasOrdenadas = Object.keys(clientesPorZona).sort((a, b) => 
-    clientesPorZona[b].length - clientesPorZona[a].length
-  );
-
+  // Función para obtener el tipo máximo de factura
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
@@ -91,11 +111,43 @@ export default function ReadyToGo() {
     }, "2.0");
   };
 
+  // ORDENAR POR PRIORIDAD: 6.1 > 3.0 > 2.0, luego por estado (Informe listo antes que Pendiente de firma)
+  const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
+  const estadoOrder = { "Informe listo": 1, "Pendiente de firma": 2 };
+  
+  const clientesOrdenados = [...misClientesReady].sort((a, b) => {
+    const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
+    const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
+    
+    if (orderA !== orderB) return orderA - orderB;
+    
+    // Si mismo tipo, ordenar por estado
+    return estadoOrder[a.estado] - estadoOrder[b.estado];
+  });
+
+  // Agrupar por zona
+  const clientesPorZona = clientesOrdenados.reduce((acc, cliente) => {
+    const zona = zonas.find(z => z.id === cliente.zona_id);
+    const zonaNombre = zona?.nombre || "Sin zona";
+    
+    if (!acc[zonaNombre]) {
+      acc[zonaNombre] = [];
+    }
+    acc[zonaNombre].push(cliente);
+    return acc;
+  }, {});
+
+  const zonasOrdenadas = Object.keys(clientesPorZona);
+
   const tipoColors = {
     "6.1": "bg-red-600 text-white",
     "3.0": "bg-orange-600 text-white",
     "2.0": "bg-blue-600 text-white"
   };
+
+  // Contadores por estado
+  const informesListos = misClientesReady.filter(c => c.estado === "Informe listo").length;
+  const pendientesFirma = misClientesReady.filter(c => c.estado === "Pendiente de firma").length;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -105,33 +157,49 @@ export default function ReadyToGo() {
           Ready to Go
         </h1>
         <p className="text-[#666666]">
-          {isAdmin ? "Todos los clientes" : "Tus clientes"} con informes listos para presentar
+          {isAdmin ? "Todos los clientes" : "Tus clientes"} listos para presentar y cerrar
         </p>
       </div>
 
-      {/* Resumen */}
-      <Card className="mb-6 border-l-4 border-green-500">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[#666666] mb-1">Total clientes listos</p>
-              <p className="text-4xl font-bold text-green-600">{misClientesReady.length}</p>
+      {/* Resumen con dos cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="border-l-4 border-green-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[#666666] mb-1">📄 Informes listos</p>
+                <p className="text-4xl font-bold text-green-600">{informesListos}</p>
+              </div>
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
             </div>
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-orange-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[#666666] mb-1">⏳ Pendientes de firma</p>
+                <p className="text-4xl font-bold text-orange-600">{pendientesFirma}</p>
+              </div>
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-orange-600" />
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Clientes por zona */}
       {zonasOrdenadas.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
             <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-[#666666] text-lg">No hay clientes con informes listos</p>
+            <p className="text-[#666666] text-lg">No hay clientes listos</p>
             <p className="text-gray-400 text-sm mt-2">
-              Los clientes aparecerán aquí cuando el administrador suba los informes finales
+              Los clientes aparecerán aquí cuando tengan informes listos para presentar
             </p>
           </CardContent>
         </Card>
@@ -149,11 +217,14 @@ export default function ReadyToGo() {
                 const esMio = cliente.propietario_email === user.email;
                 const puedoActualizar = esMio || isAdmin;
                 const tipoMax = getTipoMaximo(cliente);
+                const isPendiente = cliente.estado === "Pendiente de firma";
+                const borderColor = isPendiente ? "border-orange-500" : "border-green-500";
+                const bgColor = isPendiente ? "bg-orange-50" : "bg-green-50";
 
                 return (
                   <Card 
                     key={cliente.id}
-                    className="hover:shadow-lg transition-all duration-300 border-l-4 border-green-500"
+                    className={`hover:shadow-lg transition-all duration-300 border-l-4 ${borderColor}`}
                   >
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-start gap-4">
@@ -169,6 +240,12 @@ export default function ReadyToGo() {
                               </h3>
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm text-gray-600">{cliente.propietario_iniciales}</span>
+                                
+                                {/* Badge de estado */}
+                                <Badge className={isPendiente ? "bg-orange-600 text-white" : "bg-green-600 text-white"}>
+                                  {isPendiente ? "⏳ Pendiente de firma" : "✓ Informe listo"}
+                                </Badge>
+                                
                                 {tipoMax && (
                                   <Badge className={tipoColors[tipoMax]}>
                                     Max: {tipoMax}
@@ -191,11 +268,13 @@ export default function ReadyToGo() {
                           {cliente.suministros && cliente.suministros.length > 0 && (
                             <div className="mt-4 space-y-2">
                               <div className="flex items-center gap-2 mb-2">
-                                <FileText className="w-4 h-4 text-green-600" />
-                                <p className="text-sm font-semibold text-green-700">Informes disponibles:</p>
+                                <FileText className={`w-4 h-4 ${isPendiente ? "text-orange-600" : "text-green-600"}`} />
+                                <p className={`text-sm font-semibold ${isPendiente ? "text-orange-700" : "text-green-700"}`}>
+                                  Informes disponibles:
+                                </p>
                               </div>
                               {cliente.suministros.map(suministro => (
-                                <div key={suministro.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <div key={suministro.id} className={`${bgColor} border ${isPendiente ? "border-orange-200" : "border-green-200"} rounded-lg p-3`}>
                                   <div className="flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                       <Badge className={tipoColors[suministro.tipo_factura]} variant="outline">
@@ -203,7 +282,7 @@ export default function ReadyToGo() {
                                       </Badge>
                                       <span className="text-sm font-medium text-gray-700 truncate">{suministro.nombre}</span>
                                       {suministro.comision && (
-                                        <span className="text-sm text-green-600 font-semibold">
+                                        <span className={`text-sm font-semibold ${isPendiente ? "text-orange-600" : "text-green-600"}`}>
                                           ({suministro.comision}€)
                                         </span>
                                       )}
@@ -215,7 +294,7 @@ export default function ReadyToGo() {
                                           e.stopPropagation();
                                           window.open(suministro.informe_final.url, '_blank');
                                         }}
-                                        className="bg-green-600 hover:bg-green-700 flex-shrink-0"
+                                        className={isPendiente ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"}
                                       >
                                         <Download className="w-4 h-4 mr-1" />
                                         Descargar
@@ -242,22 +321,24 @@ export default function ReadyToGo() {
                             <p className="text-sm font-semibold text-gray-600 mb-1">Cambiar estado:</p>
                             <Select
                               value={cliente.estado}
-                              onValueChange={(value) => handleCambiarEstado(cliente.id, value)}
+                              onValueChange={(value) => handleCambiarEstado(cliente, value)}
                             >
-                              <SelectTrigger className="w-[200px]">
+                              <SelectTrigger className="w-[220px]">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Informe listo">Informe listo</SelectItem>
-                                <SelectItem value="Pendiente de firma">Pendiente de firma</SelectItem>
-                                {isAdmin && (
-                                  <>
-                                    <SelectItem value="Firmado con éxito">Firmado con éxito</SelectItem>
-                                    <SelectItem value="Rechazado">Rechazado</SelectItem>
-                                  </>
-                                )}
+                                <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
+                                <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
+                                <SelectItem value="Firmado con éxito">🎉 Firmado con éxito</SelectItem>
+                                <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
                               </SelectContent>
                             </Select>
+                            
+                            {isPendiente && (
+                              <p className="text-xs text-orange-600 mt-1">
+                                💡 Esperando firma del cliente
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
