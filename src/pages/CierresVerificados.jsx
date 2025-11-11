@@ -273,7 +273,7 @@ export default function CierresVerificados() {
                     <Card 
                       key={cliente.id}
                       className={`hover:shadow-lg transition-all duration-300 border-l-4 ${
-                        isAprobado ? 'border-green-500 bg-green-50/30' : 
+                        isAprobado ? 'border-green-500 bg-green-50/30 opacity-60' : 
                         isPendiente ? 'border-yellow-500' : 'border-gray-300'
                       }`}
                     >
@@ -281,12 +281,14 @@ export default function CierresVerificados() {
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <Building2 className="w-5 h-5 text-[#004D9D]" />
-                              <h3 className="font-bold text-[#004D9D]">{cliente.nombre_negocio}</h3>
+                              <Building2 className={`w-5 h-5 ${isAprobado ? 'text-green-600 opacity-60' : 'text-[#004D9D]'}`} />
+                              <h3 className={`font-bold ${isAprobado ? 'text-green-700 opacity-60' : 'text-[#004D9D]'}`}>
+                                {cliente.nombre_negocio}
+                              </h3>
                             </div>
                             
                             {isAprobado ? (
-                              <Badge className="bg-green-600 text-white text-xs mb-2">
+                              <Badge className="bg-green-600 text-white text-xs mb-2 opacity-75">
                                 ✓ Firma aprobada
                               </Badge>
                             ) : isPendiente ? (
@@ -295,14 +297,16 @@ export default function CierresVerificados() {
                               </Badge>
                             ) : null}
                           </div>
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
+                          <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center ${
+                            isAprobado ? 'opacity-60' : ''
+                          }`}>
                             <span className="text-white font-bold text-sm">
                               {cliente.propietario_iniciales}
                             </span>
                           </div>
                         </div>
 
-                        <div className="space-y-2 mb-4">
+                        <div className={`space-y-2 mb-4 ${isAprobado ? 'opacity-60' : ''}`}>
                           {cliente.nombre_cliente && (
                             <div className="flex items-center gap-2 text-sm text-[#666666]">
                               <User className="w-4 h-4" />
@@ -351,9 +355,9 @@ export default function CierresVerificados() {
                         )}
 
                         {isAprobado && (
-                          <div className="bg-green-100 border border-green-300 rounded-lg p-2 text-center">
+                          <div className="bg-green-100 border border-green-300 rounded-lg p-2 text-center opacity-75">
                             <p className="text-xs font-semibold text-green-700">
-                              ✓ Cierre aprobado - Comisión contabilizada
+                              ✓ Procesado - Sin acciones pendientes
                             </p>
                           </div>
                         )}
