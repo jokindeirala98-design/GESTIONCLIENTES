@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,21 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  ArrowLeft, Building2, User, Phone, Mail, MapPin, FileText,
-  Upload, Download, Trash2, Edit, X, CheckCircle2
+  ArrowLeft, Building2, User, Phone, Mail, MapPin,
+  Trash2, Edit, X, CheckCircle2
 } from "lucide-react";
 import { toast } from "sonner";
 import EditClienteDialog from "../components/clientes/EditClienteDialog.jsx";
-import SubirFacturasDialog from "../components/clientes/SubirFacturasDialog.jsx";
-import SubirInformeDialog from "../components/clientes/SubirInformeDialog.jsx";
+import SuministrosSection from "../components/clientes/SuministrosSection.jsx";
+import EventosSection from "../components/clientes/EventosSection.jsx";
 
 const estadoColors = {
   "Primer contacto": "bg-gray-500",
   "Esperando facturas": "bg-orange-500",
   "Facturas presentadas": "bg-blue-500",
-  "Informe listo": "bg-green-500", // Changed from purple-500
-  "Pendiente de firma": "bg-purple-500", // Added new state
-  "Firmado con éxito": "bg-yellow-600", // Added new state, replaced "Cerrado con éxito"
+  "Informe listo": "bg-green-500",
+  "Pendiente de firma": "bg-purple-500",
+  "Firmado con éxito": "bg-yellow-600",
   "Rechazado": "bg-red-500",
 };
 
@@ -31,8 +30,6 @@ export default function DetalleCliente() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showFacturasDialog, setShowFacturasDialog] = useState(false);
-  const [showInformeDialog, setShowInformeDialog] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const clienteId = urlParams.get('id');
@@ -81,6 +78,27 @@ export default function DetalleCliente() {
     },
   });
 
+  const handleUpdate = (data) => {
+    // Verificar si todos los suministros tienen al menos 1 factura
+    if (data.suministros) {
+      const suministrosConFacturas = data.suministros.every(s => 
+        s.facturas && s.facturas.length > 0
+      );
+      
+      if (suministrosConFacturas && cliente.estado === "Esperando facturas") {
+        // Cambiar automáticamente a "Facturas presentadas"
+        updateMutation.mutate({
+          id: clienteId,
+          data: { ...data, estado: "Facturas presentadas" }
+        });
+      } else {
+        updateMutation.mutate({ id: clienteId, data });
+      }
+    } else {
+      updateMutation.mutate({ id: clienteId, data });
+    }
+  };
+
   const handleDelete = () => {
     if (window.confirm(`¿Eliminar el cliente "${cliente.nombre_negocio}"?`)) {
       deleteMutation.mutate(clienteId);
@@ -108,17 +126,6 @@ export default function DetalleCliente() {
           fecha_cierre: fechaCierre,
           mes_comision: mesComision
         }
-      });
-    }
-  };
-
-  const handleDeleteFactura = (index) => {
-    if (window.confirm("¿Eliminar esta factura?")) {
-      const nuevasFacturas = [...cliente.facturas];
-      nuevasFacturas.splice(index, 1);
-      updateMutation.mutate({
-        id: clienteId,
-        data: { facturas: nuevasFacturas }
       });
     }
   };
@@ -157,6 +164,21 @@ export default function DetalleCliente() {
         </Card>
       </div>
     );
+  }
+
+  // Inicializar eventos si no existen
+  if (!cliente.eventos || cliente.eventos.length === 0) {
+    updateMutation.mutate({
+      id: clienteId,
+      data: {
+        eventos: [{
+          id: Date.now().toString(),
+          fecha: new Date().toISOString().split('T')[0],
+          descripcion: "Primer contacto",
+          color: "verde"
+        }]
+      }
+    });
   }
 
   return (
@@ -257,10 +279,8 @@ export default function DetalleCliente() {
               </Button>
             )}
 
-            {/* Comerciales: pueden cambiar estado en diferentes situaciones */}
             {isOwner && (
               <>
-                {/* Estados iniciales: Primer contacto, Esperando facturas, Facturas presentadas */}
                 {(cliente.estado === "Primer contacto" || cliente.estado === "Esperando facturas" || cliente.estado === "Facturas presentadas") && (
                   <Button
                     variant="outline"
@@ -272,7 +292,6 @@ export default function DetalleCliente() {
                   </Button>
                 )}
 
-                {/* Pendiente de firma: puede marcar como Firmado o Rechazado */}
                 {cliente.estado === "Pendiente de firma" && (
                   <>
                     <Button
@@ -295,7 +314,6 @@ export default function DetalleCliente() {
               </>
             )}
 
-            {/* Admins: pueden gestionar todos los estados */}
             {isAdmin && cliente.estado !== "Firmado con éxito" && cliente.estado !== "Rechazado" && (
               <>
                 <Button
@@ -321,125 +339,18 @@ export default function DetalleCliente() {
         </CardContent>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-[#004D9D] flex items-center justify-between">
-              <span>Facturas</span>
-              {isOwner && (!cliente.facturas || cliente.facturas.length < 3) && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowFacturasDialog(true)}
-                  className="bg-[#004D9D] hover:bg-[#00AEEF]"
-                >
-                  <Upload className="w-4 h-4 mr-1" />
-                  Subir
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!cliente.facturas || cliente.facturas.length === 0 ? (
-              <p className="text-[#666666] text-sm text-center py-4">
-                No hay facturas subidas
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {cliente.facturas.map((factura, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <FileText className="w-4 h-4 text-[#004D9D] flex-shrink-0" />
-                      <span className="text-sm truncate">{factura.nombre}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <a href={factura.url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="ghost">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </a>
-                      {isOwner && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteFactura(index)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-[#004D9D] flex items-center justify-between">
-              <span>Informes Finales</span>
-              {isAdmin && (!cliente.informes_finales || cliente.informes_finales.length === 0) && cliente.estado === "Facturas presentadas" && (
-                <Button
-                  size="sm"
-                  onClick={() => setShowInformeDialog(true)}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Upload className="w-4 h-4 mr-1" />
-                  Subir
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!cliente.informes_finales || cliente.informes_finales.length === 0 ? (
-              <p className="text-[#666666] text-sm text-center py-4">
-                No hay informes finales
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {cliente.informes_finales.map((informe, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                      <span className="text-sm truncate">{informe.nombre}</span>
-                    </div>
-                    <a href={informe.url} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="ghost">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </a>
-                  </div>
-                ))}
-                
-                {cliente.comision && cliente.aprobado_admin && (
-                  <div className="p-3 bg-green-50 rounded-lg mt-3">
-                    <p className="text-sm text-[#666666] mb-1">Comisión</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      €{cliente.comision.toFixed(2)}
-                    </p>
-                    {cliente.estado === "Firmado con éxito" && (
-                      <p className="text-xs text-green-600 mt-1">
-                        ✓ Contabilizada en comisiones
-                      </p>
-                    )}
-                  </div>
-                )}
-                {cliente.comision && !cliente.aprobado_admin && cliente.estado === "Firmado con éxito" && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mt-3">
-                    <p className="text-sm text-yellow-700 mb-1">⏳ Comisión pendiente de aprobación</p>
-                    <p className="text-2xl font-bold text-yellow-600">
-                      €{cliente.comision.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-yellow-600 mt-1">
-                      Esperando verificación del administrador
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
+        <SuministrosSection 
+          cliente={cliente}
+          onUpdate={handleUpdate}
+          isOwnerOrAdmin={canEdit}
+        />
+        
+        <EventosSection
+          cliente={cliente}
+          onUpdate={handleUpdate}
+          isOwnerOrAdmin={canEdit}
+        />
       </div>
 
       {showEditDialog && (
@@ -447,24 +358,6 @@ export default function DetalleCliente() {
           open={showEditDialog}
           onClose={() => setShowEditDialog(false)}
           cliente={cliente}
-        />
-      )}
-
-      {showFacturasDialog && (
-        <SubirFacturasDialog
-          open={showFacturasDialog}
-          onClose={() => setShowFacturasDialog(false)}
-          cliente={cliente}
-          user={user}
-        />
-      )}
-
-      {showInformeDialog && (
-        <SubirInformeDialog
-          open={showInformeDialog}
-          onClose={() => setShowInformeDialog(false)}
-          cliente={cliente}
-          user={user}
         />
       )}
     </div>
