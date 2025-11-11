@@ -15,7 +15,8 @@ import {
   X,
   LogOut,
   UserCircle2,
-  Sparkles
+  Sparkles,
+  Calendar as CalendarIcon // Added CalendarIcon import
 } from "lucide-react";
 import {
   Sidebar,
@@ -80,6 +81,12 @@ export default function Layout({ children }) {
       title: "Inicio",
       url: createPageUrl("Dashboard"),
       icon: Home,
+      show: true,
+    },
+    {
+      title: "Calendario",
+      url: createPageUrl("Calendario"),
+      icon: CalendarIcon,
       show: true,
     },
     {
