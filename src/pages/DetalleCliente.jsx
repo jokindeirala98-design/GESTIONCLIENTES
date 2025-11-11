@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -115,6 +116,41 @@ export default function DetalleCliente() {
       });
     }
   }, [cliente?.id]);
+
+  // NUEVO: Verificar y corregir estados automáticamente al cargar
+  useEffect(() => {
+    if (!cliente || !cliente.suministros || cliente.suministros.length === 0) return;
+    
+    const estadosFinales = ["Informe listo", "Pendiente de firma", "Firmado con éxito", "Rechazado"];
+    
+    // No tocar clientes en estados finales
+    if (estadosFinales.includes(cliente.estado)) return;
+
+    // Verificar si todos los suministros tienen al menos 1 factura
+    const todosConFacturas = cliente.suministros.every(s => 
+      s.facturas && s.facturas.length > 0
+    );
+    
+    // Verificar si todos los suministros tienen informe final
+    const todosConInforme = cliente.suministros.every(s =>
+      s.informe_final && s.informe_final.url
+    );
+
+    // Corregir estado si es necesario
+    if (todosConInforme && cliente.estado !== "Informe listo") {
+      console.log("Auto-corrección: Cambiando a Informe listo");
+      updateMutation.mutate({
+        id: clienteId,
+        data: { estado: "Informe listo" }
+      });
+    } else if (todosConFacturas && !todosConInforme && cliente.estado !== "Facturas presentadas") {
+      console.log("Auto-corrección: Cambiando a Facturas presentadas");
+      updateMutation.mutate({
+        id: clienteId,
+        data: { estado: "Facturas presentadas" }
+      });
+    }
+  }, [cliente?.id, cliente?.suministros, cliente?.estado]);
 
   const handleUpdate = (data) => {
     // Verificar si todos los suministros tienen al menos 1 factura
