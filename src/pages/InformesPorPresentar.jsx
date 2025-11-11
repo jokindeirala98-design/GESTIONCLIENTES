@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Building2, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Building2, Download, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export default function InformesPorPresentar() {
   const [user, setUser] = useState(null);
   const [clienteExpandido, setClienteExpandido] = useState(null);
   const [comisionesPorSuministro, setComisionesPorSuministro] = useState({});
+  const [sincronizando, setSincronizando] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -51,6 +53,68 @@ export default function InformesPorPresentar() {
       queryClient.invalidateQueries(['clientes']);
     },
   });
+
+  const sincronizarEstadosMutation = useMutation({
+    mutationFn: async () => {
+      const clientesActualizar = [];
+      
+      clientes.forEach(cliente => {
+        if (!cliente.suministros || cliente.suministros.length === 0) return;
+        
+        // Estados que no deben ser modificados por esta sincronización
+        const estadosFinales = ["Informe listo", "Pendiente de firma", "Firmado con éxito", "Rechazado"];
+        if (estadosFinales.includes(cliente.estado)) return;
+
+        const todosConFacturas = cliente.suministros.every(s => 
+          s.facturas && s.facturas.length > 0
+        );
+        
+        const todosConInforme = cliente.suministros.every(s =>
+          s.informe_final && s.informe_final.url
+        );
+
+        if (todosConInforme && cliente.estado !== "Informe listo") {
+          clientesActualizar.push({
+            id: cliente.id,
+            nombre: cliente.nombre_negocio,
+            nuevoEstado: "Informe listo"
+          });
+        } else if (todosConFacturas && !todosConInforme && cliente.estado !== "Facturas presentadas") {
+          clientesActualizar.push({
+            id: cliente.id,
+            nombre: cliente.nombre_negocio,
+            nuevoEstado: "Facturas presentadas"
+          });
+        }
+      });
+
+      for (const cliente of clientesActualizar) {
+        await base44.entities.Cliente.update(cliente.id, { estado: cliente.nuevoEstado });
+      }
+
+      return clientesActualizar;
+    },
+    onSuccess: (clientesActualizados) => {
+      queryClient.invalidateQueries(['clientes']);
+      if (clientesActualizados.length > 0) {
+        toast.success(`${clientesActualizados.length} cliente(s) sincronizado(s)`);
+      } else {
+        toast.info("Todos los estados están correctos");
+      }
+      setSincronizando(false);
+    },
+    onError: () => {
+      toast.error("Error al sincronizar estados");
+      setSincronizando(false);
+    }
+  });
+
+  const handleSincronizarEstados = () => {
+    if (window.confirm("¿Sincronizar los estados de todos los clientes según sus facturas e informes? Esto podría cambiar el estado de algunos clientes a 'Facturas presentadas' o 'Informe listo' si cumplen los requisitos.")) {
+      setSincronizando(true);
+      sincronizarEstadosMutation.mutate();
+    }
+  };
 
   const handleSubirInforme = async (cliente, suministroId, file) => {
     try {
@@ -167,14 +231,34 @@ export default function InformesPorPresentar() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-          <FileText className="w-8 h-8" />
-          Informes por Presentar
-        </h1>
-        <p className="text-[#666666]">
-          Clientes con facturas listas para subir informe final por suministro
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
+            <FileText className="w-8 h-8" />
+            Informes por Presentar
+          </h1>
+          <p className="text-[#666666]">
+            Clientes con facturas listas para subir informe final por suministro
+          </p>
+        </div>
+        <Button
+          onClick={handleSincronizarEstados}
+          disabled={sincronizando || isLoading}
+          variant="outline"
+          className="border-[#004D9D] text-[#004D9D] hover:bg-[#004D9D] hover:text-white"
+        >
+          {sincronizando ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              Sincronizando...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Sincronizar Estados
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
