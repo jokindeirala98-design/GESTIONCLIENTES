@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -29,12 +30,22 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
     zona_nombre: "",
     zona_id: "",
     anotaciones: "",
+    propietario_email: user.email,
   });
 
   const { data: zonas = [] } = useQuery({
     queryKey: ['zonas'],
     queryFn: () => base44.entities.Zona.list(),
   });
+
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: user?.role === 'admin',
+  });
+
+  const isAdmin = user?.role === 'admin';
+  const comerciales = usuarios.filter(u => u.role === 'user' || u.role === 'admin');
 
   useEffect(() => {
     if (zonaPreseleccionada) {
@@ -76,6 +87,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       zona_nombre: "",
       zona_id: "",
       anotaciones: "",
+      propietario_email: user.email,
     });
   };
 
@@ -105,6 +117,8 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       toast.error("Debes seleccionar un pueblo");
       return;
     }
+
+    const propietario = comerciales.find(u => u.email === formData.propietario_email);
     
     const dataToSave = {
       nombre_negocio: formData.nombre_negocio,
@@ -113,8 +127,8 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       email: formData.email,
       zona_id: zonaId,
       anotaciones: formData.anotaciones,
-      propietario_email: user.email,
-      propietario_iniciales: user.iniciales || user.full_name?.substring(0, 3).toUpperCase(),
+      propietario_email: formData.propietario_email,
+      propietario_iniciales: propietario?.iniciales || propietario?.full_name?.substring(0, 3).toUpperCase(),
       estado: "Primer contacto",
       facturas: [],
     };
@@ -188,6 +202,32 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
                 />
               </div>
             </div>
+
+            {isAdmin && comerciales.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-[#666666] mb-1 block">
+                  Asignar a comercial *
+                </label>
+                <Select
+                  value={formData.propietario_email}
+                  onValueChange={(value) => setFormData({ ...formData, propietario_email: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar comercial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {comerciales.map(comercial => (
+                      <SelectItem key={comercial.email} value={comercial.email}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{comercial.full_name}</span>
+                          <span className="text-xs text-gray-500">({comercial.iniciales})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-[#666666] mb-1 block">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +14,18 @@ import { toast } from "sonner";
 import EditClienteDialog from "../components/clientes/EditClienteDialog.jsx";
 import SuministrosSection from "../components/clientes/SuministrosSection.jsx";
 import EventosSection from "../components/clientes/EventosSection.jsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const estadoColors = {
   "Primer contacto": "bg-gray-500",
@@ -31,6 +42,7 @@ export default function DetalleCliente() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPropietarioPopover, setShowPropietarioPopover] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const clienteId = urlParams.get('id');
@@ -61,6 +73,14 @@ export default function DetalleCliente() {
     },
     enabled: !!cliente?.zona_id,
   });
+
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: user?.role === 'admin',
+  });
+
+  const comerciales = usuarios.filter(u => u.role === 'user' || u.role === 'admin');
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
@@ -164,6 +184,20 @@ export default function DetalleCliente() {
     }
   };
 
+  const handleChangePropietario = (nuevoEmail) => {
+    const nuevoPropietario = comerciales.find(u => u.email === nuevoEmail);
+    if (!nuevoPropietario) return;
+
+    updateMutation.mutate({
+      id: clienteId,
+      data: {
+        propietario_email: nuevoEmail,
+        propietario_iniciales: nuevoPropietario.iniciales || nuevoPropietario.full_name?.substring(0, 3).toUpperCase()
+      }
+    });
+    setShowPropietarioPopover(false);
+  };
+
   if (isLoading || !user || !cliente) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -242,11 +276,43 @@ export default function DetalleCliente() {
                 )}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">
-                {cliente.propietario_iniciales}
-              </span>
-            </div>
+            {isAdmin ? (
+              <Popover open={showPropietarioPopover} onOpenChange={setShowPropietarioPopover}>
+                <PopoverTrigger asChild>
+                  <button className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center cursor-pointer hover:bg-white/30 transition-colors">
+                    <span className="text-white font-bold text-lg">
+                      {cliente.propietario_iniciales}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Reasignar cliente a:</p>
+                    <Select value={cliente.propietario_email} onValueChange={handleChangePropietario}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {comerciales.map(comercial => (
+                          <SelectItem key={comercial.email} value={comercial.email}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{comercial.full_name}</span>
+                              <span className="text-xs text-gray-500">({comercial.iniciales})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">
+                  {cliente.propietario_iniciales}
+                </span>
+              </div>
+            )}
           </div>
         </CardHeader>
 
