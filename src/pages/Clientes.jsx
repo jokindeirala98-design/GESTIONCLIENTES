@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -104,6 +105,7 @@ export default function Clientes() {
                 <SelectItem value="Facturas presentadas">Facturas presentadas</SelectItem>
                 <SelectItem value="Informe listo">Informe listo</SelectItem>
                 <SelectItem value="Pendiente de firma">Pendiente de firma</SelectItem>
+                <SelectItem value="Pendiente de aprobación">Pendiente de aprobación</SelectItem>
                 <SelectItem value="Firmado con éxito">Firmado con éxito</SelectItem>
                 <SelectItem value="Rechazado">Rechazado</SelectItem>
               </SelectContent>

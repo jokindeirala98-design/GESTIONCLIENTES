@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +19,8 @@ const estadoColors = {
   "Facturas presentadas": "bg-blue-500",
   "Informe listo": "bg-green-500",
   "Pendiente de firma": "bg-purple-500",
-  "Firmado con éxito": "bg-yellow-600",
+  "Pendiente de aprobación": "bg-yellow-600",
+  "Firmado con éxito": "bg-green-700",
   "Rechazado": "bg-red-500",
 };
 
@@ -113,8 +115,8 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
                   {cliente.estado === "Pendiente de firma" && (
                     <>
                       <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Firmado con éxito")}>
-                        <CheckCircle2 className="w-4 h-4 mr-2 text-yellow-600" />
-                        <span className="text-yellow-600">🏆 Firmado con éxito</span>
+                        <CheckCircle2 className="w-4 h-4 mr-2 text-green-700" />
+                        <span className="text-green-700">🏆 Firmado con éxito</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={(e) => handleEstadoChange(e, "Rechazado")}>
                         <X className="w-4 h-4 mr-2 text-red-600" />

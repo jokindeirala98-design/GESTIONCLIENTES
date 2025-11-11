@@ -43,20 +43,21 @@ export default function ReadyToGo() {
     mutationFn: async ({ clienteId, nuevoEstado, cliente }) => {
       const updateData = { estado: nuevoEstado };
       
-      // Si es "Firmado con éxito", añadir fecha y mes de comisión
-      if (nuevoEstado === "Firmado con éxito") {
+      // Si es "Pendiente de aprobación", añadir fecha y mes de comisión
+      if (nuevoEstado === "Pendiente de aprobación") {
         const fechaCierre = new Date().toISOString().split('T')[0];
         const mesComision = fechaCierre.substring(0, 7);
         updateData.fecha_cierre = fechaCierre;
         updateData.mes_comision = mesComision;
+        updateData.aprobado_admin = false;
       }
       
       await base44.entities.Cliente.update(clienteId, updateData);
       
-      // Si es "Firmado con éxito", notificar a admins
-      if (nuevoEstado === "Firmado con éxito") {
+      // Si es "Pendiente de aprobación", notificar a admins
+      if (nuevoEstado === "Pendiente de aprobación") {
         await base44.integrations.Core.SendEmail({
-          to: "admin@voltis.com", // Aquí deberías obtener emails de admins de la BD
+          to: "admin@voltis.com",
           subject: `🎉 Nuevo cierre para verificar: ${cliente.nombre_negocio}`,
           body: `El comercial ${cliente.propietario_iniciales} ha marcado como "Firmado con éxito" al cliente "${cliente.nombre_negocio}".\n\nComisión total: ${cliente.comision}€\n\nPor favor, verifica y aprueba este cierre en: ${window.location.origin}${createPageUrl("CierresVerificados")}`
         });
@@ -71,7 +72,7 @@ export default function ReadyToGo() {
   });
 
   const handleCambiarEstado = (cliente, nuevoEstado) => {
-    if (nuevoEstado === "Firmado con éxito") {
+    if (nuevoEstado === "Pendiente de aprobación") {
       if (!window.confirm(`¿Confirmas que "${cliente.nombre_negocio}" ha firmado con éxito? Esto enviará el cierre a verificación por los administradores.`)) {
         return;
       }
@@ -329,7 +330,7 @@ export default function ReadyToGo() {
                               <SelectContent>
                                 <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
                                 <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
-                                <SelectItem value="Firmado con éxito">🎉 Firmado con éxito</SelectItem>
+                                <SelectItem value="Pendiente de aprobación">🎉 Firmado con éxito</SelectItem>
                                 <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
                               </SelectContent>
                             </Select>

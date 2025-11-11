@@ -34,7 +34,8 @@ const estadoColors = {
   "Facturas presentadas": "bg-blue-500",
   "Informe listo": "bg-green-500",
   "Pendiente de firma": "bg-purple-500",
-  "Firmado con éxito": "bg-yellow-600",
+  "Pendiente de aprobación": "bg-yellow-600",
+  "Firmado con éxito": "bg-green-700",
   "Rechazado": "bg-red-500",
 };
 
@@ -121,9 +122,9 @@ export default function DetalleCliente() {
   useEffect(() => {
     if (!cliente || !cliente.suministros || cliente.suministros.length === 0) return;
     
-    const estadosFinales = ["Informe listo", "Pendiente de firma", "Firmado con éxito", "Rechazado"];
+    const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
     
-    // No tocar clientes en estados finales
+    // No tocar clientes en estados finales (o estados que requieren aprobación)
     if (estadosFinales.includes(cliente.estado)) return;
 
     // Verificar si todos los suministros tienen al menos 1 factura
@@ -160,7 +161,7 @@ export default function DetalleCliente() {
       );
       
       // Cambiar a "Facturas presentadas" si todos tienen facturas y NO está en estado final
-      const estadosFinales = ["Informe listo", "Pendiente de firma", "Firmado con éxito", "Rechazado"];
+      const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
       if (todosConFacturas && !estadosFinales.includes(cliente.estado)) {
         console.log("Cambiando a Facturas presentadas - todos los suministros tienen facturas");
         updateMutation.mutate({
@@ -209,13 +210,37 @@ export default function DetalleCliente() {
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
       
-      updateMutation.mutate({
-        id: clienteId,
-        data: { 
+      let updateData = {};
+
+      if (isAdmin && cliente.estado === "Pendiente de aprobación") {
+        // Admin is approving a client that was previously marked as "Pendiente de aprobación" by an owner.
+        updateData = {
+          estado: "Firmado con éxito",
+          fecha_cierre: cliente.fecha_cierre || fechaCierre, // Keep existing if present
+          mes_comision: cliente.mes_comision || mesComision, // Keep existing if present
+          aprobado_admin: true
+        };
+      } else if (isAdmin && (cliente.estado === "Informe listo" || cliente.estado === "Pendiente de firma")) {
+        // Admin directly marks as Firmado con éxito, bypassing "Pendiente de aprobación"
+        updateData = {
           estado: "Firmado con éxito",
           fecha_cierre: fechaCierre,
-          mes_comision: mesComision
-        }
+          mes_comision: mesComision,
+          aprobado_admin: true
+        };
+      } else {
+        // Owner marks as "Firmado con éxito", sets to "Pendiente de aprobación"
+        updateData = {
+          estado: "Pendiente de aprobación",
+          fecha_cierre: fechaCierre,
+          mes_comision: mesComision,
+          aprobado_admin: false
+        };
+      }
+
+      updateMutation.mutate({
+        id: clienteId,
+        data: updateData
       });
     }
   };
@@ -446,6 +471,14 @@ export default function DetalleCliente() {
                     </Button>
                   </>
                 )}
+                
+                {cliente.estado === "Pendiente de aprobación" && (
+                  <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                    <p className="text-yellow-700 font-semibold text-sm">
+                      ⏳ Pendiente de aprobación por el administrador
+                    </p>
+                  </div>
+                )}
               </>
             )}
 
@@ -459,16 +492,24 @@ export default function DetalleCliente() {
                   <X className="w-4 h-4 mr-2" />
                   Rechazar
                 </Button>
-                {(cliente.estado === "Informe listo" || cliente.estado === "Pendiente de firma") && (
+                {(cliente.estado === "Informe listo" || cliente.estado === "Pendiente de firma" || cliente.estado === "Pendiente de aprobación") && (
                   <Button
                     onClick={handleMarcarFirmado}
                     className="bg-yellow-600 hover:bg-yellow-700"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Firmado con Éxito
+                    {cliente.estado === "Pendiente de aprobación" ? "Aprobar Cierre" : "Firmado con Éxito"}
                   </Button>
                 )}
               </>
+            )}
+            
+            {cliente.estado === "Firmado con éxito" && cliente.aprobado_admin === true && (
+              <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4">
+                <p className="text-green-700 font-semibold text-sm">
+                  ✓ Cierre aprobado - Comisión contabilizada
+                </p>
+              </div>
             )}
           </div>
         </CardContent>

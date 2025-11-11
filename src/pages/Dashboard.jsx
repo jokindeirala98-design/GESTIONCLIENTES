@@ -42,6 +42,7 @@ export default function Dashboard() {
     facturasPresent: misClientes.filter(c => c.estado === "Facturas presentadas").length,
     informeListo: misClientes.filter(c => c.estado === "Informe listo").length,
     pendienteFirma: misClientes.filter(c => c.estado === "Pendiente de firma").length,
+    pendienteAprobacion: misClientes.filter(c => c.estado === "Pendiente de aprobación").length,
     firmados: misClientes.filter(c => c.estado === "Firmado con éxito").length,
     rechazados: misClientes.filter(c => c.estado === "Rechazado").length,
   };
@@ -124,7 +125,8 @@ export default function Dashboard() {
                 { label: "Facturas presentadas", value: clientesPorEstado.facturasPresent, color: "bg-blue-500" },
                 { label: "Informe listo", value: clientesPorEstado.informeListo, color: "bg-green-500" },
                 { label: "Pendiente de firma", value: clientesPorEstado.pendienteFirma, color: "bg-purple-500" },
-                { label: "Firmado con éxito", value: clientesPorEstado.firmados, color: "bg-yellow-600" },
+                { label: "Pendiente de aprobación", value: clientesPorEstado.pendienteAprobacion, color: "bg-yellow-600" },
+                { label: "Firmado con éxito", value: clientesPorEstado.firmados, color: "bg-green-700" },
                 { label: "Rechazado", value: clientesPorEstado.rechazados, color: "bg-red-500" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">

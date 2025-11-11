@@ -48,17 +48,18 @@ export default function CierresVerificados() {
 
   if (!user) return null;
 
-  // Mostrar todos los clientes firmados del mes actual (aprobados y pendientes)
+  // Mostrar clientes en "Pendiente de aprobación" y "Firmado con éxito" del mes actual
   const mesActual = new Date().toISOString().substring(0, 7); // YYYY-MM
-  const clientesFirmados = clientes.filter(c => 
-    c.estado === "Firmado con éxito" && 
+  const clientesCierres = clientes.filter(c => 
+    (c.estado === "Pendiente de aprobación" || 
+     (c.estado === "Firmado con éxito" && c.aprobado_admin === true)) &&
     c.mes_comision === mesActual
   );
 
-  const clientesPendientes = clientesFirmados.filter(c => c.aprobado_admin !== true);
-  const clientesAprobados = clientesFirmados.filter(c => c.aprobado_admin === true);
+  const clientesPendientes = clientesCierres.filter(c => c.estado === "Pendiente de aprobación");
+  const clientesAprobados = clientesCierres.filter(c => c.estado === "Firmado con éxito" && c.aprobado_admin === true);
 
-  const clientesFiltrados = clientesFirmados.filter(cliente =>
+  const clientesFiltrados = clientesCierres.filter(cliente =>
     cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cliente.propietario_iniciales?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -137,8 +138,8 @@ export default function CierresVerificados() {
     clientes: clientesFiltrados.filter(c => c.zona_id === zona.id)
       .sort((a, b) => {
         // Primero los pendientes, luego los aprobados
-        if (a.aprobado_admin === true && b.aprobado_admin !== true) return 1;
-        if (a.aprobado_admin !== true && b.aprobado_admin === true) return -1;
+        if (a.estado === "Pendiente de aprobación" && b.estado !== "Pendiente de aprobación") return -1;
+        if (a.estado !== "Pendiente de aprobación" && b.estado === "Pendiente de aprobación") return 1;
         return 0;
       })
   })).filter(grupo => grupo.clientes.length > 0)
@@ -209,7 +210,7 @@ export default function CierresVerificados() {
         </Card>
       </div>
 
-      {clientesFirmados.length > 0 && (
+      {clientesCierres.length > 0 && (
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -223,7 +224,7 @@ export default function CierresVerificados() {
         </div>
       )}
 
-      {clientesFirmados.length === 0 ? (
+      {clientesCierres.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
             <CheckCircle2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -265,13 +266,15 @@ export default function CierresVerificados() {
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {clientesZona.map(cliente => {
-                  const isAprobado = cliente.aprobado_admin === true;
+                  const isPendiente = cliente.estado === "Pendiente de aprobación";
+                  const isAprobado = cliente.estado === "Firmado con éxito" && cliente.aprobado_admin === true;
                   
                   return (
                     <Card 
                       key={cliente.id}
                       className={`hover:shadow-lg transition-all duration-300 border-l-4 ${
-                        isAprobado ? 'border-green-500 bg-green-50/30' : 'border-yellow-500'
+                        isAprobado ? 'border-green-500 bg-green-50/30' : 
+                        isPendiente ? 'border-yellow-500' : 'border-gray-300'
                       }`}
                     >
                       <CardContent className="p-5">
@@ -284,13 +287,13 @@ export default function CierresVerificados() {
                             
                             {isAprobado ? (
                               <Badge className="bg-green-600 text-white text-xs mb-2">
-                                ✓ Aprobado
+                                ✓ Firma aprobada
                               </Badge>
-                            ) : (
+                            ) : isPendiente ? (
                               <Badge className="bg-yellow-600 text-white text-xs mb-2">
-                                ⏳ Pendiente
+                                ⏳ Pendiente de aprobación
                               </Badge>
-                            )}
+                            ) : null}
                           </div>
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
                             <span className="text-white font-bold text-sm">
@@ -325,7 +328,7 @@ export default function CierresVerificados() {
                           )}
                         </div>
 
-                        {!isAprobado && (
+                        {isPendiente && (
                           <div className="flex gap-2">
                             <Button
                               onClick={() => handleRechazar(cliente)}
