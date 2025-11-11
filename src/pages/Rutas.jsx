@@ -173,6 +173,13 @@ export default function Rutas() {
     updateFeedbackMutation.mutate({ id: feedbackRuta.id, feedback: feedbackText });
   };
 
+  const handleEliminarRuta = (ruta, e) => {
+    e.stopPropagation();
+    if (window.confirm(`¿Estás seguro de que quieres eliminar la ruta "${ruta.titulo || 'Sin título'}"?`)) {
+      deleteRutaMutation.mutate(ruta.id);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -183,6 +190,8 @@ export default function Rutas() {
       </div>
     );
   }
+
+  const isAdmin = user.role === "admin";
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -212,6 +221,8 @@ export default function Rutas() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {rutasGuardadas.map((ruta) => {
             const esMiRuta = ruta.comercial_email === user?.email;
+            const puedoEliminar = esMiRuta || isAdmin;
+            
             return (
               <Card 
                 key={ruta.id} 
@@ -232,16 +243,11 @@ export default function Rutas() {
                         {ruta.pueblos?.length > 3 && ` +${ruta.pueblos.length - 3} más`}
                       </p>
                     </div>
-                    {esMiRuta && (
+                    {puedoEliminar && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm('¿Estás seguro de que quieres eliminar esta ruta?')) {
-                            deleteRutaMutation.mutate(ruta.id);
-                          }
-                        }}
+                        onClick={(e) => handleEliminarRuta(ruta, e)}
                         className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
