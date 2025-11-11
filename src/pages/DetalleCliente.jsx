@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -102,8 +103,10 @@ export default function DetalleCliente() {
         s.facturas && s.facturas.length > 0
       );
       
-      // Solo cambiar a "Facturas presentadas" si está en "Esperando facturas"
-      if (todosConFacturas && cliente.estado === "Esperando facturas") {
+      // Cambiar a "Facturas presentadas" si todos tienen facturas y NO está en estado final
+      const estadosFinales = ["Informe listo", "Pendiente de firma", "Firmado con éxito", "Rechazado"];
+      if (todosConFacturas && !estadosFinales.includes(cliente.estado)) {
+        console.log("Cambiando a Facturas presentadas - todos los suministros tienen facturas");
         updateMutation.mutate({
           id: clienteId,
           data: { ...data, estado: "Facturas presentadas" }
@@ -118,6 +121,7 @@ export default function DetalleCliente() {
 
       // Cambiar a "Informe listo" si todos tienen informe y está en "Facturas presentadas"
       if (todosConInforme && cliente.estado === "Facturas presentadas") {
+        console.log("Cambiando a Informe listo - todos los suministros tienen informe");
         updateMutation.mutate({
           id: clienteId,
           data: { ...data, estado: "Informe listo" }

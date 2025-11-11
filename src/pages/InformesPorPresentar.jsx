@@ -3,11 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Building2, User, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Building2, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   Collapsible,
@@ -20,7 +21,7 @@ export default function InformesPorPresentar() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [clienteExpandido, setClienteExpandido] = useState(null);
-  const [suministrosConInforme, setSuministrosConInforme] = useState({});
+  const [comisionesPorSuministro, setComisionesPorSuministro] = useState({});
 
   useEffect(() => {
     const loadUser = async () => {
@@ -48,12 +49,19 @@ export default function InformesPorPresentar() {
     mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
-      toast.success("Informe subido correctamente");
     },
   });
 
   const handleSubirInforme = async (cliente, suministroId, file) => {
     try {
+      // Obtener comisión del estado local
+      const comision = comisionesPorSuministro[suministroId];
+      
+      if (!comision || isNaN(parseFloat(comision))) {
+        toast.error("Introduce una comisión válida para este suministro");
+        return;
+      }
+
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
       const nuevosSuministros = cliente.suministros.map(s => {
@@ -65,7 +73,8 @@ export default function InformesPorPresentar() {
               url: file_url,
               fecha_subida: new Date().toISOString(),
               subido_por_email: user.email
-            }
+            },
+            comision: parseFloat(comision)
           };
         }
         return s;
@@ -73,22 +82,36 @@ export default function InformesPorPresentar() {
 
       // Verificar si todos los suministros tienen informe
       const todosConInforme = nuevosSuministros.every(s => s.informe_final && s.informe_final.url);
+      
+      // Calcular comisión total del cliente
+      const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
+      
       const nuevoEstado = todosConInforme ? "Informe listo" : "Facturas presentadas";
 
       await updateClienteMutation.mutateAsync({
         id: cliente.id,
         data: {
           suministros: nuevosSuministros,
-          estado: nuevoEstado
+          estado: nuevoEstado,
+          comision: comisionTotal
         }
       });
 
-      // Enviar email al comercial
+      toast.success("Informe subido correctamente");
+
+      // Limpiar comisión del estado local
+      setComisionesPorSuministro(prev => {
+        const newState = { ...prev };
+        delete newState[suministroId];
+        return newState;
+      });
+
+      // Enviar email al comercial si todos tienen informe
       if (todosConInforme) {
         await base44.integrations.Core.SendEmail({
           to: cliente.propietario_email,
-          subject: `✅ Informe listo para ${cliente.nombre_negocio}`,
-          body: `Hola,\n\nTodos los informes finales de "${cliente.nombre_negocio}" ya están listos y disponibles en la plataforma.\n\nPuedes verlos en: ${window.location.origin}${createPageUrl(`DetalleCliente?id=${cliente.id}`)}\n\nSaludos,\nVoltis Energía`
+          subject: `✅ Todos los informes listos para ${cliente.nombre_negocio}`,
+          body: `Hola,\n\nTodos los informes finales de "${cliente.nombre_negocio}" ya están listos y disponibles en la plataforma.\n\nComisión total: ${comisionTotal}€\n\nPuedes verlos en: ${window.location.origin}${createPageUrl(`DetalleCliente?id=${cliente.id}`)}\n\nSaludos,\nVoltis Energía`
         });
       }
     } catch (error) {
@@ -97,11 +120,20 @@ export default function InformesPorPresentar() {
     }
   };
 
+  const handleComisionChange = (suministroId, value) => {
+    setComisionesPorSuministro(prev => ({
+      ...prev,
+      [suministroId]: value
+    }));
+  };
+
   if (!user) return null;
 
   const clientesFacturasPresent = clientes.filter(
     c => c.estado === "Facturas presentadas" && c.suministros && c.suministros.length > 0
   );
+
+  console.log("Clientes con Facturas presentadas:", clientesFacturasPresent.length, clientesFacturasPresent);
 
   // Calcular conteos por tipo de factura (máximo)
   const getTipoMaximo = (cliente) => {
@@ -197,7 +229,7 @@ export default function InformesPorPresentar() {
               No hay informes pendientes
             </p>
             <p className="text-gray-400 text-sm mt-2">
-              Los clientes aparecerán aquí cuando suban facturas
+              Los clientes aparecerán aquí cuando tengan estado "Facturas presentadas"
             </p>
           </CardContent>
         </Card>
@@ -247,73 +279,101 @@ export default function InformesPorPresentar() {
                         {cliente.suministros?.map((suministro) => (
                           <Card key={suministro.id} className="bg-gray-50">
                             <CardContent className="p-4">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <h4 className="font-semibold text-[#004D9D]">{suministro.nombre}</h4>
-                                    <Badge className={tipoFacturaColors[suministro.tipo_factura]}>
-                                      {suministro.tipo_factura}
-                                    </Badge>
-                                  </div>
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <h4 className="font-semibold text-[#004D9D]">{suministro.nombre}</h4>
+                                      <Badge className={tipoFacturaColors[suministro.tipo_factura]}>
+                                        {suministro.tipo_factura}
+                                      </Badge>
+                                    </div>
 
-                                  <div className="space-y-2">
-                                    <p className="text-sm text-gray-600 font-medium">Facturas:</p>
-                                    {suministro.facturas?.map((factura, idx) => (
-                                      <div key={idx} className="flex items-center gap-2 text-sm">
-                                        <FileText className="w-4 h-4 text-blue-600" />
-                                        <a
-                                          href={factura.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 hover:underline flex items-center gap-1"
-                                        >
-                                          {factura.nombre}
-                                          <Download className="w-3 h-3" />
-                                        </a>
-                                      </div>
-                                    ))}
+                                    <div className="space-y-2">
+                                      <p className="text-sm text-gray-600 font-medium">📄 Facturas:</p>
+                                      {suministro.facturas?.map((factura, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded border">
+                                          <FileText className="w-4 h-4 text-blue-600" />
+                                          <span className="flex-1 truncate">{factura.nombre}</span>
+                                          <a
+                                            href={factura.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline flex items-center gap-1"
+                                          >
+                                            <Download className="w-4 h-4" />
+                                            Descargar
+                                          </a>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 </div>
 
-                                <div>
-                                  {suministro.informe_final ? (
-                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                      <p className="text-xs text-green-700 font-semibold mb-2">✓ Informe subido</p>
+                                {suministro.informe_final ? (
+                                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <p className="text-sm text-green-700 font-semibold mb-2">✓ Informe subido</p>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-green-600">{suministro.informe_final.nombre}</span>
                                       <a
                                         href={suministro.informe_final.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-green-600 hover:underline"
+                                        className="text-sm text-green-600 hover:underline flex items-center gap-1"
                                       >
-                                        Ver informe
+                                        <Download className="w-4 h-4" />
+                                        Descargar
                                       </a>
                                     </div>
-                                  ) : (
-                                    <div>
-                                      <input
-                                        type="file"
-                                        id={`upload-${suministro.id}`}
-                                        className="hidden"
-                                        accept=".pdf"
-                                        onChange={(e) => {
-                                          const file = e.target.files[0];
-                                          if (file) {
-                                            handleSubirInforme(cliente, suministro.id, file);
-                                          }
-                                          e.target.value = "";
-                                        }}
+                                    {suministro.comision && (
+                                      <p className="text-sm text-green-700 mt-2">
+                                        💰 Comisión: <strong>{suministro.comision}€</strong>
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe para este suministro</p>
+                                    
+                                    <div className="mb-3">
+                                      <Label htmlFor={`comision-${suministro.id}`} className="text-sm font-medium text-gray-700">
+                                        Comisión (€) *
+                                      </Label>
+                                      <Input
+                                        id={`comision-${suministro.id}`}
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Ej: 150.00"
+                                        value={comisionesPorSuministro[suministro.id] || ""}
+                                        onChange={(e) => handleComisionChange(suministro.id, e.target.value)}
+                                        className="mt-1"
                                       />
-                                      <Button
-                                        size="sm"
-                                        onClick={() => document.getElementById(`upload-${suministro.id}`).click()}
-                                        className="bg-purple-600 hover:bg-purple-700"
-                                      >
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        Subir Informe
-                                      </Button>
                                     </div>
-                                  )}
-                                </div>
+
+                                    <input
+                                      type="file"
+                                      id={`upload-${suministro.id}`}
+                                      className="hidden"
+                                      accept=".pdf"
+                                      onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                          handleSubirInforme(cliente, suministro.id, file);
+                                        }
+                                        e.target.value = "";
+                                      }}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => document.getElementById(`upload-${suministro.id}`).click()}
+                                      className="w-full bg-purple-600 hover:bg-purple-700"
+                                    >
+                                      <FileText className="w-4 h-4 mr-2" />
+                                      Seleccionar PDF del Informe
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </CardContent>
                           </Card>
