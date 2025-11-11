@@ -11,6 +11,7 @@ import DetalleZona from './pages/DetalleZona';
 import CierresVerificados from './pages/CierresVerificados';
 import Rutas from './pages/Rutas';
 import PlanificadorRutas from './pages/PlanificadorRutas';
+import Calendario from './pages/Calendario';
 import Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "CierresVerificados": CierresVerificados,
     "Rutas": Rutas,
     "PlanificadorRutas": PlanificadorRutas,
+    "Calendario": Calendario,
 }
 
 export const pagesConfig = {
