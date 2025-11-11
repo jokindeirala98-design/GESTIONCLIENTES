@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -109,14 +110,9 @@ export default function PlanificadorRutas() {
       });
       setConversationId(conversation.id);
       
-      const horaActual = new Date().getHours();
-      const minutoActual = new Date().getMinutes();
-      const horaFormateada = `${horaActual}:${minutoActual.toString().padStart(2, '0')}`;
-      const tiempoDisponible = (14 - horaActual - (minutoActual > 0 ? 1 : 0));
-      
       setMessages([{
         role: "assistant",
-        content: `¡Hola! 👋 Soy tu asistente de rutas.\n\n⏰ ${horaFormateada} | ⌛ ${tiempoDisponible}h disponibles\n\n🔥 Prioridades: 6.1 > 3.0 > 2.0\n🆕 Sugiero pueblos nuevos si hay tiempo\n\n¿Qué ruta necesitas?`
+        content: `¡Hola! 👋 Soy tu asistente de rutas.\n\n🔥 Prioridades: 6.1 > 3.0 > 2.0\n🆕 Sugiero pueblos nuevos si hay tiempo\n\n¿Qué ruta necesitas?`
       }]);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -278,9 +274,18 @@ export default function PlanificadorRutas() {
     : clientes.filter(c => c.propietario_email === user?.email);
 
   const clientesReadyToGo = misClientes.filter(c => c.estado === "Informe listo");
-  const clientes61Ready = clientesReadyToGo.filter(c => c.tipo_factura === "6.1").length;
-  const clientes30Ready = clientesReadyToGo.filter(c => c.tipo_factura === "3.0").length;
-  const clientes20Ready = clientesReadyToGo.filter(c => c.tipo_factura === "2.0").length;
+  const clientes61Ready = clientesReadyToGo.filter(c => {
+    if (!c.suministros || c.suministros.length === 0) return false;
+    return c.suministros.some(s => s.tipo_factura === "6.1");
+  }).length;
+  const clientes30Ready = clientesReadyToGo.filter(c => {
+    if (!c.suministros || c.suministros.length === 0) return false;
+    return c.suministros.some(s => s.tipo_factura === "3.0");
+  }).length;
+  const clientes20Ready = clientesReadyToGo.filter(c => {
+    if (!c.suministros || c.suministros.length === 0) return false;
+    return c.suministros.some(s => s.tipo_factura === "2.0");
+  }).length;
   
   const zonasExistentes = zonas.map(z => z.nombre.toLowerCase());
   const MUNICIPIOS_GRANDES = [
@@ -392,26 +397,26 @@ export default function PlanificadorRutas() {
             </Button>
 
             <Button
-              onClick={() => handleQuickAction(`Son las ${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2, '0')}. Dame la ruta óptima para HOY hasta las 14:00. Incluye clientes prioritarios y si hay tiempo, sugiere pueblos para prospectar.`)}
+              onClick={() => handleQuickAction("Dame la ruta óptima para HOY desde las 8:00 hasta las 14:00 (6 horas). Incluye clientes prioritarios y si hay tiempo, sugiere pueblos para prospectar.")}
               className="w-full bg-green-600 hover:bg-green-700 text-white justify-start h-auto py-3"
               disabled={isLoading}
             >
               <Route className="w-5 h-5 mr-2 flex-shrink-0" />
               <div className="text-left">
                 <div className="font-bold">Ruta para Hoy</div>
-                <div className="text-xs opacity-90">Plan completo + tiempo real</div>
+                <div className="text-xs opacity-90">8:00-14:00 automático</div>
               </div>
             </Button>
 
             <Button
-              onClick={() => handleQuickAction("Necesito una ruta express. ¿Cuánto tiempo tengo disponible?")}
+              onClick={() => handleQuickAction("Necesito una ruta express desde ahora mismo hasta las 14:00. ¿Cuánto tiempo tengo disponible y qué ruta me recomiendas?")}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white justify-start h-auto py-3"
               disabled={isLoading}
             >
               <Clock className="w-5 h-5 mr-2 flex-shrink-0" />
               <div className="text-left">
                 <div className="font-bold">Ruta Express</div>
-                <div className="text-xs opacity-90">Tiempo limitado</div>
+                <div className="text-xs opacity-90">Desde ahora hasta 14:00</div>
               </div>
             </Button>
 
