@@ -12,6 +12,7 @@ import CierresVerificados from './pages/CierresVerificados';
 import Rutas from './pages/Rutas';
 import PlanificadorRutas from './pages/PlanificadorRutas';
 import Calendario from './pages/Calendario';
+import CorregirIniciales from './pages/CorregirIniciales';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "Rutas": Rutas,
     "PlanificadorRutas": PlanificadorRutas,
     "Calendario": Calendario,
+    "CorregirIniciales": CorregirIniciales,
 }
 
 export const pagesConfig = {
