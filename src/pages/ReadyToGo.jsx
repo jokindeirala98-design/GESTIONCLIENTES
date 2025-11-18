@@ -6,8 +6,10 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock } from "lucide-react";
+import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,6 +22,7 @@ export default function ReadyToGo() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [soloMisClientes, setSoloMisClientes] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -98,10 +101,10 @@ export default function ReadyToGo() {
     c.estado === "Pendiente de aprobación"
   );
 
-  // Filtrar por propietario si no es admin
-  const misClientesReady = isAdmin 
-    ? clientesReady 
-    : clientesReady.filter(c => c.propietario_email === user.email);
+  // Filtrar por propietario solo si el toggle está activado
+  const misClientesReady = soloMisClientes 
+    ? clientesReady.filter(c => c.propietario_email === user.email)
+    : clientesReady;
 
   // Función para obtener el tipo máximo de factura
   const getTipoMaximo = (cliente) => {
@@ -162,13 +165,33 @@ export default function ReadyToGo() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-          <CheckCircle className="w-8 h-8" />
-          Ready to Go
-        </h1>
-        <p className="text-[#666666]">
-          {isAdmin ? "Todos los clientes" : "Tus clientes"} listos para presentar y cerrar
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
+              <CheckCircle className="w-8 h-8" />
+              Ready to Go
+            </h1>
+            <p className="text-[#666666]">
+              Clientes listos para presentar y cerrar - visión completa para planificar rutas
+            </p>
+          </div>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <Filter className="w-5 h-5 text-[#004D9D]" />
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="solo-mis-clientes"
+                  checked={soloMisClientes}
+                  onCheckedChange={setSoloMisClientes}
+                />
+                <Label htmlFor="solo-mis-clientes" className="text-sm font-medium cursor-pointer">
+                  Solo mis clientes
+                </Label>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* Resumen con tres cards */}
