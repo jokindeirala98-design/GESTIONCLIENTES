@@ -225,9 +225,9 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                     <div className="flex items-center gap-2">
                       <a
                         href={factura.url}
-                        download
                         target="_blank"
                         rel="noopener noreferrer"
+                        download
                         className="text-xs text-blue-600 hover:underline"
                       >
                         Ver
@@ -254,19 +254,12 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       className="hidden"
                       accept=".pdf,.jpg,.jpeg,.png"
                       multiple
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const files = Array.from(e.target.files);
-                        const espacioDisponible = 3 - (suministro.facturas || []).length;
+                        const remaining = 3 - (suministro.facturas || []).length;
+                        const filesToUpload = files.slice(0, remaining);
                         
-                        if (files.length > espacioDisponible) {
-                          toast.error(`Solo puedes añadir ${espacioDisponible} factura(s) más`);
-                          e.target.value = "";
-                          return;
-                        }
-                        
-                        for (const file of files) {
-                          await handleUploadFactura(suministro.id, file);
-                        }
+                        filesToUpload.forEach(file => handleUploadFactura(suministro.id, file));
                         e.target.value = "";
                       }}
                     />
@@ -289,9 +282,9 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       <span className="text-sm text-green-700">{suministro.informe_final.nombre}</span>
                       <a
                         href={suministro.informe_final.url}
-                        download
                         target="_blank"
                         rel="noopener noreferrer"
+                        download
                         className="text-xs text-green-600 hover:underline"
                       >
                         Descargar

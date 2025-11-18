@@ -26,7 +26,7 @@ export default function InformesPorPresentar() {
   const [informesSubidos, setInformesSubidos] = useState({}); // {suministroId: {file, fileUrl, fileName}}
   const [sincronizando, setSincronizando] = useState(false);
   const [guardando, setGuardando] = useState({});
-  const [clientesOrden, setClientesOrden] = useState([]);
+  const [ordenManual, setOrdenManual] = useState([]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -261,31 +261,36 @@ export default function InformesPorPresentar() {
   };
 
   const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
+  
+  // Orden automático por prioridad
   const clientesOrdenadosAuto = [...clientesFacturasPresent].sort((a, b) => {
     const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
     const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
     return orderA - orderB;
   });
 
-  // Inicializar orden si cambió la lista
+  // Inicializar orden manual si está vacío
   useEffect(() => {
-    if (clientesOrdenadosAuto.length > 0 && clientesOrden.length === 0) {
-      setClientesOrden(clientesOrdenadosAuto);
-    } else if (clientesOrdenadosAuto.length !== clientesOrden.length) {
-      setClientesOrden(clientesOrdenadosAuto);
+    if (ordenManual.length === 0 && clientesOrdenadosAuto.length > 0) {
+      setOrdenManual(clientesOrdenadosAuto.map(c => c.id));
     }
   }, [clientesOrdenadosAuto.length]);
 
-  const clientesOrdenados = clientesOrden.length > 0 ? clientesOrden : clientesOrdenadosAuto;
+  // Aplicar orden manual
+  const clientesOrdenados = ordenManual.length > 0
+    ? ordenManual
+        .map(id => clientesOrdenadosAuto.find(c => c.id === id))
+        .filter(c => c !== undefined)
+    : clientesOrdenadosAuto;
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     
-    const items = Array.from(clientesOrdenados);
+    const items = Array.from(ordenManual);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
     
-    setClientesOrden(items);
+    setOrdenManual(items);
   };
 
   const tipoFacturaColors = {
@@ -387,9 +392,9 @@ export default function InformesPorPresentar() {
           <Droppable droppableId="clientes-list">
             {(provided) => (
               <div 
-                {...provided.droppableProps} 
-                ref={provided.innerRef}
                 className="space-y-4"
+                {...provided.droppableProps}
+                ref={provided.innerRef}
               >
                 {clientesOrdenados.map((cliente, index) => {
             const zona = zonas.find(z => z.id === cliente.zona_id);
@@ -402,7 +407,9 @@ export default function InformesPorPresentar() {
                   <Card 
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    className={`border-l-4 border-[#004D9D] ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
+                    className={`border-l-4 border-[#004D9D] ${
+                      snapshot.isDragging ? 'shadow-2xl' : ''
+                    }`}
                   >
                     <Collapsible
                       open={isExpanded}
@@ -463,14 +470,14 @@ export default function InformesPorPresentar() {
                                             <span className="flex-1 truncate">{factura.nombre}</span>
                                             <a
                                               href={factura.url}
-                                                  download
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="text-blue-600 hover:underline flex items-center gap-1"
-                                                >
-                                                  <Download className="w-4 h-4" />
-                                                  Descargar
-                                                </a>
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              download
+                                              className="text-blue-600 hover:underline flex items-center gap-1"
+                                            >
+                                              <Download className="w-4 h-4" />
+                                              Descargar
+                                            </a>
                                           </div>
                                         ))}
                                       </div>
@@ -484,14 +491,14 @@ export default function InformesPorPresentar() {
                                         <span className="text-sm text-green-600">{suministro.informe_final.nombre}</span>
                                         <a
                                           href={suministro.informe_final.url}
-                                          download
                                           target="_blank"
                                           rel="noopener noreferrer"
+                                          download
                                           className="text-sm text-green-600 hover:underline flex items-center gap-1"
-                                          >
+                                        >
                                           <Download className="w-4 h-4" />
                                           Descargar
-                                          </a>
+                                        </a>
                                       </div>
                                       {suministro.comision && (
                                         <p className="text-sm text-green-700 mt-2">
@@ -502,103 +509,114 @@ export default function InformesPorPresentar() {
                                   ) : (
                                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                       <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe para este suministro</p>
-
+                                      
                                       {informeSubido ? (
-                                       <div className="space-y-3">
-                                         {/* Archivo subido */}
-                                         <div className="bg-white border border-green-300 rounded-lg p-3">
-                                           <div className="flex items-center justify-between mb-2">
-                                             <div className="flex items-center gap-2">
-                                               <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                               <span className="text-sm font-semibold text-green-700">Archivo subido</span>
-                                             </div>
-                                             <Button
-                                               size="sm"
-                                               variant="ghost"
-                                               onClick={() => handleCancelarInforme(suministro.id)}
-                                               className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                                             >
-                                               <X className="w-4 h-4" />
-                                             </Button>
-                                           </div>
-                                           <p className="text-sm text-gray-600 truncate">{informeSubido.fileName}</p>
-                                         </div>
+                                        <div className="space-y-3">
+                                          {/* Archivo subido */}
+                                          <div className="bg-white border border-green-300 rounded-lg p-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="flex items-center gap-2">
+                                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                                <span className="text-sm font-semibold text-green-700">Archivo subido</span>
+                                              </div>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleCancelarInforme(suministro.id)}
+                                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                              >
+                                                <X className="w-4 h-4" />
+                                              </Button>
+                                            </div>
+                                            <p className="text-sm text-gray-600 truncate">{informeSubido.fileName}</p>
+                                          </div>
 
-                                         {/* Input comisión */}
-                                         <div>
-                                           <Label htmlFor={`comision-${suministro.id}`} className="text-sm font-medium text-gray-700">
-                                             Comisión (€) *
-                                           </Label>
-                                           <Input
-                                             id={`comision-${suministro.id}`}
-                                             type="number"
-                                             step="0.01"
-                                             min="0"
-                                             placeholder="Ej: 150.00"
-                                             value={comisionesPorSuministro[suministro.id] || ""}
-                                             onChange={(e) => handleComisionChange(suministro.id, e.target.value)}
-                                             className="mt-1"
-                                           />
-                                         </div>
+                                          {/* Input comisión */}
+                                          <div>
+                                            <Label htmlFor={`comision-${suministro.id}`} className="text-sm font-medium text-gray-700">
+                                              Comisión (€) *
+                                            </Label>
+                                            <Input
+                                              id={`comision-${suministro.id}`}
+                                              type="number"
+                                              step="0.01"
+                                              min="0"
+                                              placeholder="Ej: 150.00"
+                                              value={comisionesPorSuministro[suministro.id] || ""}
+                                              onChange={(e) => handleComisionChange(suministro.id, e.target.value)}
+                                              className="mt-1"
+                                            />
+                                          </div>
 
-                                         {/* Botón guardar */}
-                                         <Button
-                                           size="sm"
-                                           onClick={() => handleGuardarCambios(cliente, suministro.id)}
-                                           disabled={estaGuardando}
-                                           className="w-full bg-green-600 hover:bg-green-700"
-                                         >
-                                           {estaGuardando ? (
-                                             <>
-                                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                               Guardando...
-                                             </>
-                                           ) : (
-                                             <>
-                                               <Save className="w-4 h-4 mr-2" />
-                                               Guardar Cambios
-                                             </>
-                                           )}
-                                         </Button>
-                                       </div>
+                                          {/* Botón guardar */}
+                                          <Button
+                                            size="sm"
+                                            onClick={() => handleGuardarCambios(cliente, suministro.id)}
+                                            disabled={estaGuardando}
+                                            className="w-full bg-green-600 hover:bg-green-700"
+                                          >
+                                            {estaGuardando ? (
+                                              <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                                Guardando...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Save className="w-4 h-4 mr-2" />
+                                                Guardar Cambios
+                                              </>
+                                            )}
+                                          </Button>
+                                        </div>
                                       ) : (
-                                       <div
-                                         onDrop={(e) => {
-                                           e.preventDefault();
-                                           const file = e.dataTransfer.files[0];
-                                           if (file && file.type === 'application/pdf') {
-                                             handleSeleccionarInforme(suministro.id, file);
-                                           } else {
-                                             toast.error("Solo se aceptan archivos PDF");
-                                           }
-                                         }}
-                                         onDragOver={(e) => e.preventDefault()}
-                                         className="border-2 border-dashed border-purple-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
-                                       >
-                                         <input
-                                           type="file"
-                                           id={`upload-${suministro.id}`}
-                                           className="hidden"
-                                           accept=".pdf"
-                                           onChange={(e) => {
-                                             const file = e.target.files[0];
-                                             if (file) {
-                                               handleSeleccionarInforme(suministro.id, file);
-                                             }
-                                             e.target.value = "";
-                                           }}
-                                         />
-                                         <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                                         <p className="text-sm text-gray-600 mb-1">Arrastra el PDF aquí o</p>
-                                         <Button
-                                           size="sm"
-                                           type="button"
-                                           onClick={() => document.getElementById(`upload-${suministro.id}`).click()}
-                                           className="bg-purple-600 hover:bg-purple-700"
-                                         >
-                                           Seleccionar archivo
-                                         </Button>
-                                       </div>
+                                        <>
+                                          <div
+                                            onDragOver={(e) => {
+                                              e.preventDefault();
+                                              e.currentTarget.classList.add('border-purple-500', 'bg-purple-100');
+                                            }}
+                                            onDragLeave={(e) => {
+                                              e.currentTarget.classList.remove('border-purple-500', 'bg-purple-100');
+                                            }}
+                                            onDrop={(e) => {
+                                              e.preventDefault();
+                                              e.currentTarget.classList.remove('border-purple-500', 'bg-purple-100');
+                                              const file = e.dataTransfer.files[0];
+                                              if (file && file.type === 'application/pdf') {
+                                                handleSeleccionarInforme(suministro.id, file);
+                                              } else {
+                                                toast.error("Solo se permiten archivos PDF");
+                                              }
+                                            }}
+                                            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center transition-colors"
+                                          >
+                                            <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600 mb-2">
+                                              Arrastra el PDF aquí o haz clic para seleccionar
+                                            </p>
+                                            <input
+                                              type="file"
+                                              id={`upload-${suministro.id}`}
+                                              className="hidden"
+                                              accept=".pdf"
+                                              onChange={(e) => {
+                                                const file = e.target.files[0];
+                                                if (file) {
+                                                  handleSeleccionarInforme(suministro.id, file);
+                                                }
+                                                e.target.value = "";
+                                              }}
+                                            />
+                                            <Button
+                                              size="sm"
+                                              onClick={() => document.getElementById(`upload-${suministro.id}`).click()}
+                                              className="bg-purple-600 hover:bg-purple-700"
+                                            >
+                                              <Upload className="w-4 h-4 mr-2" />
+                                              Seleccionar PDF
+                                            </Button>
+                                          </div>
+                                        </>
                                       )}
                                     </div>
                                   )}
@@ -609,19 +627,19 @@ export default function InformesPorPresentar() {
                         })}
                       </div>
                     </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            )}
-          </Draggable>
-        );
-      })}
-      {provided.placeholder}
-    </div>
-  )}
-</Droppable>
-</DragDropContext>
-)}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                )}
+              </Draggable>
+            );
+          })}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
+  </DragDropContext>
+      )}
     </div>
   );
 }
