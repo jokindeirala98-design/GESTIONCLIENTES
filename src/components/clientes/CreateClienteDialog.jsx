@@ -118,7 +118,18 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       return;
     }
 
-    const propietario = comerciales.find(u => u.email === formData.propietario_email);
+    const propietario = isAdmin 
+      ? comerciales.find(u => u.email === formData.propietario_email)
+      : user;
+    
+    let iniciales = 'n/s';
+    if (propietario) {
+      if (propietario.iniciales) {
+        iniciales = propietario.iniciales;
+      } else if (propietario.full_name) {
+        iniciales = propietario.full_name.substring(0, 3).toUpperCase();
+      }
+    }
     
     const dataToSave = {
       nombre_negocio: formData.nombre_negocio,
@@ -128,7 +139,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       zona_id: zonaId,
       anotaciones: formData.anotaciones,
       propietario_email: formData.propietario_email,
-      propietario_iniciales: propietario?.iniciales || propietario?.full_name?.substring(0, 3).toUpperCase(),
+      propietario_iniciales: iniciales,
       estado: "Primer contacto",
       facturas: [],
     };
