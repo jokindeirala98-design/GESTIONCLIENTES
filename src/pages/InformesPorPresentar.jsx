@@ -26,7 +26,10 @@ export default function InformesPorPresentar() {
   const [informesSubidos, setInformesSubidos] = useState({}); // {suministroId: {file, fileUrl, fileName}}
   const [sincronizando, setSincronizando] = useState(false);
   const [guardando, setGuardando] = useState({});
-  const [ordenManual, setOrdenManual] = useState([]);
+  const [ordenManual, setOrdenManual] = useState(() => {
+    const saved = localStorage.getItem('informes-orden-manual');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -300,6 +303,7 @@ export default function InformesPorPresentar() {
     items.splice(result.destination.index, 0, reorderedItem);
     
     setOrdenManual(items);
+    localStorage.setItem('informes-orden-manual', JSON.stringify(items));
   };
 
   const tipoFacturaColors = {
