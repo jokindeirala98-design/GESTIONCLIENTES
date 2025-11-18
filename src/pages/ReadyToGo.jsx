@@ -268,7 +268,7 @@ export default function ReadyToGo() {
                                 {cliente.nombre_negocio}
                               </h3>
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm text-gray-600">{cliente.propietario_iniciales}</span>
+                                <span className="text-sm text-gray-600">{cliente.propietario_iniciales || 'n/s'}</span>
                                 
                                 {/* Badge de estado */}
                                 {isPendienteAprobacion ? (

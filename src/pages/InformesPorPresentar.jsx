@@ -440,7 +440,7 @@ export default function InformesPorPresentar() {
                             <CardTitle className="text-[#004D9D]">{cliente.nombre_negocio}</CardTitle>
                             <div className="flex items-center gap-3 mt-2">
                               {zona && <span className="text-sm text-gray-600">{zona.nombre}</span>}
-                              <span className="text-sm text-gray-600">• {cliente.propietario_iniciales}</span>
+                              <span className="text-sm text-gray-600">• {cliente.propietario_iniciales || 'n/s'}</span>
                               <Badge className={tipoFacturaColors[tipoMax]}>
                                 Max: {tipoMax}
                               </Badge>

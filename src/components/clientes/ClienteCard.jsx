@@ -30,6 +30,7 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
   const isOwner = cliente.propietario_email === user.email;
   const isAdmin = user.role === "admin";
   const canViewFull = isOwner || isAdmin;
+  const canViewBasic = true; // Todos pueden ver info básica
 
   const zona = zonas.find(z => z.id === cliente.zona_id);
 
@@ -87,7 +88,7 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
           <div className="flex-1">
             <h3 className="font-bold text-[#004D9D] text-lg mb-2 flex items-center gap-2">
               <Building2 className="w-5 h-5" />
-              {canViewFull ? cliente.nombre_negocio : '*****'}
+              {cliente.nombre_negocio}
             </h3>
             
             {canChangeState ? (
@@ -147,7 +148,7 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
           </div>
         )}
 
-        {canViewFull ? (
+        {canViewFull && (
           <>
             {cliente.nombre_cliente && (
               <div className="flex items-center gap-2 text-sm text-[#666666]">
@@ -168,10 +169,6 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
               </div>
             )}
           </>
-        ) : (
-          <div className="text-sm text-[#666666] italic">
-            Datos privados del propietario
-          </div>
         )}
 
         {cliente.facturas && cliente.facturas.length > 0 && (
