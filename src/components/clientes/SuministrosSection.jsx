@@ -225,6 +225,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                     <div className="flex items-center gap-2">
                       <a
                         href={factura.url}
+                        download
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline"
@@ -252,9 +253,20 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       id={`upload-${suministro.id}`}
                       className="hidden"
                       accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) handleUploadFactura(suministro.id, file);
+                      multiple
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files);
+                        const espacioDisponible = 3 - (suministro.facturas || []).length;
+                        
+                        if (files.length > espacioDisponible) {
+                          toast.error(`Solo puedes añadir ${espacioDisponible} factura(s) más`);
+                          e.target.value = "";
+                          return;
+                        }
+                        
+                        for (const file of files) {
+                          await handleUploadFactura(suministro.id, file);
+                        }
                         e.target.value = "";
                       }}
                     />
@@ -265,7 +277,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       className="w-full"
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Añadir Factura ({(suministro.facturas || []).length}/3)
+                      Añadir Factura(s) ({(suministro.facturas || []).length}/3)
                     </Button>
                   </div>
                 )}
@@ -277,6 +289,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       <span className="text-sm text-green-700">{suministro.informe_final.nombre}</span>
                       <a
                         href={suministro.informe_final.url}
+                        download
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-green-600 hover:underline"

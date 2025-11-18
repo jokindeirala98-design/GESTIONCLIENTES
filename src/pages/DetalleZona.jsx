@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -198,28 +197,26 @@ export default function DetalleZona() {
         </div>
       )}
 
-      {isAdmin && (
-        <Card className="border-2 border-red-200 bg-red-50 mt-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-red-900 mb-1">Zona de peligro</h3>
-                <p className="text-sm text-red-700">
-                  Eliminar el área "{zona.nombre}" y todos sus clientes ({clientesDeZona.length} clientes)
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteZona}
-                className="bg-red-600 hover:bg-red-700 w-full md:w-auto"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Eliminar Área y Todos los Clientes
-              </Button>
+      <Card className="border-2 border-red-200 bg-red-50 mt-8">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-red-900 mb-1">Zona de peligro</h3>
+              <p className="text-sm text-red-700">
+                Eliminar el área "{zona.nombre}" y todos sus clientes ({clientesDeZona.length} clientes)
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Button
+              variant="destructive"
+              onClick={handleDeleteZona}
+              className="bg-red-600 hover:bg-red-700 w-full md:w-auto"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar Área y Todos los Clientes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <CreateClienteDialog
         open={showCreateCliente}
