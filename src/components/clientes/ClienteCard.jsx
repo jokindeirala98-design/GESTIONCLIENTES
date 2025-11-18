@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -134,7 +133,7 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
           </div>
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center">
             <span className="text-white font-bold text-sm">
-              {cliente.propietario_iniciales || 'N/A'}
+              {cliente.propietario_iniciales || 'n/s'}
             </span>
           </div>
         </div>
