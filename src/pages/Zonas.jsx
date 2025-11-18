@@ -7,12 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, MapPin, Calendar, Sparkles, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, MapPin, Calendar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { MUNICIPIOS_NAVARRA } from "./Rutas";
 
 export default function Zonas() {
   const navigate = useNavigate();
@@ -21,7 +17,6 @@ export default function Zonas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingUltimaVisita, setEditingUltimaVisita] = useState(null);
   const [ultimaVisitaValue, setUltimaVisitaValue] = useState("");
-  const [openCombobox, setOpenCombobox] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
   });
@@ -94,13 +89,7 @@ export default function Zonas() {
     });
   };
 
-  const handleSelectPueblo = (puebloNombre) => {
-    setFormData({
-      ...formData,
-      nombre: puebloNombre
-    });
-    setOpenCombobox(false);
-  };
+
 
   const getClientesEnZona = (zonaId) => {
     return clientes.filter(c => c.zona_id === zonaId);
@@ -310,62 +299,17 @@ export default function Zonas() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-[#666666] mb-1 block">
-                  Nombre del pueblo *
+                  Nombre del área *
                 </label>
-                <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openCombobox}
-                      className="w-full justify-between"
-                    >
-                      {formData.nombre || "Buscar pueblo..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Buscar pueblo (ej: pam, tud)..." />
-                      <CommandEmpty>
-                        <div className="p-4 text-sm text-gray-500">
-                          No se encontró el pueblo.
-                          <Button
-                            type="button"
-                            variant="link"
-                            className="block mt-2 text-[#004D9D]"
-                            onClick={() => {
-                              const customValue = prompt("Introduce el nombre del pueblo:");
-                              if (customValue) {
-                                setFormData({ ...formData, nombre: customValue });
-                                setOpenCombobox(false);
-                              }
-                            }}
-                          >
-                            ¿Añadir manualmente?
-                          </Button>
-                        </div>
-                      </CommandEmpty>
-                      <CommandGroup className="max-h-64 overflow-auto">
-                        {MUNICIPIOS_NAVARRA.map((municipio) => (
-                          <CommandItem
-                            key={municipio.nombre}
-                            value={municipio.nombre}
-                            onSelect={() => handleSelectPueblo(municipio.nombre)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.nombre === municipio.nombre ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {municipio.nombre}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Input
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  placeholder="Ej: Tudela, Tafalla, Zona Sur..."
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  El planificador IA identificará la ubicación automáticamente
+                </p>
               </div>
             </div>
 
