@@ -40,6 +40,34 @@ export default function InformesPorPresentar() {
     loadUser();
   }, [navigate]);
 
+  // Inicializar orden manual cuando cambia la lista de clientes
+  useEffect(() => {
+    const clientesFacturasPresent = clientes.filter(
+      c => c.estado === "Facturas presentadas" && c.suministros && c.suministros.length > 0
+    );
+    
+    const getTipoMaximo = (cliente) => {
+      if (!cliente.suministros || cliente.suministros.length === 0) return null;
+      const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
+      return cliente.suministros.reduce((max, s) => {
+        const actual = orden[s.tipo_factura] || 0;
+        const maxActual = orden[max] || 0;
+        return actual > maxActual ? s.tipo_factura : max;
+      }, "2.0");
+    };
+
+    const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
+    const clientesOrdenadosAuto = [...clientesFacturasPresent].sort((a, b) => {
+      const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
+      const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
+      return orderA - orderB;
+    });
+
+    if (ordenManual.length === 0 && clientesOrdenadosAuto.length > 0) {
+      setOrdenManual(clientesOrdenadosAuto.map(c => c.id));
+    }
+  }, [clientes.length, ordenManual.length]);
+
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
@@ -269,17 +297,10 @@ export default function InformesPorPresentar() {
     return orderA - orderB;
   });
 
-  // Inicializar orden manual si está vacío
-  useEffect(() => {
-    if (ordenManual.length === 0 && clientesOrdenadosAuto.length > 0) {
-      setOrdenManual(clientesOrdenadosAuto.map(c => c.id));
-    }
-  }, [clientesOrdenadosAuto.length]);
-
   // Aplicar orden manual
   const clientesOrdenados = ordenManual.length > 0
     ? ordenManual
-        .map(id => clientesOrdenadosAuto.find(c => c.id === id))
+        .map(id => clientesFacturasPresent.find(c => c.id === id))
         .filter(c => c !== undefined)
     : clientesOrdenadosAuto;
 
