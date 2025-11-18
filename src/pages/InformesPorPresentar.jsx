@@ -683,12 +683,14 @@ export default function InformesPorPresentar() {
                                             onDrop={(e) => {
                                               e.preventDefault();
                                               e.currentTarget.classList.remove('border-purple-500', 'bg-purple-100');
-                                              const file = e.dataTransfer.files[0];
-                                              if (file && file.type === 'application/pdf') {
-                                                handleSeleccionarInforme(suministro.id, file);
-                                              } else {
-                                                toast.error("Solo se permiten archivos PDF");
-                                              }
+                                              const files = Array.from(e.dataTransfer.files);
+                                              files.forEach(file => {
+                                                if (file && file.type === 'application/pdf') {
+                                                  handleSeleccionarInforme(suministro.id, file);
+                                                } else if (file) {
+                                                  toast.error(`${file.name}: Solo se permiten archivos PDF`);
+                                                }
+                                              });
                                             }}
                                             className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center transition-colors"
                                           >
