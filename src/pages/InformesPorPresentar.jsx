@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Building2, Download, ChevronDown, ChevronUp, CheckCircle2, Upload, X, Save, GripVertical } from "lucide-react";
+import { FileText, Building2, Download, ChevronDown, ChevronUp, CheckCircle2, Upload, X, Save, GripVertical, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,10 @@ export default function InformesPorPresentar() {
   const [user, setUser] = useState(null);
   const [clienteExpandido, setClienteExpandido] = useState(null);
   const [comisionesPorSuministro, setComisionesPorSuministro] = useState({});
-  const [informesSubidos, setInformesSubidos] = useState({}); // {suministroId: {file, fileUrl, fileName}}
+  const [informesSubidos, setInformesSubidos] = useState({}); // {suministroId: {files: [{file, fileUrl, fileName}]}}
   const [sincronizando, setSincronizando] = useState(false);
   const [guardando, setGuardando] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
   const [ordenManual, setOrdenManual] = useState(() => {
     const saved = localStorage.getItem('informes-orden-manual');
     return saved ? JSON.parse(saved) : [];
@@ -124,24 +125,50 @@ export default function InformesPorPresentar() {
   const handleSeleccionarInforme = async (suministroId, file) => {
     if (!file) return;
     
+    const informesActuales = informesSubidos[suministroId]?.files || [];
+    if (informesActuales.length >= 2) {
+      toast.error("Máximo 2 archivos por suministro");
+      return;
+    }
+    
     try {
-      toast.loading("Subiendo archivo...", { id: `upload-${suministroId}` });
+      toast.loading("Subiendo archivo...", { id: `upload-${suministroId}-${informesActuales.length}` });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
       setInformesSubidos(prev => ({
         ...prev,
         [suministroId]: {
-          file,
-          fileUrl: file_url,
-          fileName: file.name
+          files: [
+            ...(prev[suministroId]?.files || []),
+            { file, fileUrl: file_url, fileName: file.name }
+          ]
         }
       }));
       
-      toast.success("Archivo subido. Ahora introduce la comisión y guarda.", { id: `upload-${suministroId}` });
+      toast.success("Archivo subido. Añade comisión y guarda.", { id: `upload-${suministroId}-${informesActuales.length}` });
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Error al subir el archivo", { id: `upload-${suministroId}` });
+      toast.error("Error al subir el archivo", { id: `upload-${suministroId}-${informesActuales.length}` });
     }
+  };
+
+  const handleEliminarArchivoIndividual = (suministroId, index) => {
+    setInformesSubidos(prev => {
+      const files = prev[suministroId]?.files || [];
+      const newFiles = files.filter((_, i) => i !== index);
+      
+      if (newFiles.length === 0) {
+        const newState = { ...prev };
+        delete newState[suministroId];
+        return newState;
+      }
+      
+      return {
+        ...prev,
+        [suministroId]: { files: newFiles }
+      };
+    });
+    toast.info("Archivo eliminado");
   };
 
   const handleCancelarInforme = (suministroId) => {
@@ -155,15 +182,15 @@ export default function InformesPorPresentar() {
       delete newState[suministroId];
       return newState;
     });
-    toast.info("Informe cancelado");
+    toast.info("Informes cancelados");
   };
 
   const handleGuardarCambios = async (cliente, suministroId) => {
     const informeSubido = informesSubidos[suministroId];
     const comision = comisionesPorSuministro[suministroId];
     
-    if (!informeSubido) {
-      toast.error("Selecciona un archivo primero");
+    if (!informeSubido || !informeSubido.files || informeSubido.files.length === 0) {
+      toast.error("Selecciona al menos un archivo");
       return;
     }
     
@@ -180,8 +207,10 @@ export default function InformesPorPresentar() {
           return {
             ...s,
             informe_final: {
-              nombre: informeSubido.fileName,
-              url: informeSubido.fileUrl,
+              archivos: informeSubido.files.map(f => ({
+                nombre: f.fileName,
+                url: f.fileUrl
+              })),
               fecha_subida: new Date().toISOString(),
               subido_por_email: user.email
             },
@@ -278,11 +307,21 @@ export default function InformesPorPresentar() {
   }, [clientesOrdenadosAuto.length]);
 
   // Aplicar orden manual
-  const clientesOrdenados = ordenManual.length > 0
+  let clientesOrdenados = ordenManual.length > 0
     ? ordenManual
         .map(id => clientesFacturasPresent.find(c => c.id === id))
         .filter(c => c !== undefined)
     : clientesOrdenadosAuto;
+
+  // Filtrar por búsqueda
+  if (searchTerm) {
+    clientesOrdenados = clientesOrdenados.filter(cliente =>
+      cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.propietario_iniciales?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      zonas.find(z => z.id === cliente.zona_id)?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
 
   if (!user) {
     return (
@@ -343,6 +382,20 @@ export default function InformesPorPresentar() {
           )}
         </Button>
       </div>
+
+      {clientesFacturasPresent.length > 0 && (
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Buscar por cliente, negocio, zona o propietario..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card className="border-l-4 border-red-500">
@@ -499,19 +552,39 @@ export default function InformesPorPresentar() {
 
                                   {suministro.informe_final ? (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                      <p className="text-sm text-green-700 font-semibold mb-2">✓ Informe subido</p>
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-sm text-green-600">{suministro.informe_final.nombre}</span>
-                                        <a
-                                          href={suministro.informe_final.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          download
-                                          className="text-sm text-green-600 hover:underline flex items-center gap-1"
-                                        >
-                                          <Download className="w-4 h-4" />
-                                          Descargar
-                                        </a>
+                                      <p className="text-sm text-green-700 font-semibold mb-2">✓ Informe(s) subido(s)</p>
+                                      <div className="space-y-2">
+                                        {suministro.informe_final.archivos ? (
+                                          suministro.informe_final.archivos.map((archivo, idx) => (
+                                            <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border">
+                                              <span className="text-sm text-green-600 truncate">{archivo.nombre}</span>
+                                              <a
+                                                href={archivo.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                download
+                                                className="text-sm text-green-600 hover:underline flex items-center gap-1"
+                                              >
+                                                <Download className="w-4 h-4" />
+                                                Descargar
+                                              </a>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-sm text-green-600">{suministro.informe_final.nombre}</span>
+                                            <a
+                                              href={suministro.informe_final.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              download
+                                              className="text-sm text-green-600 hover:underline flex items-center gap-1"
+                                            >
+                                              <Download className="w-4 h-4" />
+                                              Descargar
+                                            </a>
+                                          </div>
+                                        )}
                                       </div>
                                       {suministro.comision && (
                                         <p className="text-sm text-green-700 mt-2">
@@ -523,25 +596,41 @@ export default function InformesPorPresentar() {
                                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                       <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe para este suministro</p>
                                       
-                                      {informeSubido ? (
+                                      {informeSubido && informeSubido.files && informeSubido.files.length > 0 ? (
                                         <div className="space-y-3">
-                                          {/* Archivo subido */}
-                                          <div className="bg-white border border-green-300 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                              <div className="flex items-center gap-2">
-                                                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                                <span className="text-sm font-semibold text-green-700">Archivo subido</span>
-                                              </div>
+                                          {/* Archivos subidos */}
+                                          <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-sm font-semibold text-green-700">
+                                                {informeSubido.files.length} archivo(s) subido(s)
+                                              </span>
                                               <Button
                                                 size="sm"
                                                 variant="ghost"
                                                 onClick={() => handleCancelarInforme(suministro.id)}
-                                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                                className="text-xs text-red-500 hover:text-red-700"
                                               >
-                                                <X className="w-4 h-4" />
+                                                Cancelar todo
                                               </Button>
                                             </div>
-                                            <p className="text-sm text-gray-600 truncate">{informeSubido.fileName}</p>
+                                            {informeSubido.files.map((file, idx) => (
+                                              <div key={idx} className="bg-white border border-green-300 rounded-lg p-3">
+                                                <div className="flex items-center justify-between">
+                                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                                    <p className="text-sm text-gray-600 truncate">{file.fileName}</p>
+                                                  </div>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleEliminarArchivoIndividual(suministro.id, idx)}
+                                                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 flex-shrink-0 ml-2"
+                                                  >
+                                                    <X className="w-4 h-4" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ))}
                                           </div>
 
                                           {/* Input comisión */}
@@ -605,18 +694,21 @@ export default function InformesPorPresentar() {
                                           >
                                             <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2" />
                                             <p className="text-sm text-gray-600 mb-2">
-                                              Arrastra el PDF aquí o haz clic para seleccionar
+                                              Arrastra PDFs aquí o haz clic para seleccionar (máx. 2)
                                             </p>
                                             <input
                                               type="file"
                                               id={`upload-${suministro.id}`}
                                               className="hidden"
                                               accept=".pdf"
+                                              multiple
                                               onChange={(e) => {
-                                                const file = e.target.files[0];
-                                                if (file) {
-                                                  handleSeleccionarInforme(suministro.id, file);
-                                                }
+                                                const files = Array.from(e.target.files);
+                                                files.forEach(file => {
+                                                  if (file) {
+                                                    handleSeleccionarInforme(suministro.id, file);
+                                                  }
+                                                });
                                                 e.target.value = "";
                                               }}
                                             />
