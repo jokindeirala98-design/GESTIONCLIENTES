@@ -285,8 +285,12 @@ export default function InformesPorPresentar() {
     }, "2.0");
   };
 
+  // Solo mostrar clientes que realmente necesitan informes (estado "Facturas presentadas")
+  // Excluir los que ya tienen todos los informes ("Informe listo" y posteriores)
   let clientesFacturasPresent = clientes.filter(
-    c => c.estado === "Facturas presentadas" && c.suministros && c.suministros.length > 0
+    c => c.estado === "Facturas presentadas" && 
+         c.suministros && 
+         c.suministros.length > 0
   );
 
   // Aplicar filtro de prioridad
