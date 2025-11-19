@@ -22,7 +22,6 @@ export default function ReadyToGo() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [soloMisClientes, setSoloMisClientes] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -111,17 +110,13 @@ export default function ReadyToGo() {
     }, "2.0");
   };
 
-  // Clientes con "Informe listo", "Pendiente de firma" O "Pendiente de aprobación"
-  const clientesReady = clientes.filter(c => 
-    c.estado === "Informe listo" || 
-    c.estado === "Pendiente de firma" ||
-    c.estado === "Pendiente de aprobación"
+  // Cada comercial ve solo sus clientes
+  const misClientesReady = clientes.filter(c => 
+    c.propietario_email === user.email &&
+    (c.estado === "Informe listo" || 
+     c.estado === "Pendiente de firma" ||
+     c.estado === "Pendiente de aprobación")
   );
-
-  // Filtrar por propietario solo si el toggle está activado
-  const misClientesReady = soloMisClientes 
-    ? clientesReady.filter(c => c.propietario_email === user.email)
-    : clientesReady;
 
   // ORDENAR POR PRIORIDAD: Pendiente de aprobación primero, luego 6.1 > 3.0 > 2.0, luego por estado
   const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
@@ -178,25 +173,9 @@ export default function ReadyToGo() {
               Ready to Go
             </h1>
             <p className="text-[#666666]">
-              Clientes listos para presentar y cerrar - visión completa para planificar rutas
+              Tus clientes listos para presentar y cerrar
             </p>
           </div>
-          
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <Filter className="w-5 h-5 text-[#004D9D]" />
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="solo-mis-clientes"
-                  checked={soloMisClientes}
-                  onCheckedChange={setSoloMisClientes}
-                />
-                <Label htmlFor="solo-mis-clientes" className="text-sm font-medium cursor-pointer">
-                  Solo mis clientes
-                </Label>
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
 
@@ -257,13 +236,52 @@ export default function ReadyToGo() {
           </CardContent>
         </Card>
       ) : (
-        zonasOrdenadas.map(zonaNombre => (
-          <div key={zonaNombre} className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <MapPin className="w-6 h-6 text-[#004D9D]" />
-              <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
-              <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
-            </div>
+        zonasOrdenadas.map(zonaNombre => {
+          // Detectar otros comerciales en esta zona
+          const zona = zonas.find(z => z.nombre === zonaNombre);
+          const otrosComerciales = zona ? clientes.filter(c => 
+            c.zona_id === zona.id && 
+            c.propietario_email !== user.email &&
+            (c.estado === "Informe listo" || 
+             c.estado === "Pendiente de firma" || 
+             c.estado === "Facturas presentadas")
+          ) : [];
+
+          // Agrupar por comercial
+          const porComercial = otrosComerciales.reduce((acc, c) => {
+            const iniciales = c.propietario_iniciales || 'n/s';
+            if (!acc[iniciales]) {
+              acc[iniciales] = { informeListo: 0, facturasPresentadas: 0, pendienteFirma: 0 };
+            }
+            if (c.estado === "Informe listo") acc[iniciales].informeListo++;
+            if (c.estado === "Facturas presentadas") acc[iniciales].facturasPresentadas++;
+            if (c.estado === "Pendiente de firma") acc[iniciales].pendienteFirma++;
+            return acc;
+          }, {});
+
+          return (
+            <div key={zonaNombre} className="mb-8">
+              <div className="flex items-center gap-3 mb-4 flex-wrap">
+                <MapPin className="w-6 h-6 text-[#004D9D]" />
+                <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+                <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+
+                {Object.keys(porComercial).length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {Object.entries(porComercial).map(([iniciales, counts]) => (
+                      <Badge key={iniciales} className="bg-orange-100 text-orange-700 border border-orange-300">
+                        👤 {iniciales} tiene {
+                          [
+                            counts.informeListo > 0 && `${counts.informeListo} informe${counts.informeListo > 1 ? 's' : ''} listo${counts.informeListo > 1 ? 's' : ''}`,
+                            counts.pendienteFirma > 0 && `${counts.pendienteFirma} pendiente${counts.pendienteFirma > 1 ? 's' : ''} de firma`,
+                            counts.facturasPresentadas > 0 && `${counts.facturasPresentadas} factura${counts.facturasPresentadas > 1 ? 's' : ''} presentada${counts.facturasPresentadas > 1 ? 's' : ''}`
+                          ].filter(Boolean).join(' y ')
+                        }
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
 
             <div className="space-y-4">
               {clientesPorZona[zonaNombre].map(cliente => {
@@ -472,8 +490,9 @@ export default function ReadyToGo() {
                 );
               })}
             </div>
-          </div>
-        ))
+            </div>
+            );
+            })
       )}
     </div>
   );
