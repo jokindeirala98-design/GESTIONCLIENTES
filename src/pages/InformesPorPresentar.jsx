@@ -271,15 +271,6 @@ export default function InformesPorPresentar() {
     }));
   };
 
-  let clientesFacturasPresent = clientes.filter(
-    c => c.estado === "Facturas presentadas" && c.suministros && c.suministros.length > 0
-  );
-
-  // Aplicar filtro de prioridad
-  if (filtroPrioridad !== "all") {
-    clientesFacturasPresent = clientesFacturasPresent.filter(c => getTipoMaximo(c) === filtroPrioridad);
-  }
-
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
@@ -289,6 +280,15 @@ export default function InformesPorPresentar() {
       return actual > maxActual ? s.tipo_factura : max;
     }, "2.0");
   };
+
+  let clientesFacturasPresent = clientes.filter(
+    c => c.estado === "Facturas presentadas" && c.suministros && c.suministros.length > 0
+  );
+
+  // Aplicar filtro de prioridad
+  if (filtroPrioridad !== "all") {
+    clientesFacturasPresent = clientesFacturasPresent.filter(c => getTipoMaximo(c) === filtroPrioridad);
+  }
 
   const conteo = {
     "6.1": clientesFacturasPresent.filter(c => getTipoMaximo(c) === "6.1").length,
