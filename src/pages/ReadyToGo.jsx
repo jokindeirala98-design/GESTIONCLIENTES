@@ -110,13 +110,18 @@ export default function ReadyToGo() {
     }, "2.0");
   };
 
-  // Cada comercial ve solo sus clientes
-  const misClientesReady = clientes.filter(c => 
-    c.propietario_email === user.email &&
-    (c.estado === "Informe listo" || 
-     c.estado === "Pendiente de firma" ||
-     c.estado === "Pendiente de aprobación")
-  );
+  // Admins ven TODOS los clientes, comerciales solo los suyos
+  const misClientesReady = clientes.filter(c => {
+    const estadosReady = c.estado === "Informe listo" || 
+                         c.estado === "Pendiente de firma" ||
+                         c.estado === "Pendiente de aprobación";
+    
+    if (isAdmin) {
+      return estadosReady;
+    } else {
+      return estadosReady && c.propietario_email === user.email;
+    }
+  });
 
   // ORDENAR POR PRIORIDAD: Pendiente de aprobación primero, luego 6.1 > 3.0 > 2.0, luego por estado
   const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
@@ -173,7 +178,7 @@ export default function ReadyToGo() {
               Ready to Go
             </h1>
             <p className="text-[#666666]">
-              Tus clientes listos para presentar y cerrar
+              {isAdmin ? 'Todos los clientes listos para presentar y cerrar' : 'Tus clientes listos para presentar y cerrar'}
             </p>
           </div>
         </div>
