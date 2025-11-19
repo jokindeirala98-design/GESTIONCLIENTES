@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -134,7 +133,8 @@ export default function DetalleCliente() {
     
     // Verificar si todos los suministros tienen informe final
     const todosConInforme = cliente.suministros.every(s =>
-      s.informe_final && s.informe_final.url
+      s.informe_final && 
+      (s.informe_final.archivos?.length > 0 || s.informe_final.url)
     );
 
     // Corregir estado si es necesario
@@ -173,7 +173,8 @@ export default function DetalleCliente() {
 
       // Verificar si todos los suministros tienen informe final
       const todosConInforme = data.suministros.length > 0 && data.suministros.every(s =>
-        s.informe_final && s.informe_final.url
+        s.informe_final && 
+        (s.informe_final.archivos?.length > 0 || s.informe_final.url)
       );
 
       // Cambiar a "Informe listo" si todos tienen informe y está en "Facturas presentadas"

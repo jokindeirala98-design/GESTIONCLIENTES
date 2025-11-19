@@ -77,7 +77,8 @@ export default function InformesPorPresentar() {
         );
         
         const todosConInforme = cliente.suministros.every(s =>
-          s.informe_final && s.informe_final.url
+          s.informe_final && 
+          (s.informe_final.archivos?.length > 0 || s.informe_final.url)
         );
 
         if (todosConInforme && cliente.estado !== "Informe listo") {
@@ -221,7 +222,10 @@ export default function InformesPorPresentar() {
         return s;
       });
 
-      const todosConInforme = nuevosSuministros.every(s => s.informe_final && s.informe_final.url);
+      const todosConInforme = nuevosSuministros.every(s => 
+        s.informe_final && 
+        (s.informe_final.archivos?.length > 0 || s.informe_final.url)
+      );
       const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
       const nuevoEstado = todosConInforme ? "Informe listo" : "Facturas presentadas";
 
