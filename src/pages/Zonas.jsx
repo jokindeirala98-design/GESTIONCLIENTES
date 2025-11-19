@@ -141,6 +141,8 @@ export default function Zonas() {
 
   if (!user) return null;
 
+  const isAdmin = user.role === "admin";
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
