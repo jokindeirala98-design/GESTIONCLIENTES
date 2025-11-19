@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, FileText, Edit2, Check, X } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import {
@@ -281,28 +281,32 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                         {suministro.informe_final.archivos.map((archivo, idx) => (
                           <div key={idx} className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
                             <span className="text-sm text-green-700 truncate">{archivo.nombre}</span>
-                            <a
-                              href={archivo.url}
-                              download={archivo.nombre}
-                              className="text-xs text-green-600 hover:underline whitespace-nowrap ml-2"
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => window.open(archivo.url, '_blank')}
+                              className="text-xs text-green-600 hover:text-green-700 h-auto py-1 px-2"
                             >
+                              <Download className="w-3 h-3 mr-1" />
                               Descargar
-                            </a>
+                            </Button>
                           </div>
                         ))}
                       </div>
-                    ) : (
+                    ) : suministro.informe_final.url ? (
                       <div className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
-                        <span className="text-sm text-green-700">{suministro.informe_final.nombre}</span>
-                        <a
-                          href={suministro.informe_final.url}
-                          download={suministro.informe_final.nombre}
-                          className="text-xs text-green-600 hover:underline"
+                        <span className="text-sm text-green-700">{suministro.informe_final.nombre || 'Informe final'}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => window.open(suministro.informe_final.url, '_blank')}
+                          className="text-xs text-green-600 hover:text-green-700 h-auto py-1 px-2"
                         >
+                          <Download className="w-3 h-3 mr-1" />
                           Descargar
-                        </a>
+                        </Button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </CardContent>

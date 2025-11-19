@@ -389,44 +389,39 @@ export default function ReadyToGo() {
                                       suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
                                         <div className="flex gap-2">
                                           {suministro.informe_final.archivos.map((archivo, idx) => (
-                                            <a
+                                            <Button
                                               key={idx}
-                                              href={archivo.url}
-                                              download={archivo.nombre}
-                                              onClick={(e) => e.stopPropagation()}
-                                              className="flex-shrink-0"
+                                              size="sm"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(archivo.url, '_blank');
+                                              }}
+                                              className={
+                                                isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                                isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                              }
                                             >
-                                              <Button
-                                                size="sm"
-                                                className={
-                                                  isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                                  isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                                }
-                                              >
-                                                <Download className="w-4 h-4 mr-1" />
-                                                {idx === 0 ? "PDF 1" : "PDF 2"}
-                                              </Button>
-                                            </a>
+                                              <Download className="w-4 h-4 mr-1" />
+                                              {idx === 0 ? "PDF 1" : "PDF 2"}
+                                            </Button>
                                           ))}
                                         </div>
-                                      ) : (
-                                        <a
-                                          href={suministro.informe_final.url}
-                                          download={suministro.informe_final.nombre}
-                                          onClick={(e) => e.stopPropagation()}
+                                      ) : suministro.informe_final.url ? (
+                                        <Button
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.open(suministro.informe_final.url, '_blank');
+                                          }}
+                                          className={
+                                            isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                            isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                          }
                                         >
-                                          <Button
-                                            size="sm"
-                                            className={
-                                              isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                              isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                            }
-                                          >
-                                            <Download className="w-4 h-4 mr-1" />
-                                            Descargar
-                                          </Button>
-                                        </a>
-                                      )
+                                          <Download className="w-4 h-4 mr-1" />
+                                          Descargar
+                                        </Button>
+                                      ) : null
                                     ) : (
                                       <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
                                         Sin informe
