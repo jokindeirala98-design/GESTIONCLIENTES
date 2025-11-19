@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Plus, Trash2, Users, TrendingUp, FileCheck
 } from "lucide-react";
