@@ -563,9 +563,7 @@ export default function InformesPorPresentar() {
                                             <span className="flex-1 truncate">{factura.nombre}</span>
                                             <a
                                               href={factura.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              download
+                                              download={factura.nombre}
                                               className="text-blue-600 hover:underline flex items-center gap-1"
                                             >
                                               <Download className="w-4 h-4" />

@@ -225,12 +225,10 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                     <div className="flex items-center gap-2">
                       <a
                         href={factura.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
+                        download={factura.nombre}
                         className="text-xs text-blue-600 hover:underline"
                       >
-                        Ver
+                        Descargar
                       </a>
                       {isOwnerOrAdmin && (
                         <Button
@@ -277,19 +275,34 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
 
                 {suministro.informe_final && (
                   <div className="mt-3 pt-3 border-t">
-                    <p className="text-xs text-gray-500 mb-2 font-semibold">📄 Informe Final:</p>
-                    <div className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
-                      <span className="text-sm text-green-700">{suministro.informe_final.nombre}</span>
-                      <a
-                        href={suministro.informe_final.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        className="text-xs text-green-600 hover:underline"
-                      >
-                        Descargar
-                      </a>
-                    </div>
+                    <p className="text-xs text-gray-500 mb-2 font-semibold">📄 Informe(s) Final(es):</p>
+                    {suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
+                      <div className="space-y-2">
+                        {suministro.informe_final.archivos.map((archivo, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
+                            <span className="text-sm text-green-700 truncate">{archivo.nombre}</span>
+                            <a
+                              href={archivo.url}
+                              download={archivo.nombre}
+                              className="text-xs text-green-600 hover:underline whitespace-nowrap ml-2"
+                            >
+                              Descargar
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
+                        <span className="text-sm text-green-700">{suministro.informe_final.nombre}</span>
+                        <a
+                          href={suministro.informe_final.url}
+                          download={suministro.informe_final.nombre}
+                          className="text-xs text-green-600 hover:underline"
+                        >
+                          Descargar
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
