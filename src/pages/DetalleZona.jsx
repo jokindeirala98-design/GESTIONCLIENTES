@@ -104,10 +104,8 @@ export default function DetalleZona() {
   const isAdmin = user.role === "admin";
   const clientesDeZona = clientes.filter(c => c.zona_id === zonaId);
   
-  // Admins ven TODOS los clientes, comerciales solo los suyos
-  const clientesParaMostrar = isAdmin 
-    ? clientesDeZona 
-    : clientesDeZona.filter(c => c.propietario_email === user.email);
+  // TODOS ven TODOS los clientes de la zona (anonimizados para no propietarios)
+  const clientesParaMostrar = clientesDeZona;
   
   const misClientesDeZona = clientesDeZona.filter(c => c.propietario_email === user.email);
   const clientesInformeListo = clientesDeZona.filter(c => c.estado === "Informe listo").length;
@@ -153,7 +151,7 @@ export default function DetalleZona() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <h2 className="text-2xl font-bold text-[#004D9D]">
-          {isAdmin ? `Todos los clientes en ${zona.nombre}` : `Mis clientes en ${zona.nombre}`}
+          Clientes en {zona.nombre}
         </h2>
         <Button
           onClick={() => setShowCreateCliente(true)}
@@ -169,10 +167,10 @@ export default function DetalleZona() {
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-[#666666] text-lg mb-2">
-              {isAdmin ? 'No hay clientes en esta área' : 'No tienes clientes en esta área'}
+              No hay clientes en esta área
             </p>
             <p className="text-gray-400 text-sm mb-4">
-              Comienza agregando {isAdmin ? 'un' : 'tu primer'} cliente
+              Comienza agregando un cliente
             </p>
             <Button
               onClick={() => setShowCreateCliente(true)}
@@ -185,15 +183,44 @@ export default function DetalleZona() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          {clientesParaMostrar.map(cliente => (
-            <ClienteCard
-              key={cliente.id}
-              cliente={cliente}
-              user={user}
-              zonas={todasZonas}
-              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-            />
-          ))}
+          {clientesParaMostrar.map((cliente, index) => {
+            const esMio = cliente.propietario_email === user.email;
+            const estadoColors = {
+              "Primer contacto": "bg-gray-500",
+              "Esperando facturas": "bg-orange-500",
+              "Facturas presentadas": "bg-blue-500",
+              "Informe listo": "bg-green-500",
+              "Pendiente de firma": "bg-purple-500",
+              "Pendiente de aprobación": "bg-yellow-600",
+              "Firmado con éxito": "bg-green-700",
+              "Rechazado": "bg-red-500",
+            };
+            
+            return (
+              <Card 
+                key={cliente.id}
+                className={`border-l-4 cursor-pointer hover:shadow-lg transition-all duration-300`}
+                style={{ borderLeftColor: estadoColors[cliente.estado] }}
+                onClick={() => esMio ? navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`)) : null}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-bold text-[#004D9D] text-lg">
+                      {esMio ? cliente.nombre_negocio : `${zona.nombre} ${index + 1}`}
+                    </h3>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#004D9D] flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">
+                        {cliente.propietario_iniciales}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge className={`${estadoColors[cliente.estado]} text-white`}>
+                    {cliente.estado}
+                  </Badge>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

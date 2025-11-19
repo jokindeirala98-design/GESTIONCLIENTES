@@ -94,27 +94,8 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    let zonaId = formData.zona_id;
-
-    if (!zonaId && formData.zona_nombre) {
-      const zonaExistente = zonas.find(
-        z => z.nombre.toLowerCase() === formData.zona_nombre.toLowerCase()
-      );
-
-      if (zonaExistente) {
-        zonaId = zonaExistente.id;
-      } else {
-        const nuevaZona = await createZonaMutation.mutateAsync({
-          nombre: formData.zona_nombre,
-          fecha_creacion_zona: new Date().toISOString().split('T')[0],
-          creador_email: user?.email,
-        });
-        zonaId = nuevaZona.id;
-      }
-    }
-
-    if (!zonaId) {
-      toast.error("Debes seleccionar un pueblo");
+    if (!formData.zona_id) {
+      toast.error("Debes seleccionar una zona");
       return;
     }
 
@@ -136,27 +117,19 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       nombre_cliente: formData.nombre_cliente,
       telefono: formData.telefono,
       email: formData.email,
-      zona_id: zonaId,
+      zona_id: formData.zona_id,
       anotaciones: formData.anotaciones,
       propietario_email: formData.propietario_email,
       propietario_iniciales: iniciales,
       estado: "Primer contacto",
       facturas: [],
+      eventos: []
     };
 
     createMutation.mutate(dataToSave);
   };
 
-  const handleSelectMunicipio = (municipioNombre) => {
-    const zonaExistente = zonas.find(z => z.nombre === municipioNombre);
-    
-    setFormData({
-      ...formData,
-      zona_nombre: municipioNombre,
-      zona_id: zonaExistente ? zonaExistente.id : ""
-    });
-    setOpenCombobox(false);
-  };
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -242,65 +215,35 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
 
             <div>
               <label className="text-sm font-medium text-[#666666] mb-1 block">
-                Pueblo *
+                Zona / Pueblo *
               </label>
-              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openCombobox}
-                    className="w-full justify-between"
-                  >
-                    {formData.zona_nombre || "Buscar pueblo..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Buscar pueblo (ej: pam, tud)..." />
-                    <CommandEmpty>
-                      <div className="p-4 text-sm text-gray-500">
-                        No se encontró el pueblo.
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="block mt-2 text-[#004D9D]"
-                          onClick={() => {
-                            const customValue = prompt("Introduce el nombre del pueblo:");
-                            if (customValue) {
-                              setFormData({ ...formData, zona_nombre: customValue, zona_id: "" });
-                              setOpenCombobox(false);
-                            }
-                          }}
-                        >
-                          ¿Añadir manualmente?
-                        </Button>
-                      </div>
-                    </CommandEmpty>
-                    <CommandGroup className="max-h-64 overflow-auto">
-                      {MUNICIPIOS_NAVARRA.map((municipio) => (
-                        <CommandItem
-                          key={municipio.nombre}
-                          value={municipio.nombre}
-                          onSelect={() => handleSelectMunicipio(municipio.nombre)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              formData.zona_nombre === municipio.nombre ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {municipio.nombre}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {zonaPreseleccionada && formData.zona_id && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✓ Pueblo preseleccionado
+              <Select
+                value={formData.zona_id}
+                onValueChange={(value) => {
+                  const zona = zonas.find(z => z.id === value);
+                  setFormData({ ...formData, zona_id: value, zona_nombre: zona?.nombre || "" });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una zona existente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {zonas.length === 0 ? (
+                    <div className="p-2 text-sm text-gray-500">
+                      No hay zonas creadas. Crea una zona primero desde "Zonas".
+                    </div>
+                  ) : (
+                    zonas.map(zona => (
+                      <SelectItem key={zona.id} value={zona.id}>
+                        {zona.nombre}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {zonas.length === 0 && (
+                <p className="text-xs text-orange-600 mt-1">
+                  ⚠️ Debes crear una zona primero desde la sección "Zonas"
                 </p>
               )}
             </div>
