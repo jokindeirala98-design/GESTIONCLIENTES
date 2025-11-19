@@ -362,20 +362,47 @@ export default function ReadyToGo() {
                                       )}
                                     </div>
                                     {suministro.informe_final ? (
-                                      <Button
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          window.open(suministro.informe_final.url, '_blank');
-                                        }}
-                                        className={
-                                          isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                          isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                        }
-                                      >
-                                        <Download className="w-4 h-4 mr-1" />
-                                        Descargar
-                                      </Button>
+                                      suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
+                                        <div className="flex gap-2">
+                                          {suministro.informe_final.archivos.map((archivo, idx) => (
+                                            <a
+                                              key={idx}
+                                              href={archivo.url}
+                                              download={archivo.nombre}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="flex-shrink-0"
+                                            >
+                                              <Button
+                                                size="sm"
+                                                className={
+                                                  isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                                  isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                                }
+                                              >
+                                                <Download className="w-4 h-4 mr-1" />
+                                                {idx === 0 ? "PDF 1" : "PDF 2"}
+                                              </Button>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <a
+                                          href={suministro.informe_final.url}
+                                          download={suministro.informe_final.nombre}
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Button
+                                            size="sm"
+                                            className={
+                                              isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                              isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                            }
+                                          >
+                                            <Download className="w-4 h-4 mr-1" />
+                                            Descargar
+                                          </Button>
+                                        </a>
+                                      )
                                     ) : (
                                       <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
                                         Sin informe
@@ -383,9 +410,17 @@ export default function ReadyToGo() {
                                     )}
                                   </div>
                                   {suministro.informe_final && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      📄 {suministro.informe_final.nombre}
-                                    </p>
+                                    suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
+                                      <div className="text-xs text-gray-500 mt-1 space-y-1">
+                                        {suministro.informe_final.archivos.map((archivo, idx) => (
+                                          <p key={idx}>📄 {archivo.nombre}</p>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        📄 {suministro.informe_final.nombre}
+                                      </p>
+                                    )
                                   )}
                                 </div>
                               ))}

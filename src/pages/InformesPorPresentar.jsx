@@ -27,6 +27,7 @@ export default function InformesPorPresentar() {
   const [sincronizando, setSincronizando] = useState(false);
   const [guardando, setGuardando] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [filtroPrioridad, setFiltroPrioridad] = useState("all"); // "all", "6.1", "3.0", "2.0"
   const [ordenManual, setOrdenManual] = useState(() => {
     const saved = localStorage.getItem('informes-orden-manual');
     return saved ? JSON.parse(saved) : [];
@@ -270,9 +271,14 @@ export default function InformesPorPresentar() {
     }));
   };
 
-  const clientesFacturasPresent = clientes.filter(
+  let clientesFacturasPresent = clientes.filter(
     c => c.estado === "Facturas presentadas" && c.suministros && c.suministros.length > 0
   );
+
+  // Aplicar filtro de prioridad
+  if (filtroPrioridad !== "all") {
+    clientesFacturasPresent = clientesFacturasPresent.filter(c => getTipoMaximo(c) === filtroPrioridad);
+  }
 
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
@@ -398,11 +404,18 @@ export default function InformesPorPresentar() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="border-l-4 border-red-500">
+        <Card 
+          className={`border-l-4 border-red-500 cursor-pointer transition-all ${
+            filtroPrioridad === "6.1" ? "ring-2 ring-red-500 shadow-lg" : "hover:shadow-lg"
+          }`}
+          onClick={() => setFiltroPrioridad(filtroPrioridad === "6.1" ? "all" : "6.1")}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#666666] mb-1">Prioridad 6.1</p>
+                <p className="text-sm text-[#666666] mb-1">
+                  Prioridad 6.1 {filtroPrioridad === "6.1" && "✓"}
+                </p>
                 <p className="text-3xl font-bold text-red-600">{conteo["6.1"]}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -412,11 +425,18 @@ export default function InformesPorPresentar() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-orange-500">
+        <Card 
+          className={`border-l-4 border-orange-500 cursor-pointer transition-all ${
+            filtroPrioridad === "3.0" ? "ring-2 ring-orange-500 shadow-lg" : "hover:shadow-lg"
+          }`}
+          onClick={() => setFiltroPrioridad(filtroPrioridad === "3.0" ? "all" : "3.0")}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#666666] mb-1">Prioridad 3.0</p>
+                <p className="text-sm text-[#666666] mb-1">
+                  Prioridad 3.0 {filtroPrioridad === "3.0" && "✓"}
+                </p>
                 <p className="text-3xl font-bold text-orange-600">{conteo["3.0"]}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
@@ -426,11 +446,18 @@ export default function InformesPorPresentar() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-blue-500">
+        <Card 
+          className={`border-l-4 border-blue-500 cursor-pointer transition-all ${
+            filtroPrioridad === "2.0" ? "ring-2 ring-blue-500 shadow-lg" : "hover:shadow-lg"
+          }`}
+          onClick={() => setFiltroPrioridad(filtroPrioridad === "2.0" ? "all" : "2.0")}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#666666] mb-1">Prioridad 2.0</p>
+                <p className="text-sm text-[#666666] mb-1">
+                  Prioridad 2.0 {filtroPrioridad === "2.0" && "✓"}
+                </p>
                 <p className="text-3xl font-bold text-blue-600">{conteo["2.0"]}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">

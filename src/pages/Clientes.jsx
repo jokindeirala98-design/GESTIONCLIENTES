@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +17,7 @@ export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("all");
   const [filterZona, setFilterZona] = useState("all");
+  const [filterUsuario, setFilterUsuario] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
@@ -38,6 +38,12 @@ export default function Clientes() {
     queryFn: () => base44.entities.Zona.list(),
   });
 
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: isAdmin,
+  });
+
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
@@ -55,8 +61,9 @@ export default function Clientes() {
     
     const matchEstado = filterEstado === "all" || cliente.estado === filterEstado;
     const matchZona = filterZona === "all" || cliente.zona_id === filterZona;
+    const matchUsuario = filterUsuario === "all" || cliente.propietario_email === filterUsuario;
     
-    return matchSearch && matchEstado && matchZona;
+    return matchSearch && matchEstado && matchZona && matchUsuario;
   });
 
   const sortedClientes = [...filteredClientes].sort((a, b) => 
@@ -83,7 +90,7 @@ export default function Clientes() {
 
       <Card className="mb-6 border-none shadow-md">
         <CardContent className="p-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -122,6 +129,22 @@ export default function Clientes() {
                 ))}
               </SelectContent>
             </Select>
+
+            {isAdmin && (
+              <Select value={filterUsuario} onValueChange={setFilterUsuario}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los usuarios</SelectItem>
+                  {usuarios.map(usuario => (
+                    <SelectItem key={usuario.email} value={usuario.email}>
+                      {usuario.full_name} ({usuario.iniciales || usuario.full_name?.substring(0, 3).toUpperCase()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -144,6 +167,7 @@ export default function Clientes() {
                   setSearchTerm("");
                   setFilterEstado("all");
                   setFilterZona("all");
+                  setFilterUsuario("all");
                 }}
               >
                 Limpiar filtros
