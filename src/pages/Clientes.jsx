@@ -38,15 +38,15 @@ export default function Clientes() {
     queryFn: () => base44.entities.Zona.list(),
   });
 
-  if (!user) return null;
-
-  const isAdmin = user.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
     enabled: isAdmin,
   });
+
+  if (!user) return null;
 
   // Filtrar: cada usuario ve solo sus clientes (admin ve todos)
   const misClientes = isAdmin 
