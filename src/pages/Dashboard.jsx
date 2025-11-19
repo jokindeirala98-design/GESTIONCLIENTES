@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +27,13 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Cliente.list('-created_date'),
   });
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const isAdmin = user.role === "admin";
   
