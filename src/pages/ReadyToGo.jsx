@@ -100,6 +100,17 @@ export default function ReadyToGo() {
 
   const isAdmin = user.role === "admin";
 
+  // Función para obtener el tipo máximo de factura
+  const getTipoMaximo = (cliente) => {
+    if (!cliente.suministros || cliente.suministros.length === 0) return null;
+    const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
+    return cliente.suministros.reduce((max, s) => {
+      const actual = orden[s.tipo_factura] || 0;
+      const maxActual = orden[max] || 0;
+      return actual > maxActual ? s.tipo_factura : max;
+    }, "2.0");
+  };
+
   // Clientes con "Informe listo", "Pendiente de firma" O "Pendiente de aprobación"
   const clientesReady = clientes.filter(c => 
     c.estado === "Informe listo" || 
@@ -111,17 +122,6 @@ export default function ReadyToGo() {
   const misClientesReady = soloMisClientes 
     ? clientesReady.filter(c => c.propietario_email === user.email)
     : clientesReady;
-
-  // Función para obtener el tipo máximo de factura
-  const getTipoMaximo = (cliente) => {
-    if (!cliente.suministros || cliente.suministros.length === 0) return null;
-    const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
-    return cliente.suministros.reduce((max, s) => {
-      const actual = orden[s.tipo_factura] || 0;
-      const maxActual = orden[max] || 0;
-      return actual > maxActual ? s.tipo_factura : max;
-    }, "2.0");
-  };
 
   // ORDENAR POR PRIORIDAD: Pendiente de aprobación primero, luego 6.1 > 3.0 > 2.0, luego por estado
   const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
