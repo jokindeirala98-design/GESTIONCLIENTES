@@ -101,9 +101,9 @@ export default function Layout({ children }) {
       url: createPageUrl("Configuracion"),
       icon: Settings,
     },
-  ];
+    ];
 
-  // Menú para administradores
+    // Menú para administradores
   const menuAdmin = [
     {
       title: "Calendario",
@@ -149,6 +149,11 @@ export default function Layout({ children }) {
       title: "Gestión de Usuarios",
       url: createPageUrl("GestionUsuarios"),
       icon: UserCircle2,
+    },
+    {
+      title: "Limpieza de Datos",
+      url: createPageUrl("LimpiezaDatos"),
+      icon: Settings,
     },
     {
       title: "Configuración",
