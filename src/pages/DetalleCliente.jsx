@@ -131,13 +131,12 @@ export default function DetalleCliente() {
       s.facturas && s.facturas.length > 0
     );
     
-    // Verificar si todos los suministros tienen informe final
+    // Verificar si todos los suministros tienen informe final (solo URL requerida)
     const todosConInforme = cliente.suministros.every(s => {
       if (!s.informe_final) return false;
-      // Validar archivos array (nuevo formato)
-      const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
-        s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
-      // Validar URL legacy (formato viejo)
+      const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+        a && a.url && a.url.trim() !== '' && a.url !== 'null'
+      );
       const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
       return tieneArchivosValidos || tieneUrlValida;
     });
@@ -193,8 +192,9 @@ export default function DetalleCliente() {
 
       const todosConInforme = data.suministros.length > 0 && data.suministros.every(s => {
         if (!s.informe_final) return false;
-        const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
-          s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+        const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+          a && a.url && a.url.trim() !== '' && a.url !== 'null'
+        );
         const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
         return tieneArchivosValidos || tieneUrlValida;
       });
@@ -546,8 +546,9 @@ export default function DetalleCliente() {
         
         {/* Sección de Informes Finales */}
         {cliente.suministros?.some(s => {
-          const tieneArchivosValidos = s.informe_final?.archivos?.length > 0 && 
-            s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+          const tieneArchivosValidos = s.informe_final?.archivos?.some(a => 
+            a && a.url && a.url.trim() !== '' && a.url !== 'null'
+          );
           const tieneUrlValida = s.informe_final?.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
           return tieneArchivosValidos || tieneUrlValida;
         }) && (
@@ -560,11 +561,12 @@ export default function DetalleCliente() {
             </CardHeader>
             <CardContent className="space-y-3">
               {cliente.suministros.map((suministro) => {
-                const tieneArchivosValidos = suministro.informe_final?.archivos?.length > 0 && 
-                  suministro.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+                const archivosValidos = suministro.informe_final?.archivos?.filter(a => 
+                  a && a.url && a.url.trim() !== '' && a.url !== 'null'
+                ) || [];
                 const tieneUrlValida = suministro.informe_final?.url && suministro.informe_final.url.trim() !== '' && suministro.informe_final.url !== 'null';
                 
-                if (!tieneArchivosValidos && !tieneUrlValida) return null;
+                if (archivosValidos.length === 0 && !tieneUrlValida) return null;
                 
                 return (
                   <Card key={suministro.id} className="bg-white">
@@ -576,16 +578,16 @@ export default function DetalleCliente() {
                             {suministro.comision && `Comisión: ${suministro.comision}€`}
                           </p>
                         </div>
-                        {tieneArchivosValidos ? (
+                        {archivosValidos.length > 0 ? (
                           <div className="flex gap-2">
-                            {suministro.informe_final.archivos.map((archivo, idx) => (
+                            {archivosValidos.map((archivo, idx) => (
                               <Button
                                 key={idx}
                                 size="sm"
                                 onClick={() => window.open(archivo.url, '_blank')}
                                 className="bg-green-600 hover:bg-green-700"
                               >
-                                📄 {archivo.nombre}
+                                📄 {archivo.nombre || `Informe ${idx + 1}`}
                               </Button>
                             ))}
                           </div>
