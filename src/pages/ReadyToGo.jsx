@@ -61,10 +61,16 @@ export default function ReadyToGo() {
         });
       }
       
-      return updateData;
+      return { clienteId, updateData };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['clientes']);
+    onSuccess: ({ clienteId, updateData }) => {
+      // Actualizar el caché inmediatamente
+      queryClient.setQueryData(['clientes'], (oldData) => {
+        if (!oldData) return oldData;
+        return oldData.map(c => 
+          c.id === clienteId ? { ...c, ...updateData } : c
+        );
+      });
       toast.success("Estado actualizado");
     },
   });
