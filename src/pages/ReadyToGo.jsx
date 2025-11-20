@@ -85,7 +85,7 @@ export default function ReadyToGo() {
     updateStatusMutation.mutate({ clienteId: cliente.id, nuevoEstado, cliente });
   };
 
-  // Helper unificado: obtener siempre los archivos descargables de un suministro
+  // Helper unificado: obtener archivos descargables (ACEPTA CUALQUIER NOMBRE)
   const getArchivosValidos = (suministro) => {
     if (!suministro || !suministro.informe_final) return [];
 
@@ -94,55 +94,26 @@ export default function ReadyToGo() {
     // Formato nuevo: { informe_final: { archivos: [...] } }
     if (Array.isArray(informe.archivos)) {
       return informe.archivos
-        .filter(
-          (a) =>
-            a &&
-            typeof a.url === "string" &&
-            a.url.trim() !== "" &&
-            a.url !== "null"
-        )
-        .map((a) => ({
+        .filter((a) => a && a.url && a.url.trim() !== "" && a.url !== "null")
+        .map((a, idx) => ({
           url: a.url,
-          nombre:
-            a.nombre &&
-            a.nombre !== "null" &&
-            a.nombre.trim() !== ""
-              ? a.nombre
-              : undefined,
+          nombre: a.nombre || `Informe ${idx + 1}`,
         }));
     }
 
     // Formato legacy: { informe_final: { url: "..." } }
-    if (
-      typeof informe.url === "string" &&
-      informe.url.trim() !== "" &&
-      informe.url !== "null"
-    ) {
+    if (informe.url && informe.url.trim() !== "" && informe.url !== "null") {
       return [
         {
           url: informe.url,
-          nombre:
-            informe.nombre &&
-            informe.nombre !== "null" &&
-            informe.nombre.trim() !== ""
-              ? informe.nombre
-              : undefined,
+          nombre: informe.nombre || "Informe Final",
         },
       ];
     }
 
-    // Caso extremo: informe_final es directamente un string con la URL
-    if (
-      typeof informe === "string" &&
-      informe.trim() !== "" &&
-      informe !== "null"
-    ) {
-      return [
-        {
-          url: informe,
-          nombre: undefined,
-        },
-      ];
+    // Caso extremo: informe_final es string directo
+    if (typeof informe === "string" && informe.trim() !== "" && informe !== "null") {
+      return [{ url: informe, nombre: "Informe Final" }];
     }
 
     return [];
@@ -462,9 +433,7 @@ export default function ReadyToGo() {
                                                 }
                                               >
                                                 <Download className="w-4 h-4 mr-1" />
-                                                {archivo.nombre && archivo.nombre !== "null"
-                                                  ? archivo.nombre
-                                                  : `PDF ${idx + 1}`}
+                                                {archivo.nombre}
                                               </Button>
                                             ))}
                                           </div>
@@ -478,11 +447,7 @@ export default function ReadyToGo() {
                                       {informeValido && (
                                         <div className="text-xs text-gray-500 mt-1">
                                           {archivosValidos.map((archivo, idx) => (
-                                            <p key={idx}>
-                                              📄 {archivo.nombre && archivo.nombre !== "null"
-                                                ? archivo.nombre
-                                                : `PDF ${idx + 1}`}
-                                            </p>
+                                            <p key={idx}>📄 {archivo.nombre}</p>
                                           ))}
                                         </div>
                                       )}

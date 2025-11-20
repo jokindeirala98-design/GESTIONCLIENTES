@@ -242,16 +242,15 @@ export default function InformesPorPresentar() {
           };
         }
         
-        // LIMPIEZA PREVENTIVA: Si tiene informe_final corrupto, eliminarlo
+        // LIMPIEZA: Solo eliminar si NO hay URL válida
         if (s.informe_final) {
-          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
-          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
           const archivosValidos = s.informe_final.archivos?.filter(a => 
             a && a.url && a.url.trim() && a.url !== 'null'
           ) || [];
+          const tieneUrlLegacy = s.informe_final.url && s.informe_final.url.trim() && s.informe_final.url !== 'null';
 
-          // Si no tiene archivos válidos ni URL legacy válida, eliminar informe_final
-          if (archivosValidos.length === 0 && (tieneNombreNull || tieneUrlNull || !s.informe_final.url)) {
+          // Solo eliminar si no hay ninguna URL válida
+          if (archivosValidos.length === 0 && !tieneUrlLegacy) {
             const { informe_final, ...suministroLimpio } = s;
             return suministroLimpio;
           }
@@ -262,10 +261,11 @@ export default function InformesPorPresentar() {
 
       const todosConInforme = nuevosSuministros.every(s => {
         if (!s.informe_final) return false;
-        // Validar archivos array (nuevo formato)
-        const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
-          s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
-        // Validar URL legacy (formato viejo)
+        // Validar archivos array (solo URL requerida)
+        const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+          a && a.url && a.url.trim() !== '' && a.url !== 'null'
+        );
+        // Validar URL legacy
         const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
         return tieneArchivosValidos || tieneUrlValida;
       });
