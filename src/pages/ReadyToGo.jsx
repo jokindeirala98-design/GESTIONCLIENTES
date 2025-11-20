@@ -6,10 +6,8 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock, Filter } from "lucide-react";
+import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -45,7 +43,6 @@ export default function ReadyToGo() {
     mutationFn: async ({ clienteId, nuevoEstado, cliente }) => {
       const updateData = { estado: nuevoEstado };
       
-      // Si es "Pendiente de aprobación", añadir fecha y mes de comisión
       if (nuevoEstado === "Pendiente de aprobación") {
         const fechaCierre = new Date().toISOString().split('T')[0];
         const mesComision = fechaCierre.substring(0, 7);
@@ -56,7 +53,6 @@ export default function ReadyToGo() {
       
       await base44.entities.Cliente.update(clienteId, updateData);
       
-      // Si es "Pendiente de aprobación", notificar a admins
       if (nuevoEstado === "Pendiente de aprobación") {
         await base44.integrations.Core.SendEmail({
           to: "admin@voltis.com",
@@ -89,17 +85,30 @@ export default function ReadyToGo() {
     updateStatusMutation.mutate({ clienteId: cliente.id, nuevoEstado, cliente });
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // FUNCIÓN CRÍTICA: Validar si un suministro tiene informe válido
+  const tieneInformeValido = (suministro) => {
+    if (!suministro.informe_final) return false;
+    
+    // Validar formato nuevo (archivos array)
+    if (suministro.informe_final.archivos && Array.isArray(suministro.informe_final.archivos)) {
+      const archivosValidos = suministro.informe_final.archivos.filter(a => 
+        a && a.url && a.url.trim() && a.url !== 'null' && 
+        a.nombre && a.nombre.trim() && a.nombre !== 'null'
+      );
+      if (archivosValidos.length > 0) return true;
+    }
+    
+    // Validar formato legacy (url simple)
+    if (suministro.informe_final.url && 
+        typeof suministro.informe_final.url === 'string' &&
+        suministro.informe_final.url.trim() !== '' && 
+        suministro.informe_final.url !== 'null') {
+      return true;
+    }
+    
+    return false;
+  };
 
-  const isAdmin = user.role === "admin";
-
-  // Función para obtener el tipo máximo de factura
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
@@ -110,7 +119,16 @@ export default function ReadyToGo() {
     }, "2.0");
   };
 
-  // Admins ven TODOS los clientes, comerciales solo los suyos
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const isAdmin = user.role === "admin";
+
   const misClientesReady = clientes.filter(c => {
     const estadosReady = c.estado === "Informe listo" || 
                          c.estado === "Pendiente de firma" ||
@@ -123,7 +141,6 @@ export default function ReadyToGo() {
     }
   });
 
-  // ORDENAR POR PRIORIDAD: Pendiente de aprobación primero, luego 6.1 > 3.0 > 2.0, luego por estado
   const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
   const estadoOrder = { 
     "Pendiente de aprobación": 0,
@@ -132,18 +149,15 @@ export default function ReadyToGo() {
   };
   
   const clientesOrdenados = [...misClientesReady].sort((a, b) => {
-    // Primero ordenar por estado (Pendiente de aprobación primero)
     const estadoA = estadoOrder[a.estado];
     const estadoB = estadoOrder[b.estado];
     if (estadoA !== estadoB) return estadoA - estadoB;
 
-    // Luego por tipo de factura
     const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
     const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
     return orderA - orderB;
   });
 
-  // Agrupar por zona
   const clientesPorZona = clientesOrdenados.reduce((acc, cliente) => {
     const zona = zonas.find(z => z.id === cliente.zona_id);
     const zonaNombre = zona?.nombre || "Sin zona";
@@ -163,7 +177,6 @@ export default function ReadyToGo() {
     "2.0": "bg-blue-600 text-white"
   };
 
-  // Contadores por estado
   const informesListos = misClientesReady.filter(c => c.estado === "Informe listo").length;
   const pendientesFirma = misClientesReady.filter(c => c.estado === "Pendiente de firma").length;
   const pendientesAprobacion = misClientesReady.filter(c => c.estado === "Pendiente de aprobación").length;
@@ -184,7 +197,6 @@ export default function ReadyToGo() {
         </div>
       </div>
 
-      {/* Resumen con tres cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="border-l-4 border-green-500">
           <CardContent className="p-6">
@@ -229,7 +241,6 @@ export default function ReadyToGo() {
         </Card>
       </div>
 
-      {/* Clientes por zona */}
       {zonasOrdenadas.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
@@ -242,7 +253,6 @@ export default function ReadyToGo() {
         </Card>
       ) : (
         zonasOrdenadas.map(zonaNombre => {
-          // Detectar otros comerciales en esta zona
           const zona = zonas.find(z => z.nombre === zonaNombre);
           const otrosComerciales = zona ? clientes.filter(c => 
             c.zona_id === zona.id && 
@@ -252,7 +262,6 @@ export default function ReadyToGo() {
              c.estado === "Facturas presentadas")
           ) : [];
 
-          // Agrupar por comercial
           const porComercial = otrosComerciales.reduce((acc, c) => {
             const iniciales = c.propietario_iniciales || 'n/s';
             if (!acc[iniciales]) {
@@ -288,128 +297,137 @@ export default function ReadyToGo() {
                 )}
               </div>
 
-            <div className="space-y-4">
-              {clientesPorZona[zonaNombre].map(cliente => {
-                const esMio = cliente.propietario_email === user.email;
-                const puedoActualizar = esMio || isAdmin;
-                const tipoMax = getTipoMaximo(cliente);
-                const isPendienteFirma = cliente.estado === "Pendiente de firma";
-                const isPendienteAprobacion = cliente.estado === "Pendiente de aprobación";
-                const isInformeListo = cliente.estado === "Informe listo";
-                
-                const borderColor = isPendienteAprobacion ? "border-emerald-500" : 
-                                   isPendienteFirma ? "border-orange-500" : "border-green-500";
-                const bgColor = isPendienteAprobacion ? "bg-emerald-50" : 
-                               isPendienteFirma ? "bg-orange-50" : "bg-green-50";
+              <div className="space-y-4">
+                {clientesPorZona[zonaNombre].map(cliente => {
+                  const esMio = cliente.propietario_email === user.email;
+                  const puedoActualizar = esMio || isAdmin;
+                  const tipoMax = getTipoMaximo(cliente);
+                  const isPendienteFirma = cliente.estado === "Pendiente de firma";
+                  const isPendienteAprobacion = cliente.estado === "Pendiente de aprobación";
+                  
+                  const borderColor = isPendienteAprobacion ? "border-emerald-500" : 
+                                     isPendienteFirma ? "border-orange-500" : "border-green-500";
+                  const bgColor = isPendienteAprobacion ? "bg-emerald-50" : 
+                                 isPendienteFirma ? "bg-orange-50" : "bg-green-50";
 
-                return (
-                  <Card 
-                    key={cliente.id}
-                    className={`hover:shadow-lg transition-all duration-300 border-l-4 ${borderColor}`}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-start gap-4">
-                        <div className="flex-1">
-                          <div 
-                            className="flex items-start gap-3 mb-3 cursor-pointer"
-                            onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-                          >
-                            <Building2 className="w-6 h-6 text-[#004D9D] flex-shrink-0 mt-1" />
-                            <div className="flex-1">
-                              <h3 className="font-bold text-[#004D9D] text-lg mb-1 hover:underline">
-                                {cliente.nombre_negocio}
-                              </h3>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm text-gray-600">{cliente.propietario_iniciales || 'n/s'}</span>
-                                
-                                {/* Badge de estado */}
-                                {isPendienteAprobacion ? (
-                                  <Badge className="bg-emerald-600 text-white">
-                                    ✅ Firmado - Pendiente admin
+                  return (
+                    <Card 
+                      key={cliente.id}
+                      className={`hover:shadow-lg transition-all duration-300 border-l-4 ${borderColor}`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-start gap-4">
+                          <div className="flex-1">
+                            <div 
+                              className="flex items-start gap-3 mb-3 cursor-pointer"
+                              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                            >
+                              <Building2 className="w-6 h-6 text-[#004D9D] flex-shrink-0 mt-1" />
+                              <div className="flex-1">
+                                <h3 className="font-bold text-[#004D9D] text-lg mb-1 hover:underline">
+                                  {cliente.nombre_negocio}
+                                </h3>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm text-gray-600">{cliente.propietario_iniciales || 'n/s'}</span>
+                                  
+                                  {isPendienteAprobacion ? (
+                                    <Badge className="bg-emerald-600 text-white">
+                                      ✅ Firmado - Pendiente admin
+                                    </Badge>
+                                  ) : isPendienteFirma ? (
+                                    <Badge className="bg-orange-600 text-white">
+                                      ⏳ Pendiente de firma
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-green-600 text-white">
+                                      ✓ Informe listo
+                                    </Badge>
+                                  )}
+                                  
+                                  {tipoMax && (
+                                    <Badge className={tipoColors[tipoMax]}>
+                                      Max: {tipoMax}
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline">
+                                    {cliente.suministros?.length || 0} suministro(s)
                                   </Badge>
-                                ) : isPendienteFirma ? (
-                                  <Badge className="bg-orange-600 text-white">
-                                    ⏳ Pendiente de firma
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-green-600 text-white">
-                                    ✓ Informe listo
-                                  </Badge>
-                                )}
-                                
-                                {tipoMax && (
-                                  <Badge className={tipoColors[tipoMax]}>
-                                    Max: {tipoMax}
-                                  </Badge>
-                                )}
-                                <Badge variant="outline">
-                                  {cliente.suministros?.length || 0} suministro(s)
-                                </Badge>
-                                {cliente.comision && (
-                                  <Badge className="bg-yellow-600 text-white">
-                                    <DollarSign className="w-3 h-3 mr-1" />
-                                    {cliente.comision}€
-                                  </Badge>
-                                )}
+                                  {cliente.comision && (
+                                    <Badge className="bg-yellow-600 text-white">
+                                      <DollarSign className="w-3 h-3 mr-1" />
+                                      {cliente.comision}€
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Suministros con informes */}
-                          {cliente.suministros && cliente.suministros.length > 0 && (
-                            <div className="mt-4 space-y-2">
-                              <div className="flex items-center gap-2 mb-2">
-                                <FileText className={`w-4 h-4 ${
-                                  isPendienteAprobacion ? "text-emerald-600" :
-                                  isPendienteFirma ? "text-orange-600" : "text-green-600"
-                                }`} />
-                                <p className={`text-sm font-semibold ${
-                                  isPendienteAprobacion ? "text-emerald-700" :
-                                  isPendienteFirma ? "text-orange-700" : "text-green-700"
-                                }`}>
-                                  Informes disponibles:
-                                </p>
-                              </div>
-                              {cliente.suministros.map(suministro => (
-                                <div key={suministro.id} className={`${bgColor} border ${
-                                  isPendienteAprobacion ? "border-emerald-200" :
-                                  isPendienteFirma ? "border-orange-200" : "border-green-200"
-                                } rounded-lg p-3`}>
-                                  <div className="flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      <Badge className={tipoColors[suministro.tipo_factura]} variant="outline">
-                                        {suministro.tipo_factura}
-                                      </Badge>
-                                      <span className="text-sm font-medium text-gray-700 truncate">{suministro.nombre}</span>
-                                      {suministro.comision && (
-                                        <span className={`text-sm font-semibold ${
-                                          isPendienteAprobacion ? "text-emerald-600" :
-                                          isPendienteFirma ? "text-orange-600" : "text-green-600"
-                                        }`}>
-                                          ({suministro.comision}€)
-                                        </span>
-                                      )}
-                                    </div>
-                                    {(() => {
-                                      // Validar archivos array (nuevo formato)
-                                      const tieneArchivosValidos = suministro.informe_final?.archivos?.length > 0 && 
-                                        suministro.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.nombre);
-                                      
-                                      // Validar URL legacy (formato viejo)
-                                      const tieneUrlValida = suministro.informe_final?.url && 
-                                        suministro.informe_final.url.trim() !== '' && 
-                                        suministro.informe_final.url !== 'null';
-                                      
-                                      if (tieneArchivosValidos) {
-                                        return (
+                            {cliente.suministros && cliente.suministros.length > 0 && (
+                              <div className="mt-4 space-y-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <FileText className={`w-4 h-4 ${
+                                    isPendienteAprobacion ? "text-emerald-600" :
+                                    isPendienteFirma ? "text-orange-600" : "text-green-600"
+                                  }`} />
+                                  <p className={`text-sm font-semibold ${
+                                    isPendienteAprobacion ? "text-emerald-700" :
+                                    isPendienteFirma ? "text-orange-700" : "text-green-700"
+                                  }`}>
+                                    Informes disponibles:
+                                  </p>
+                                </div>
+                                {cliente.suministros.map(suministro => {
+                                  const informeValido = tieneInformeValido(suministro);
+                                  
+                                  return (
+                                    <div key={suministro.id} className={`${bgColor} border ${
+                                      isPendienteAprobacion ? "border-emerald-200" :
+                                      isPendienteFirma ? "border-orange-200" : "border-green-200"
+                                    } rounded-lg p-3`}>
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                          <Badge className={tipoColors[suministro.tipo_factura]} variant="outline">
+                                            {suministro.tipo_factura}
+                                          </Badge>
+                                          <span className="text-sm font-medium text-gray-700 truncate">{suministro.nombre}</span>
+                                          {suministro.comision && (
+                                            <span className={`text-sm font-semibold ${
+                                              isPendienteAprobacion ? "text-emerald-600" :
+                                              isPendienteFirma ? "text-orange-600" : "text-green-600"
+                                            }`}>
+                                              ({suministro.comision}€)
+                                            </span>
+                                          )}
+                                        </div>
+                                        
+                                        {informeValido ? (
                                           <div className="flex gap-2">
-                                            {suministro.informe_final.archivos.map((archivo, idx) => (
+                                            {suministro.informe_final.archivos && Array.isArray(suministro.informe_final.archivos) ? (
+                                              suministro.informe_final.archivos
+                                                .filter(a => a && a.url && a.url.trim() && a.url !== 'null')
+                                                .map((archivo, idx) => (
+                                                  <Button
+                                                    key={idx}
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      window.open(archivo.url, '_blank');
+                                                    }}
+                                                    className={
+                                                      isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                                      isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                                    }
+                                                  >
+                                                    <Download className="w-4 h-4 mr-1" />
+                                                    PDF {idx + 1}
+                                                  </Button>
+                                                ))
+                                            ) : (
                                               <Button
-                                                key={idx}
                                                 size="sm"
                                                 onClick={(e) => {
                                                   e.stopPropagation();
-                                                  window.open(archivo.url, '_blank');
+                                                  window.open(suministro.informe_final.url, '_blank');
                                                 }}
                                                 className={
                                                   isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
@@ -417,110 +435,78 @@ export default function ReadyToGo() {
                                                 }
                                               >
                                                 <Download className="w-4 h-4 mr-1" />
-                                                {idx === 0 ? "PDF 1" : "PDF 2"}
+                                                Descargar
                                               </Button>
-                                            ))}
+                                            )}
                                           </div>
-                                        );
-                                      } else if (tieneUrlValida) {
-                                        return (
-                                          <Button
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              window.open(suministro.informe_final.url, '_blank');
-                                            }}
-                                            className={
-                                              isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                              isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                            }
-                                          >
-                                            <Download className="w-4 h-4 mr-1" />
-                                            Descargar
-                                          </Button>
-                                        );
-                                      } else {
-                                        return (
+                                        ) : (
                                           <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
                                             Sin informe
                                           </Badge>
-                                        );
-                                      }
-                                    })()}
-                                  </div>
-                                  {(() => {
-                                    // Mostrar nombres de archivos si están disponibles
-                                    const tieneArchivosValidos = suministro.informe_final?.archivos?.length > 0 && 
-                                      suministro.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.nombre);
-                                    
-                                    const tieneNombreValido = suministro.informe_final?.nombre && 
-                                      suministro.informe_final.nombre.trim() !== '' && 
-                                      suministro.informe_final.nombre !== 'null';
-                                    
-                                    if (tieneArchivosValidos) {
-                                      return (
-                                        <div className="text-xs text-gray-500 mt-1 space-y-1">
-                                          {suministro.informe_final.archivos.map((archivo, idx) => (
-                                            <p key={idx}>📄 {archivo.nombre}</p>
-                                          ))}
+                                        )}
+                                      </div>
+                                      
+                                      {informeValido && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          {suministro.informe_final.archivos && Array.isArray(suministro.informe_final.archivos) ? (
+                                            suministro.informe_final.archivos
+                                              .filter(a => a && a.nombre && a.nombre.trim() && a.nombre !== 'null')
+                                              .map((archivo, idx) => (
+                                                <p key={idx}>📄 {archivo.nombre}</p>
+                                              ))
+                                          ) : suministro.informe_final.nombre && suministro.informe_final.nombre !== 'null' ? (
+                                            <p>📄 {suministro.informe_final.nombre}</p>
+                                          ) : null}
                                         </div>
-                                      );
-                                    } else if (tieneNombreValido) {
-                                      return (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          📄 {suministro.informe_final.nombre}
-                                        </p>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
-                                </div>
-                              ))}
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {puedoActualizar && (
+                            <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                              <p className="text-sm font-semibold text-gray-600 mb-1">Cambiar estado:</p>
+                              <Select
+                                value={cliente.estado}
+                                onValueChange={(value) => handleCambiarEstado(cliente, value)}
+                                disabled={isPendienteAprobacion && !isAdmin}
+                              >
+                                <SelectTrigger className="w-[220px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
+                                  <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
+                                  <SelectItem value="Pendiente de aprobación">🎉 Firmado con éxito</SelectItem>
+                                  <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              {isPendienteFirma && (
+                                <p className="text-xs text-orange-600 mt-1">
+                                  💡 Esperando firma del cliente
+                                </p>
+                              )}
+                              
+                              {isPendienteAprobacion && (
+                                <p className="text-xs text-emerald-600 mt-1">
+                                  ⏳ Esperando aprobación del admin
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
-
-                        {puedoActualizar && (
-                          <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-                            <p className="text-sm font-semibold text-gray-600 mb-1">Cambiar estado:</p>
-                            <Select
-                              value={cliente.estado}
-                              onValueChange={(value) => handleCambiarEstado(cliente, value)}
-                              disabled={isPendienteAprobacion && !isAdmin}
-                            >
-                              <SelectTrigger className="w-[220px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
-                                <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
-                                <SelectItem value="Pendiente de aprobación">🎉 Firmado con éxito</SelectItem>
-                                <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            
-                            {isPendienteFirma && (
-                              <p className="text-xs text-orange-600 mt-1">
-                                💡 Esperando firma del cliente
-                              </p>
-                            )}
-                            
-                            {isPendienteAprobacion && (
-                              <p className="text-xs text-emerald-600 mt-1">
-                                ⏳ Esperando aprobación del admin
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
-            </div>
-            );
-            })
+          );
+        })
       )}
     </div>
   );

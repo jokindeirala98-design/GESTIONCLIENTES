@@ -151,11 +151,6 @@ export default function Layout({ children }) {
       icon: UserCircle2,
     },
     {
-      title: "Limpieza de Datos",
-      url: createPageUrl("LimpiezaDatos"),
-      icon: Settings,
-    },
-    {
       title: "Configuración",
       url: createPageUrl("Configuracion"),
       icon: Settings,
