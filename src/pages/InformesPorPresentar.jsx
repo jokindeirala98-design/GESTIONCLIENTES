@@ -128,33 +128,44 @@ export default function InformesPorPresentar() {
     }
   };
 
-  const handleSeleccionarInforme = async (suministroId, file) => {
-    if (!file) return;
+  const handleSeleccionarInformes = async (suministroId, files) => {
+    if (!files || files.length === 0) return;
     
     const informesActuales = informesSubidos[suministroId]?.files || [];
-    if (informesActuales.length >= 2) {
+    const remaining = 2 - informesActuales.length;
+    
+    if (remaining <= 0) {
       toast.error("Máximo 2 archivos por suministro");
       return;
     }
     
+    const filesToUpload = files.slice(0, remaining);
+    
     try {
-      toast.loading("Subiendo archivo...", { id: `upload-${suministroId}-${informesActuales.length}` });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      toast.loading(`Subiendo ${filesToUpload.length} archivo(s)...`, { id: `upload-${suministroId}` });
+      
+      const uploads = await Promise.all(
+        filesToUpload.map(file => base44.integrations.Core.UploadFile({ file }))
+      );
       
       setInformesSubidos(prev => ({
         ...prev,
         [suministroId]: {
           files: [
             ...(prev[suministroId]?.files || []),
-            { file, fileUrl: file_url, fileName: file.name }
+            ...uploads.map((upload, idx) => ({
+              file: filesToUpload[idx],
+              fileUrl: upload.file_url,
+              fileName: filesToUpload[idx].name
+            }))
           ]
         }
       }));
       
-      toast.success("Archivo subido. Añade comisión y guarda.", { id: `upload-${suministroId}-${informesActuales.length}` });
+      toast.success(`${filesToUpload.length} archivo(s) subido(s). Añade comisión y guarda.`, { id: `upload-${suministroId}` });
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Error al subir el archivo", { id: `upload-${suministroId}-${informesActuales.length}` });
+      toast.error("Error al subir archivos", { id: `upload-${suministroId}` });
     }
   };
 
@@ -724,13 +735,15 @@ export default function InformesPorPresentar() {
                                               e.preventDefault();
                                               e.currentTarget.classList.remove('border-purple-500', 'bg-purple-100');
                                               const files = Array.from(e.dataTransfer.files);
-                                              files.forEach(file => {
-                                                if (file && file.type === 'application/pdf') {
-                                                  handleSeleccionarInforme(suministro.id, file);
-                                                } else if (file) {
-                                                  toast.error(`${file.name}: Solo se permiten archivos PDF`);
-                                                }
-                                              });
+                                              const pdfFiles = files.filter(f => f.type === 'application/pdf');
+                                              
+                                              if (pdfFiles.length < files.length) {
+                                                toast.error("Solo se permiten archivos PDF");
+                                              }
+                                              
+                                              if (pdfFiles.length > 0) {
+                                                handleSeleccionarInformes(suministro.id, pdfFiles);
+                                              }
                                             }}
                                             className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center transition-colors"
                                           >
@@ -746,11 +759,9 @@ export default function InformesPorPresentar() {
                                               multiple
                                               onChange={(e) => {
                                                 const files = Array.from(e.target.files);
-                                                files.forEach(file => {
-                                                  if (file) {
-                                                    handleSeleccionarInforme(suministro.id, file);
-                                                  }
-                                                });
+                                                if (files.length > 0) {
+                                                  handleSeleccionarInformes(suministro.id, files);
+                                                }
                                                 e.target.value = "";
                                               }}
                                             />

@@ -81,34 +81,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     toast.success("Nombre actualizado");
   };
 
-  const handleUploadFactura = async (suministroId, file) => {
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
-      const nuevosSuministros = suministros.map(s => {
-        if (s.id === suministroId) {
-          const nuevasFacturas = [
-            ...(s.facturas || []),
-            {
-              nombre: file.name,
-              url: file_url,
-              fecha_subida: new Date().toISOString(),
-              tipo_archivo: file.type
-            }
-          ];
-          return { ...s, facturas: nuevasFacturas };
-        }
-        return s;
-      });
 
-      setSuministros(nuevosSuministros);
-      onUpdate({ suministros: nuevosSuministros });
-      toast.success("Factura subida correctamente");
-    } catch (error) {
-      console.error("Error uploading:", error);
-      toast.error("Error al subir la factura");
-    }
-  };
 
   const handleDeleteFactura = (suministroId, facturaIndex) => {
     const nuevosSuministros = suministros.map(s => {
@@ -252,12 +225,43 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       className="hidden"
                       accept=".pdf,.jpg,.jpeg,.png"
                       multiple
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const files = Array.from(e.target.files);
                         const remaining = 3 - (suministro.facturas || []).length;
                         const filesToUpload = files.slice(0, remaining);
                         
-                        filesToUpload.forEach(file => handleUploadFactura(suministro.id, file));
+                        // Subir todos los archivos en paralelo
+                        toast.loading(`Subiendo ${filesToUpload.length} archivo(s)...`, { id: `upload-${suministro.id}` });
+                        
+                        try {
+                          const uploads = await Promise.all(
+                            filesToUpload.map(file => base44.integrations.Core.UploadFile({ file }))
+                          );
+                          
+                          const nuevosSuministros = suministros.map(s => {
+                            if (s.id === suministro.id) {
+                              const nuevasFacturas = [
+                                ...(s.facturas || []),
+                                ...uploads.map((upload, idx) => ({
+                                  nombre: filesToUpload[idx].name,
+                                  url: upload.file_url,
+                                  fecha_subida: new Date().toISOString(),
+                                  tipo_archivo: filesToUpload[idx].type
+                                }))
+                              ];
+                              return { ...s, facturas: nuevasFacturas };
+                            }
+                            return s;
+                          });
+
+                          setSuministros(nuevosSuministros);
+                          onUpdate({ suministros: nuevosSuministros });
+                          toast.success(`${filesToUpload.length} factura(s) subida(s)`, { id: `upload-${suministro.id}` });
+                        } catch (error) {
+                          console.error("Error uploading:", error);
+                          toast.error("Error al subir facturas", { id: `upload-${suministro.id}` });
+                        }
+                        
                         e.target.value = "";
                       }}
                     />
