@@ -410,6 +410,21 @@ export default function ReadyToGo() {
                                           </Button>
                                         ))}
                                       </div>
+                                    ) : suministro.informe_final?.url ? (
+                                      <Button
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(suministro.informe_final.url, '_blank');
+                                        }}
+                                        className={
+                                          isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                          isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                        }
+                                      >
+                                        <Download className="w-4 h-4 mr-1" />
+                                        Descargar
+                                      </Button>
                                     ) : (
                                       <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
                                         Sin informe
@@ -423,11 +438,11 @@ export default function ReadyToGo() {
                                           <p key={idx}>📄 {archivo.nombre}</p>
                                         ))}
                                       </div>
-                                    ) : (
+                                    ) : suministro.informe_final.nombre ? (
                                       <p className="text-xs text-gray-500 mt-1">
                                         📄 {suministro.informe_final.nombre}
                                       </p>
-                                    )
+                                    ) : null
                                   )}
                                 </div>
                               ))}
