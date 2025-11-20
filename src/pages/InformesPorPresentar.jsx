@@ -57,8 +57,10 @@ export default function InformesPorPresentar() {
 
   const updateClienteMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidar queries globales y específicas del cliente
       queryClient.invalidateQueries(['clientes']);
+      queryClient.invalidateQueries(['cliente', variables.id]);
     },
   });
 
@@ -256,6 +258,10 @@ export default function InformesPorPresentar() {
         }
       });
 
+      // CRÍTICO: Invalidar todas las queries para forzar recarga
+      await queryClient.invalidateQueries(['clientes']);
+      await queryClient.invalidateQueries(['cliente', cliente.id]);
+      
       toast.success("Informe guardado correctamente");
 
       // Limpiar estado
@@ -272,11 +278,16 @@ export default function InformesPorPresentar() {
 
       // Enviar email al comercial si todos tienen informe
       if (todosConInforme) {
-        await base44.integrations.Core.SendEmail({
-          to: cliente.propietario_email,
-          subject: `✅ Todos los informes listos para ${cliente.nombre_negocio}`,
-          body: `Hola,\n\nTodos los informes finales de "${cliente.nombre_negocio}" ya están listos y disponibles en la plataforma.\n\nComisión total: ${comisionTotal}€\n\nPuedes verlos en: ${window.location.origin}${createPageUrl(`DetalleCliente?id=${cliente.id}`)}\n\nSaludos,\nVoltis Energía`
-        });
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: cliente.propietario_email,
+            subject: `✅ Todos los informes listos para ${cliente.nombre_negocio}`,
+            body: `Hola,\n\nTodos los informes finales de "${cliente.nombre_negocio}" ya están listos y disponibles en la plataforma.\n\nComisión total: ${comisionTotal}€\n\nPuedes verlos en: ${window.location.origin}${createPageUrl(`DetalleCliente?id=${cliente.id}`)}\n\nSaludos,\nVoltis Energía`
+          });
+        } catch (emailError) {
+          console.error("Error enviando email:", emailError);
+          // No bloquear el proceso si falla el email
+        }
       }
     } catch (error) {
       console.error("Error:", error);
