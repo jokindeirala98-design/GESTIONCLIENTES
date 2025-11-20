@@ -159,13 +159,25 @@ export default function DetalleCliente() {
   }, [cliente?.id, cliente?.suministros, cliente?.estado]);
 
   const handleUpdate = (data) => {
-    // Verificar si todos los suministros tienen al menos 1 factura
+    // LIMPIEZA: Eliminar informes_final corruptos antes de guardar
     if (data.suministros) {
+      data.suministros = data.suministros.map(s => {
+        if (s.informe_final) {
+          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
+          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
+          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
+          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+            const { informe_final, ...resto } = s;
+            return resto;
+          }
+        }
+        return s;
+      });
+      
       const todosConFacturas = data.suministros.length > 0 && data.suministros.every(s => 
         s.facturas && s.facturas.length > 0
       );
       
-      // Cambiar a "Facturas presentadas" si todos tienen facturas y NO está en estado final
       const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
       if (todosConFacturas && !estadosFinales.includes(cliente.estado)) {
         console.log("Cambiando a Facturas presentadas - todos los suministros tienen facturas");
@@ -176,18 +188,14 @@ export default function DetalleCliente() {
         return;
       }
 
-      // Verificar si todos los suministros tienen informe final
       const todosConInforme = data.suministros.length > 0 && data.suministros.every(s => {
         if (!s.informe_final) return false;
-        // Validar archivos array (nuevo formato)
         const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
           s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
-        // Validar URL legacy (formato viejo)
         const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
         return tieneArchivosValidos || tieneUrlValida;
       });
 
-      // Cambiar a "Informe listo" si todos tienen informe y está en "Facturas presentadas"
       if (todosConInforme && cliente.estado === "Facturas presentadas") {
         console.log("Cambiando a Informe listo - todos los suministros tienen informe");
         updateMutation.mutate({

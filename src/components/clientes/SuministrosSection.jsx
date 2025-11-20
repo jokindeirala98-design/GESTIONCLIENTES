@@ -50,6 +50,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
         nombre: nuevoSuministro.nombre,
         tipo_factura: nuevoSuministro.tipo_factura,
         facturas: []
+        // CRÍTICO: NO crear informe_final aquí, solo cuando el admin lo suba
       }
     ];
     setSuministros(nuevosSuministros);
@@ -72,9 +73,23 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   };
 
   const handleSaveName = (suministroId) => {
-    const nuevosSuministros = suministros.map(s =>
-      s.id === suministroId ? { ...s, nombre: editingName } : s
-    );
+    const nuevosSuministros = suministros.map(s => {
+      if (s.id === suministroId) {
+        // LIMPIEZA: Eliminar informe_final corrupto si existe
+        let suministroActualizado = { ...s, nombre: editingName };
+        if (s.informe_final) {
+          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
+          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
+          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
+          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+            const { informe_final, ...resto } = suministroActualizado;
+            return resto;
+          }
+        }
+        return suministroActualizado;
+      }
+      return s;
+    });
     setSuministros(nuevosSuministros);
     onUpdate({ suministros: nuevosSuministros });
     setEditingId(null);
@@ -87,7 +102,19 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     const nuevosSuministros = suministros.map(s => {
       if (s.id === suministroId) {
         const nuevasFacturas = s.facturas.filter((_, idx) => idx !== facturaIndex);
-        return { ...s, facturas: nuevasFacturas };
+        
+        // LIMPIEZA: Eliminar informe_final corrupto si existe
+        let suministroActualizado = { ...s, facturas: nuevasFacturas };
+        if (s.informe_final) {
+          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
+          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
+          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
+          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+            const { informe_final, ...resto } = suministroActualizado;
+            return resto;
+          }
+        }
+        return suministroActualizado;
       }
       return s;
     });
