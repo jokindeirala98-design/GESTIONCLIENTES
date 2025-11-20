@@ -249,7 +249,19 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                                   tipo_archivo: filesToUpload[idx].type
                                 }))
                               ];
-                              return { ...s, facturas: nuevasFacturas };
+                              
+                              // LIMPIEZA: Si tiene informe_final corrupto, eliminarlo
+                              let suministroActualizado = { ...s, facturas: nuevasFacturas };
+                              if (s.informe_final) {
+                                const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
+                                const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
+                                const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
+                                if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+                                  const { informe_final, ...resto } = suministroActualizado;
+                                  suministroActualizado = resto;
+                                }
+                              }
+                              return suministroActualizado;
                             }
                             return s;
                           });

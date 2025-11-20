@@ -242,6 +242,20 @@ export default function InformesPorPresentar() {
             comision: parseFloat(comision)
           };
         }
+        
+        // LIMPIEZA: Si el suministro tiene informe_final corrupto (nombre/url null), eliminarlo
+        if (s.informe_final) {
+          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
+          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
+          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
+          
+          // Si tiene el formato legacy corrupto (nombre/url null y sin archivos válidos), limpiarlo
+          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+            const { informe_final, ...suministroLimpio } = s;
+            return suministroLimpio;
+          }
+        }
+        
         return s;
       });
 
