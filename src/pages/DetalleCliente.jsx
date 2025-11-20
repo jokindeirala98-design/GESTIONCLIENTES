@@ -533,6 +533,69 @@ export default function DetalleCliente() {
           isOwnerOrAdmin={canEdit}
         />
         
+        {/* Sección de Informes Finales */}
+        {cliente.suministros?.some(s => {
+          const tieneArchivosValidos = s.informe_final?.archivos?.length > 0 && 
+            s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+          const tieneUrlValida = s.informe_final?.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+          return tieneArchivosValidos || tieneUrlValida;
+        }) && (
+          <Card className="border-2 border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-green-800 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5" />
+                Informes Finales
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {cliente.suministros.map((suministro) => {
+                const tieneArchivosValidos = suministro.informe_final?.archivos?.length > 0 && 
+                  suministro.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+                const tieneUrlValida = suministro.informe_final?.url && suministro.informe_final.url.trim() !== '' && suministro.informe_final.url !== 'null';
+                
+                if (!tieneArchivosValidos && !tieneUrlValida) return null;
+                
+                return (
+                  <Card key={suministro.id} className="bg-white">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-gray-800">{suministro.nombre}</p>
+                          <p className="text-sm text-gray-600">
+                            {suministro.comision && `Comisión: ${suministro.comision}€`}
+                          </p>
+                        </div>
+                        {tieneArchivosValidos ? (
+                          <div className="flex gap-2">
+                            {suministro.informe_final.archivos.map((archivo, idx) => (
+                              <Button
+                                key={idx}
+                                size="sm"
+                                onClick={() => window.open(archivo.url, '_blank')}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                📄 {archivo.nombre}
+                              </Button>
+                            ))}
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => window.open(suministro.informe_final.url, '_blank')}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            📄 {suministro.informe_final.nombre || 'Descargar Informe'}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+        
         <EventosSection
           cliente={cliente}
           onUpdate={handleUpdate}
