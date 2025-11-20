@@ -134,10 +134,12 @@ export default function DetalleCliente() {
     // Verificar si todos los suministros tienen informe final
     const todosConInforme = cliente.suministros.every(s => {
       if (!s.informe_final) return false;
-      const tieneArchivos = s.informe_final.archivos?.length > 0 && 
-                           s.informe_final.archivos.every(a => a.url && a.nombre);
-      const tieneUrl = s.informe_final.url && s.informe_final.url.trim() !== '';
-      return tieneArchivos || tieneUrl;
+      // Validar archivos array (nuevo formato)
+      const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
+        s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+      // Validar URL legacy (formato viejo)
+      const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+      return tieneArchivosValidos || tieneUrlValida;
     });
 
     // Corregir estado si es necesario
@@ -177,10 +179,12 @@ export default function DetalleCliente() {
       // Verificar si todos los suministros tienen informe final
       const todosConInforme = data.suministros.length > 0 && data.suministros.every(s => {
         if (!s.informe_final) return false;
-        const tieneArchivos = s.informe_final.archivos?.length > 0 && 
-                             s.informe_final.archivos.every(a => a.url && a.nombre);
-        const tieneUrl = s.informe_final.url && s.informe_final.url.trim() !== '';
-        return tieneArchivos || tieneUrl;
+        // Validar archivos array (nuevo formato)
+        const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
+          s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+        // Validar URL legacy (formato viejo)
+        const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+        return tieneArchivosValidos || tieneUrlValida;
       });
 
       // Cambiar a "Informe listo" si todos tienen informe y está en "Facturas presentadas"

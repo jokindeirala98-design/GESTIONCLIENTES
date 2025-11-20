@@ -390,15 +390,45 @@ export default function ReadyToGo() {
                                         </span>
                                       )}
                                     </div>
-                                    {suministro.informe_final?.archivos && suministro.informe_final.archivos.length > 0 ? (
-                                      <div className="flex gap-2">
-                                        {suministro.informe_final.archivos.map((archivo, idx) => (
+                                    {(() => {
+                                      // Validar archivos array (nuevo formato)
+                                      const tieneArchivosValidos = suministro.informe_final?.archivos?.length > 0 && 
+                                        suministro.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.nombre);
+                                      
+                                      // Validar URL legacy (formato viejo)
+                                      const tieneUrlValida = suministro.informe_final?.url && 
+                                        suministro.informe_final.url.trim() !== '' && 
+                                        suministro.informe_final.url !== 'null';
+                                      
+                                      if (tieneArchivosValidos) {
+                                        return (
+                                          <div className="flex gap-2">
+                                            {suministro.informe_final.archivos.map((archivo, idx) => (
+                                              <Button
+                                                key={idx}
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  window.open(archivo.url, '_blank');
+                                                }}
+                                                className={
+                                                  isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                                  isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                                }
+                                              >
+                                                <Download className="w-4 h-4 mr-1" />
+                                                {idx === 0 ? "PDF 1" : "PDF 2"}
+                                              </Button>
+                                            ))}
+                                          </div>
+                                        );
+                                      } else if (tieneUrlValida) {
+                                        return (
                                           <Button
-                                            key={idx}
                                             size="sm"
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              window.open(archivo.url, '_blank');
+                                              window.open(suministro.informe_final.url, '_blank');
                                             }}
                                             className={
                                               isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
@@ -406,44 +436,44 @@ export default function ReadyToGo() {
                                             }
                                           >
                                             <Download className="w-4 h-4 mr-1" />
-                                            {idx === 0 ? "PDF 1" : "PDF 2"}
+                                            Descargar
                                           </Button>
-                                        ))}
-                                      </div>
-                                    ) : suministro.informe_final?.url ? (
-                                      <Button
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          window.open(suministro.informe_final.url, '_blank');
-                                        }}
-                                        className={
-                                          isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                          isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                        }
-                                      >
-                                        <Download className="w-4 h-4 mr-1" />
-                                        Descargar
-                                      </Button>
-                                    ) : (
-                                      <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
-                                        Sin informe
-                                      </Badge>
-                                    )}
+                                        );
+                                      } else {
+                                        return (
+                                          <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
+                                            Sin informe
+                                          </Badge>
+                                        );
+                                      }
+                                    })()}
                                   </div>
-                                  {suministro.informe_final && (
-                                    suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
-                                      <div className="text-xs text-gray-500 mt-1 space-y-1">
-                                        {suministro.informe_final.archivos.map((archivo, idx) => (
-                                          <p key={idx}>📄 {archivo.nombre}</p>
-                                        ))}
-                                      </div>
-                                    ) : suministro.informe_final.nombre ? (
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        📄 {suministro.informe_final.nombre}
-                                      </p>
-                                    ) : null
-                                  )}
+                                  {(() => {
+                                    // Mostrar nombres de archivos si están disponibles
+                                    const tieneArchivosValidos = suministro.informe_final?.archivos?.length > 0 && 
+                                      suministro.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.nombre);
+                                    
+                                    const tieneNombreValido = suministro.informe_final?.nombre && 
+                                      suministro.informe_final.nombre.trim() !== '' && 
+                                      suministro.informe_final.nombre !== 'null';
+                                    
+                                    if (tieneArchivosValidos) {
+                                      return (
+                                        <div className="text-xs text-gray-500 mt-1 space-y-1">
+                                          {suministro.informe_final.archivos.map((archivo, idx) => (
+                                            <p key={idx}>📄 {archivo.nombre}</p>
+                                          ))}
+                                        </div>
+                                      );
+                                    } else if (tieneNombreValido) {
+                                      return (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          📄 {suministro.informe_final.nombre}
+                                        </p>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               ))}
                             </div>

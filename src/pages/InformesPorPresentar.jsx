@@ -80,11 +80,12 @@ export default function InformesPorPresentar() {
         
         const todosConInforme = cliente.suministros.every(s => {
           if (!s.informe_final) return false;
-          // Validar que tenga archivos válidos O url válida
-          const tieneArchivos = s.informe_final.archivos?.length > 0 && 
-                               s.informe_final.archivos.every(a => a.url && a.nombre);
-          const tieneUrl = s.informe_final.url && s.informe_final.url.trim() !== '';
-          return tieneArchivos || tieneUrl;
+          // Validar archivos array (nuevo formato)
+          const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
+            s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+          // Validar URL legacy (formato viejo)
+          const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+          return tieneArchivosValidos || tieneUrlValida;
         });
 
         if (todosConInforme && cliente.estado !== "Informe listo") {
@@ -229,12 +230,14 @@ export default function InformesPorPresentar() {
             url: f.fileUrl
           }));
           
+          // CRÍTICO: Solo crear informe_final con archivos válidos, nunca campos vacíos
           return {
             ...s,
             informe_final: {
-              archivos: archivos,
+              archivos: archivos, // Array con {nombre, url}
               fecha_subida: new Date().toISOString(),
               subido_por_email: user.email
+              // NUNCA incluir nombre: null, url: null
             },
             comision: parseFloat(comision)
           };
@@ -244,10 +247,12 @@ export default function InformesPorPresentar() {
 
       const todosConInforme = nuevosSuministros.every(s => {
         if (!s.informe_final) return false;
-        const tieneArchivos = s.informe_final.archivos?.length > 0 && 
-                             s.informe_final.archivos.every(a => a.url && a.nombre);
-        const tieneUrl = s.informe_final.url && s.informe_final.url.trim() !== '';
-        return tieneArchivos || tieneUrl;
+        // Validar archivos array (nuevo formato)
+        const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
+          s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
+        // Validar URL legacy (formato viejo)
+        const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+        return tieneArchivosValidos || tieneUrlValida;
       });
       const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
       const nuevoEstado = todosConInforme ? "Informe listo" : "Facturas presentadas";
