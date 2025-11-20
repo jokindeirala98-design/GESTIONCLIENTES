@@ -390,43 +390,26 @@ export default function ReadyToGo() {
                                         </span>
                                       )}
                                     </div>
-                                    {suministro.informe_final ? (
-                                      suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
-                                        <div className="flex gap-2">
-                                          {suministro.informe_final.archivos.map((archivo, idx) => (
-                                            <Button
-                                              key={idx}
-                                              size="sm"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                window.open(archivo.url, '_blank');
-                                              }}
-                                              className={
-                                                isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                                isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                              }
-                                            >
-                                              <Download className="w-4 h-4 mr-1" />
-                                              {idx === 0 ? "PDF 1" : "PDF 2"}
-                                            </Button>
-                                          ))}
-                                        </div>
-                                      ) : suministro.informe_final.url ? (
-                                        <Button
-                                          size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.open(suministro.informe_final.url, '_blank');
-                                          }}
-                                          className={
-                                            isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                            isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                          }
-                                        >
-                                          <Download className="w-4 h-4 mr-1" />
-                                          Descargar
-                                        </Button>
-                                      ) : null
+                                    {suministro.informe_final?.archivos && suministro.informe_final.archivos.length > 0 ? (
+                                      <div className="flex gap-2">
+                                        {suministro.informe_final.archivos.map((archivo, idx) => (
+                                          <Button
+                                            key={idx}
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              window.open(archivo.url, '_blank');
+                                            }}
+                                            className={
+                                              isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                              isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                            }
+                                          >
+                                            <Download className="w-4 h-4 mr-1" />
+                                            {idx === 0 ? "PDF 1" : "PDF 2"}
+                                          </Button>
+                                        ))}
+                                      </div>
                                     ) : (
                                       <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
                                         Sin informe
