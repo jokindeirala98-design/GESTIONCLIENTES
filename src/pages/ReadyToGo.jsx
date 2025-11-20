@@ -85,28 +85,73 @@ export default function ReadyToGo() {
     updateStatusMutation.mutate({ clienteId: cliente.id, nuevoEstado, cliente });
   };
 
+  // Helper unificado: obtener siempre los archivos descargables de un suministro
+  const getArchivosValidos = (suministro) => {
+    if (!suministro || !suministro.informe_final) return [];
+
+    const informe = suministro.informe_final;
+
+    // Formato nuevo: { informe_final: { archivos: [...] } }
+    if (Array.isArray(informe.archivos)) {
+      return informe.archivos
+        .filter(
+          (a) =>
+            a &&
+            typeof a.url === "string" &&
+            a.url.trim() !== "" &&
+            a.url !== "null"
+        )
+        .map((a) => ({
+          url: a.url,
+          nombre:
+            a.nombre &&
+            a.nombre !== "null" &&
+            a.nombre.trim() !== ""
+              ? a.nombre
+              : undefined,
+        }));
+    }
+
+    // Formato legacy: { informe_final: { url: "..." } }
+    if (
+      typeof informe.url === "string" &&
+      informe.url.trim() !== "" &&
+      informe.url !== "null"
+    ) {
+      return [
+        {
+          url: informe.url,
+          nombre:
+            informe.nombre &&
+            informe.nombre !== "null" &&
+            informe.nombre.trim() !== ""
+              ? informe.nombre
+              : undefined,
+        },
+      ];
+    }
+
+    // Caso extremo: informe_final es directamente un string con la URL
+    if (
+      typeof informe === "string" &&
+      informe.trim() !== "" &&
+      informe !== "null"
+    ) {
+      return [
+        {
+          url: informe,
+          nombre: undefined,
+        },
+      ];
+    }
+
+    return [];
+  };
+
   // FUNCIÓN CRÍTICA: Validar si un suministro tiene informe válido
   const tieneInformeValido = (suministro) => {
-    if (!suministro.informe_final) return false;
-    
-    // Validar formato nuevo (archivos array)
-    if (suministro.informe_final.archivos && Array.isArray(suministro.informe_final.archivos)) {
-      const archivosValidos = suministro.informe_final.archivos.filter(a => 
-        a && a.url && a.url.trim() && a.url !== 'null' && 
-        a.nombre && a.nombre.trim() && a.nombre !== 'null'
-      );
-      if (archivosValidos.length > 0) return true;
-    }
-    
-    // Validar formato legacy (url simple)
-    if (suministro.informe_final.url && 
-        typeof suministro.informe_final.url === 'string' &&
-        suministro.informe_final.url.trim() !== '' && 
-        suministro.informe_final.url !== 'null') {
-      return true;
-    }
-    
-    return false;
+    const archivos = getArchivosValidos(suministro);
+    return archivos.length > 0;
   };
 
   const getTipoMaximo = (cliente) => {
@@ -377,7 +422,8 @@ export default function ReadyToGo() {
                                   </p>
                                 </div>
                                 {cliente.suministros.map(suministro => {
-                                  const informeValido = tieneInformeValido(suministro);
+                                  const archivosValidos = getArchivosValidos(suministro);
+                                  const informeValido = archivosValidos.length > 0;
                                   
                                   return (
                                     <div key={suministro.id} className={`${bgColor} border ${
@@ -402,32 +448,13 @@ export default function ReadyToGo() {
                                         
                                         {informeValido ? (
                                           <div className="flex gap-2">
-                                            {suministro.informe_final.archivos && Array.isArray(suministro.informe_final.archivos) ? (
-                                              suministro.informe_final.archivos
-                                                .filter(a => a && a.url && a.url.trim() && a.url !== 'null')
-                                                .map((archivo, idx) => (
-                                                  <Button
-                                                    key={idx}
-                                                    size="sm"
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      window.open(archivo.url, '_blank');
-                                                    }}
-                                                    className={
-                                                      isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                                      isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                                    }
-                                                  >
-                                                    <Download className="w-4 h-4 mr-1" />
-                                                    PDF {idx + 1}
-                                                  </Button>
-                                                ))
-                                            ) : (
+                                            {archivosValidos.map((archivo, idx) => (
                                               <Button
+                                                key={idx}
                                                 size="sm"
                                                 onClick={(e) => {
                                                   e.stopPropagation();
-                                                  window.open(suministro.informe_final.url, '_blank');
+                                                  window.open(archivo.url, '_blank');
                                                 }}
                                                 className={
                                                   isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
@@ -435,9 +462,11 @@ export default function ReadyToGo() {
                                                 }
                                               >
                                                 <Download className="w-4 h-4 mr-1" />
-                                                Descargar
+                                                {archivo.nombre && archivo.nombre !== "null"
+                                                  ? archivo.nombre
+                                                  : `PDF ${idx + 1}`}
                                               </Button>
-                                            )}
+                                            ))}
                                           </div>
                                         ) : (
                                           <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
@@ -448,15 +477,13 @@ export default function ReadyToGo() {
                                       
                                       {informeValido && (
                                         <div className="text-xs text-gray-500 mt-1">
-                                          {suministro.informe_final.archivos && Array.isArray(suministro.informe_final.archivos) ? (
-                                            suministro.informe_final.archivos
-                                              .filter(a => a && a.nombre && a.nombre.trim() && a.nombre !== 'null')
-                                              .map((archivo, idx) => (
-                                                <p key={idx}>📄 {archivo.nombre}</p>
-                                              ))
-                                          ) : suministro.informe_final.nombre && suministro.informe_final.nombre !== 'null' ? (
-                                            <p>📄 {suministro.informe_final.nombre}</p>
-                                          ) : null}
+                                          {archivosValidos.map((archivo, idx) => (
+                                            <p key={idx}>
+                                              📄 {archivo.nombre && archivo.nombre !== "null"
+                                                ? archivo.nombre
+                                                : `PDF ${idx + 1}`}
+                                            </p>
+                                          ))}
                                         </div>
                                       )}
                                     </div>
