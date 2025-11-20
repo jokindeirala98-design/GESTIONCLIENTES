@@ -229,33 +229,34 @@ export default function InformesPorPresentar() {
             nombre: f.fileName,
             url: f.fileUrl
           }));
-          
-          // CRÍTICO: Solo crear informe_final con archivos válidos, nunca campos vacíos
+
+          // CRÍTICO: Solo crear informe_final con archivos válidos
           return {
             ...s,
             informe_final: {
-              archivos: archivos, // Array con {nombre, url}
+              archivos: archivos,
               fecha_subida: new Date().toISOString(),
               subido_por_email: user.email
-              // NUNCA incluir nombre: null, url: null
             },
             comision: parseFloat(comision)
           };
         }
         
-        // LIMPIEZA: Si el suministro tiene informe_final corrupto (nombre/url null), eliminarlo
+        // LIMPIEZA PREVENTIVA: Si tiene informe_final corrupto, eliminarlo
         if (s.informe_final) {
           const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
           const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
-          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
-          
-          // Si tiene el formato legacy corrupto (nombre/url null y sin archivos válidos), limpiarlo
-          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+          const archivosValidos = s.informe_final.archivos?.filter(a => 
+            a && a.url && a.url.trim() && a.url !== 'null'
+          ) || [];
+
+          // Si no tiene archivos válidos ni URL legacy válida, eliminar informe_final
+          if (archivosValidos.length === 0 && (tieneNombreNull || tieneUrlNull || !s.informe_final.url)) {
             const { informe_final, ...suministroLimpio } = s;
             return suministroLimpio;
           }
         }
-        
+
         return s;
       });
 

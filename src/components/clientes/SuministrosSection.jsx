@@ -75,13 +75,16 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   const handleSaveName = (suministroId) => {
     const nuevosSuministros = suministros.map(s => {
       if (s.id === suministroId) {
-        // LIMPIEZA: Eliminar informe_final corrupto si existe
         let suministroActualizado = { ...s, nombre: editingName };
+        // LIMPIEZA PREVENTIVA
         if (s.informe_final) {
-          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
-          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
-          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
-          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+          const archivosValidos = s.informe_final.archivos?.filter(a => 
+            a && a.url && a.url.trim() && a.url !== 'null'
+          ) || [];
+          const tieneUrlLegacy = s.informe_final.url && 
+            s.informe_final.url.trim() && s.informe_final.url !== 'null';
+
+          if (archivosValidos.length === 0 && !tieneUrlLegacy) {
             const { informe_final, ...resto } = suministroActualizado;
             return resto;
           }
@@ -102,14 +105,17 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     const nuevosSuministros = suministros.map(s => {
       if (s.id === suministroId) {
         const nuevasFacturas = s.facturas.filter((_, idx) => idx !== facturaIndex);
-        
-        // LIMPIEZA: Eliminar informe_final corrupto si existe
+
         let suministroActualizado = { ...s, facturas: nuevasFacturas };
+        // LIMPIEZA PREVENTIVA
         if (s.informe_final) {
-          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
-          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
-          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
-          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+          const archivosValidos = s.informe_final.archivos?.filter(a => 
+            a && a.url && a.url.trim() && a.url !== 'null'
+          ) || [];
+          const tieneUrlLegacy = s.informe_final.url && 
+            s.informe_final.url.trim() && s.informe_final.url !== 'null';
+
+          if (archivosValidos.length === 0 && !tieneUrlLegacy) {
             const { informe_final, ...resto } = suministroActualizado;
             return resto;
           }
@@ -276,14 +282,17 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                                   tipo_archivo: filesToUpload[idx].type
                                 }))
                               ];
-                              
-                              // LIMPIEZA: Si tiene informe_final corrupto, eliminarlo
+
+                              // LIMPIEZA PREVENTIVA: Eliminar informe_final corrupto
                               let suministroActualizado = { ...s, facturas: nuevasFacturas };
                               if (s.informe_final) {
-                                const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
-                                const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
-                                const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
-                                if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
+                                const archivosValidos = s.informe_final.archivos?.filter(a => 
+                                  a && a.url && a.url.trim() && a.url !== 'null'
+                                ) || [];
+                                const tieneUrlLegacy = s.informe_final.url && 
+                                  s.informe_final.url.trim() && s.informe_final.url !== 'null';
+
+                                if (archivosValidos.length === 0 && !tieneUrlLegacy) {
                                   const { informe_final, ...resto } = suministroActualizado;
                                   suministroActualizado = resto;
                                 }

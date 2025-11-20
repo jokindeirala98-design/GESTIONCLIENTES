@@ -159,20 +159,23 @@ export default function DetalleCliente() {
   }, [cliente?.id, cliente?.suministros, cliente?.estado]);
 
   const handleUpdate = (data) => {
-    // LIMPIEZA: Eliminar informes_final corruptos antes de guardar
-    if (data.suministros) {
-      data.suministros = data.suministros.map(s => {
-        if (s.informe_final) {
-          const tieneNombreNull = s.informe_final.nombre === null || s.informe_final.nombre === 'null';
-          const tieneUrlNull = s.informe_final.url === null || s.informe_final.url === 'null';
-          const noTieneArchivos = !s.informe_final.archivos || s.informe_final.archivos.length === 0;
-          if (tieneNombreNull && tieneUrlNull && noTieneArchivos) {
-            const { informe_final, ...resto } = s;
-            return resto;
+      // LIMPIEZA PREVENTIVA: Eliminar informes corruptos
+      if (data.suministros) {
+        data.suministros = data.suministros.map(s => {
+          if (s.informe_final) {
+            const archivosValidos = s.informe_final.archivos?.filter(a => 
+              a && a.url && a.url.trim() && a.url !== 'null'
+            ) || [];
+            const tieneUrlLegacy = s.informe_final.url && 
+              s.informe_final.url.trim() && s.informe_final.url !== 'null';
+
+            if (archivosValidos.length === 0 && !tieneUrlLegacy) {
+              const { informe_final, ...resto } = s;
+              return resto;
+            }
           }
-        }
-        return s;
-      });
+          return s;
+        });
       
       const todosConFacturas = data.suministros.length > 0 && data.suministros.every(s => 
         s.facturas && s.facturas.length > 0
