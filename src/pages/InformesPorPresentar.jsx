@@ -223,32 +223,19 @@ export default function InformesPorPresentar() {
     try {
       const nuevosSuministros = cliente.suministros.map(s => {
         if (s.id === suministroId) {
-          // CRÍTICO: Construir el objeto informe_final correctamente
-          const informeFinal = {
-            fecha_subida: new Date().toISOString(),
-            subido_por_email: user.email
-          };
-          
-          // Si hay múltiples archivos, usar el array 'archivos'
-          if (informeSubido.files.length > 1) {
-            informeFinal.archivos = informeSubido.files.map(f => ({
-              nombre: f.fileName,
-              url: f.fileUrl
-            }));
-          } else if (informeSubido.files.length === 1) {
-            // Si solo hay un archivo, mantener compatibilidad con ambos formatos
-            informeFinal.archivos = [{
-              nombre: informeSubido.files[0].fileName,
-              url: informeSubido.files[0].fileUrl
-            }];
-            // También mantener campos legacy por compatibilidad
-            informeFinal.nombre = informeSubido.files[0].fileName;
-            informeFinal.url = informeSubido.files[0].fileUrl;
-          }
+          // Construir el array archivos con los archivos subidos
+          const archivos = informeSubido.files.map(f => ({
+            nombre: f.fileName,
+            url: f.fileUrl
+          }));
           
           return {
             ...s,
-            informe_final: informeFinal,
+            informe_final: {
+              archivos: archivos,
+              fecha_subida: new Date().toISOString(),
+              subido_por_email: user.email
+            },
             comision: parseFloat(comision)
           };
         }
