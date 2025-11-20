@@ -76,10 +76,14 @@ export default function InformesPorPresentar() {
           s.facturas && s.facturas.length > 0
         );
         
-        const todosConInforme = cliente.suministros.every(s =>
-          s.informe_final && 
-          (s.informe_final.archivos?.length > 0 || s.informe_final.url)
-        );
+        const todosConInforme = cliente.suministros.every(s => {
+          if (!s.informe_final) return false;
+          // Validar que tenga archivos válidos O url válida
+          const tieneArchivos = s.informe_final.archivos?.length > 0 && 
+                               s.informe_final.archivos.every(a => a.url && a.nombre);
+          const tieneUrl = s.informe_final.url && s.informe_final.url.trim() !== '';
+          return tieneArchivos || tieneUrl;
+        });
 
         if (todosConInforme && cliente.estado !== "Informe listo") {
           clientesActualizar.push({
@@ -222,10 +226,13 @@ export default function InformesPorPresentar() {
         return s;
       });
 
-      const todosConInforme = nuevosSuministros.every(s => 
-        s.informe_final && 
-        (s.informe_final.archivos?.length > 0 || s.informe_final.url)
-      );
+      const todosConInforme = nuevosSuministros.every(s => {
+        if (!s.informe_final) return false;
+        const tieneArchivos = s.informe_final.archivos?.length > 0 && 
+                             s.informe_final.archivos.every(a => a.url && a.nombre);
+        const tieneUrl = s.informe_final.url && s.informe_final.url.trim() !== '';
+        return tieneArchivos || tieneUrl;
+      });
       const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
       const nuevoEstado = todosConInforme ? "Informe listo" : "Facturas presentadas";
 
