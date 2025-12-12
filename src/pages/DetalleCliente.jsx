@@ -158,6 +158,71 @@ export default function DetalleCliente() {
   }, [cliente?.id, cliente?.suministros, cliente?.estado]);
 
   const handleUpdate = (data) => {
+      // Gestionar eventos automáticos según cambios de estado
+      let eventosActualizados = [...(data.eventos || cliente.eventos || [])];
+
+      // 1. Si cambia a "Facturas presentadas", eliminar evento "recordar_facturas"
+      if (data.estado === "Facturas presentadas" || (data.suministros && cliente.estado !== "Facturas presentadas")) {
+        const todosConFacturas = data.suministros?.length > 0 && data.suministros.every(s => 
+          s.facturas && s.facturas.length > 0
+        );
+        if (todosConFacturas) {
+          eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_facturas");
+        }
+      }
+
+      // 2. Si cambia a "Pendiente de firma", crear evento "recordar_cierre" a 3 días
+      if (data.estado === "Pendiente de firma" && cliente.estado !== "Pendiente de firma") {
+        const fecha3Dias = new Date();
+        fecha3Dias.setDate(fecha3Dias.getDate() + 3);
+        eventosActualizados.push({
+          id: Date.now().toString(),
+          fecha: fecha3Dias.toISOString().split('T')[0],
+          descripcion: "Recordar el cierre",
+          color: "amarillo",
+          tipo_automatico: "recordar_cierre"
+        });
+      }
+
+      // 3. Si se aprueba un cierre (admin marca como aprobado), crear eventos de feedback
+      if (data.aprobado_admin === true && cliente.aprobado_admin !== true && data.fecha_cierre) {
+        const fechaCierre = new Date(data.fecha_cierre);
+        
+        // Eliminar evento "recordar_cierre" si existe
+        eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_cierre");
+
+        // Crear eventos de feedback
+        const fecha2Meses = new Date(fechaCierre);
+        fecha2Meses.setMonth(fecha2Meses.getMonth() + 2);
+        eventosActualizados.push({
+          id: `${Date.now()}_2m`,
+          fecha: fecha2Meses.toISOString().split('T')[0],
+          descripcion: "Preguntar por feedback",
+          color: "amarillo",
+          tipo_automatico: "feedback_2meses"
+        });
+
+        const fecha6Meses = new Date(fechaCierre);
+        fecha6Meses.setMonth(fecha6Meses.getMonth() + 6);
+        eventosActualizados.push({
+          id: `${Date.now()}_6m`,
+          fecha: fecha6Meses.toISOString().split('T')[0],
+          descripcion: "Preguntar por feedback",
+          color: "amarillo",
+          tipo_automatico: "feedback_6meses"
+        });
+
+        const fecha1Año = new Date(fechaCierre);
+        fecha1Año.setFullYear(fecha1Año.getFullYear() + 1);
+        eventosActualizados.push({
+          id: `${Date.now()}_1y`,
+          fecha: fecha1Año.toISOString().split('T')[0],
+          descripcion: "Preguntar por feedback",
+          color: "amarillo",
+          tipo_automatico: "feedback_1año"
+        });
+      }
+
       // LIMPIEZA PREVENTIVA: Eliminar informes corruptos
       if (data.suministros) {
         data.suministros = data.suministros.map(s => {
@@ -183,9 +248,10 @@ export default function DetalleCliente() {
       const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
       if (todosConFacturas && !estadosFinales.includes(cliente.estado)) {
         console.log("Cambiando a Facturas presentadas - todos los suministros tienen facturas");
+        eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_facturas");
         updateMutation.mutate({
           id: clienteId,
-          data: { ...data, estado: "Facturas presentadas" }
+          data: { ...data, estado: "Facturas presentadas", eventos: eventosActualizados }
         });
         return;
       }
@@ -203,13 +269,13 @@ export default function DetalleCliente() {
         console.log("Cambiando a Informe listo - todos los suministros tienen informe");
         updateMutation.mutate({
           id: clienteId,
-          data: { ...data, estado: "Informe listo" }
+          data: { ...data, estado: "Informe listo", eventos: eventosActualizados }
         });
         return;
       }
     }
 
-    updateMutation.mutate({ id: clienteId, data });
+    updateMutation.mutate({ id: clienteId, data: { ...data, eventos: eventosActualizados } });
   };
 
   const handleDelete = () => {
