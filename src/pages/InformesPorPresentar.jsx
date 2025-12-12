@@ -574,6 +574,7 @@ export default function InformesPorPresentar() {
             
             // Calcular fecha de primera factura subida
             let primeraFechaFactura = null;
+            let diasDesdeSubida = 0;
             if (cliente.suministros && cliente.suministros.length > 0) {
               const todasFechas = cliente.suministros
                 .flatMap(s => s.facturas || [])
@@ -581,11 +582,13 @@ export default function InformesPorPresentar() {
                 .filter(f => f)
                 .sort();
               if (todasFechas.length > 0) {
-                primeraFechaFactura = new Date(todasFechas[0]).toLocaleDateString('es-ES', {
+                const fechaSubida = new Date(todasFechas[0]);
+                primeraFechaFactura = fechaSubida.toLocaleDateString('es-ES', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric'
                 });
+                diasDesdeSubida = Math.floor((new Date() - fechaSubida) / (1000 * 60 * 60 * 24));
               }
             }
             
