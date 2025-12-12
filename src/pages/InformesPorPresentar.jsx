@@ -572,6 +572,23 @@ export default function InformesPorPresentar() {
             const tipoMax = getTipoMaximo(cliente);
             const isExpanded = clienteExpandido === cliente.id;
             
+            // Calcular fecha de primera factura subida
+            let primeraFechaFactura = null;
+            if (cliente.suministros && cliente.suministros.length > 0) {
+              const todasFechas = cliente.suministros
+                .flatMap(s => s.facturas || [])
+                .map(f => f.fecha_subida)
+                .filter(f => f)
+                .sort();
+              if (todasFechas.length > 0) {
+                primeraFechaFactura = new Date(todasFechas[0]).toLocaleDateString('es-ES', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                });
+              }
+            }
+            
             return (
               <Draggable key={cliente.id} draggableId={cliente.id} index={index}>
                 {(provided, snapshot) => (
