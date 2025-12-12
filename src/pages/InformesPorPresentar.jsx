@@ -630,7 +630,9 @@ export default function InformesPorPresentar() {
                         </div>
                         <div className="flex items-center gap-3">
                           {primeraFechaFactura && (
-                            <span className="text-sm text-gray-500">📅 {primeraFechaFactura}</span>
+                            <span className={`text-sm ${diasDesdeSubida > 8 ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                              📅 {primeraFechaFactura}
+                            </span>
                           )}
                           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                         </div>
