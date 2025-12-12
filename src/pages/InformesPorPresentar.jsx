@@ -372,12 +372,31 @@ export default function InformesPorPresentar() {
     }
   }, [clientesOrdenadosAuto.length]);
 
-  // Aplicar orden manual
-  let clientesOrdenados = ordenManual.length > 0
-    ? ordenManual
-        .map(id => clientesFacturasPresent.find(c => c.id === id))
-        .filter(c => c !== undefined)
-    : clientesOrdenadosAuto;
+  // Aplicar orden manual y añadir nuevos clientes que no están en el orden
+  let clientesOrdenados;
+  if (ordenManual.length > 0) {
+    // Clientes que están en el orden manual
+    const clientesEnOrden = ordenManual
+      .map(id => clientesFacturasPresent.find(c => c.id === id))
+      .filter(c => c !== undefined);
+    
+    // Clientes nuevos que NO están en el orden manual
+    const clientesNuevos = clientesFacturasPresent.filter(
+      c => !ordenManual.includes(c.id)
+    );
+    
+    // Ordenar los nuevos por prioridad automáticamente
+    const clientesNuevosOrdenados = clientesNuevos.sort((a, b) => {
+      const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
+      const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
+      return orderA - orderB;
+    });
+    
+    // Combinar: primero los del orden manual, luego los nuevos
+    clientesOrdenados = [...clientesEnOrden, ...clientesNuevosOrdenados];
+  } else {
+    clientesOrdenados = clientesOrdenadosAuto;
+  }
 
   // Filtrar por búsqueda
   if (searchTerm) {
