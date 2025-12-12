@@ -135,6 +135,7 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
         email: formData.email,
         zona_id: zonaId,
         anotaciones: formData.anotaciones,
+        eventos: eventosActualizados
       }
     });
   };
