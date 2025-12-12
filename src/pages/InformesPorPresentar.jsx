@@ -402,7 +402,6 @@ export default function InformesPorPresentar() {
   if (searchTerm) {
     clientesOrdenados = clientesOrdenados.filter(cliente =>
       cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cliente.propietario_iniciales?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       zonas.find(z => z.id === cliente.zona_id)?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
     );
