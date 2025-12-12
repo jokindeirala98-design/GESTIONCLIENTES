@@ -69,6 +69,22 @@ export default function Calendario() {
     },
   });
 
+  const deleteEventMutation = useMutation({
+    mutationFn: async ({ clienteId, eventoId }) => {
+      const cliente = clientes.find(c => c.id === clienteId);
+      const eventosActuales = cliente.eventos || [];
+      const nuevosEventos = eventosActuales.filter(e => e.id !== eventoId);
+      
+      await base44.entities.Cliente.update(clienteId, {
+        eventos: nuevosEventos
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clientes']);
+      toast.success("Tarea completada");
+    },
+  });
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -93,7 +109,7 @@ export default function Calendario() {
           // Admins ven solo eventos rojos de todos
           return evento.color === "rojo";
         } else {
-          // Comerciales ven solo sus eventos (verdes y rojos)
+          // Comerciales ven solo sus eventos (verdes, rojos y amarillos)
           return cliente.propietario_email === user.email;
         }
       })
@@ -251,6 +267,7 @@ export default function Calendario() {
                 const hasEvents = eventosDay.length > 0;
                 const hasGreen = eventosDay.some(e => e.color === "verde");
                 const hasRed = eventosDay.some(e => e.color === "rojo");
+                const hasYellow = eventosDay.some(e => e.color === "amarillo");
                 const isSelected = selectedDay && selectedDay.toDateString() === dayInfo.date.toDateString();
                 const isToday = dayInfo.date.toDateString() === new Date().toDateString();
 
@@ -271,6 +288,7 @@ export default function Calendario() {
                         <div className="flex gap-1 mt-1">
                           {hasGreen && <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
                           {hasRed && <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />}
+                          {hasYellow && <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />}
                         </div>
                       )}
                     </div>
@@ -329,35 +347,63 @@ export default function Calendario() {
                     {eventosDelDia.map((evento) => (
                       <Card 
                         key={evento.id}
-                        className="cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
+                        className="hover:shadow-md transition-shadow"
                       >
                         <CardContent className="p-3">
                           <div className="flex items-start gap-2">
                             <div
                               className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
-                                evento.color === "verde" ? "bg-green-500" : "bg-red-500"
+                                evento.color === "verde" ? "bg-green-500" : 
+                                evento.color === "rojo" ? "bg-red-500" : "bg-yellow-500"
                               }`}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm text-[#004D9D] truncate">
-                                  {evento.cliente_nombre}
-                                </span>
-                                {!evento.es_mi_cliente && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {evento.cliente_propietario}
-                                  </Badge>
+                              <div 
+                                className="cursor-pointer hover:underline"
+                                onClick={() => navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-sm text-[#004D9D] truncate">
+                                    {evento.cliente_nombre}
+                                  </span>
+                                  {!evento.es_mi_cliente && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {evento.cliente_propietario}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600">{evento.descripcion}</p>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge className={`text-xs ${
+                                  evento.color === "verde" 
+                                    ? "bg-green-100 text-green-700" 
+                                    : evento.color === "rojo"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                                }`}>
+                                  {evento.color === "verde" ? "Usuario" : 
+                                   evento.color === "rojo" ? "Admin" : "Automático"}
+                                </Badge>
+                                {evento.es_mi_cliente && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (window.confirm("¿Marcar esta tarea como completada?")) {
+                                        deleteEventMutation.mutate({
+                                          clienteId: evento.cliente_id,
+                                          eventoId: evento.id
+                                        });
+                                      }
+                                    }}
+                                    className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  >
+                                    ✓ Tarea hecha
+                                  </Button>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-600">{evento.descripcion}</p>
-                              <Badge className={`mt-2 text-xs ${
-                                evento.color === "verde" 
-                                  ? "bg-green-100 text-green-700" 
-                                  : "bg-red-100 text-red-700"
-                              }`}>
-                                {evento.color === "verde" ? "Usuario" : "Admin"}
-                              </Badge>
                             </div>
                           </div>
                         </CardContent>
@@ -442,6 +488,12 @@ export default function Calendario() {
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-red-500 rounded-full" />
                       <span>Alta (visible para admins)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="amarillo">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+                      <span>Automático</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
