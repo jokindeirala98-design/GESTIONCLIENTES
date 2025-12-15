@@ -579,6 +579,26 @@ export default function DetalleCliente() {
                   </Button>
                 )}
 
+                {cliente.estado === "Informe listo" && (
+                  <Button
+                    onClick={() => {
+                      if (window.confirm("¿Cambiar a Pendiente de firma?")) {
+                        const fechaCambio = new Date().toISOString().split('T')[0];
+                        updateMutation.mutate({
+                          id: cliente.id,
+                          data: { 
+                            estado: "Pendiente de firma",
+                            fecha_cambio_pendiente_firma: fechaCambio
+                          }
+                        });
+                      }
+                    }}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    ⏳ Marcar Pendiente de Firma
+                  </Button>
+                )}
+
                 {cliente.estado === "Pendiente de firma" && (
                   <>
                     <Button
@@ -596,6 +616,15 @@ export default function DetalleCliente() {
                       <CheckCircle2 className="w-4 h-4 mr-2" />
                       Firmado con Éxito
                     </Button>
+                    {cliente.fecha_cambio_pendiente_firma && (
+                      <div className="w-full text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                        📅 En pendiente desde: {new Date(cliente.fecha_cambio_pendiente_firma).toLocaleDateString('es-ES')}
+                        {(() => {
+                          const dias = Math.floor((new Date() - new Date(cliente.fecha_cambio_pendiente_firma)) / (1000 * 60 * 60 * 24));
+                          return dias >= 25 ? ` - ⚠️ ${dias} días (auto-rechazo en ${30 - dias} días)` : '';
+                        })()}
+                      </div>
+                    )}
                   </>
                 )}
                 
