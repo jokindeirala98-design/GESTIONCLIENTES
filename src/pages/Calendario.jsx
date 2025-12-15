@@ -455,24 +455,22 @@ export default function Calendario() {
                                   {evento.color === "verde" ? "Usuario" : 
                                    evento.color === "rojo" ? "Admin" : "Automático"}
                                 </Badge>
-                                {evento.es_mi_cliente && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteEventMutation.mutate({
-                                        clienteId: evento.cliente_id,
-                                        eventoId: evento.id,
-                                        esTarea: evento.es_tarea,
-                                        tareaId: evento.tarea_id
-                                      });
-                                    }}
-                                    className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  >
-                                    ✓ Tarea hecha
-                                  </Button>
-                                )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteEventMutation.mutate({
+                                      clienteId: evento.cliente_id,
+                                      eventoId: evento.id,
+                                      esTarea: evento.es_tarea,
+                                      tareaId: evento.tarea_id
+                                    });
+                                  }}
+                                  className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                  ✓ Tarea hecha
+                                </Button>
                               </div>
                             </div>
                           </div>
