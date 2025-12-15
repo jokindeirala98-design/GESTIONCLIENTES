@@ -335,10 +335,11 @@ export default function Calendario() {
     .filter(t => !t.completada && t.fecha)
     .map(t => ({
       id: `corcho-${t.id}`,
+      tarea_corcho_id: t.id,
       fecha: t.fecha,
       descripcion: t.descripcion,
       color: "azul",
-      cliente_nombre: "Tarea del corcho",
+      cliente_nombre: "Tarea",
       es_tarea_corcho: true,
       tiene_alerta: t.tiene_alerta
     })) : [];
@@ -628,24 +629,26 @@ export default function Calendario() {
                                    evento.color === "rojo" ? "Admin" : 
                                    evento.color === "azul" ? "Corcho" : "Automático"}
                                 </Badge>
-                                {!evento.es_tarea_corcho && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (evento.es_tarea_corcho) {
+                                      completarTareaCorchoMutation.mutate(evento.tarea_corcho_id);
+                                    } else {
                                       deleteEventMutation.mutate({
                                         clienteId: evento.cliente_id,
                                         eventoId: evento.id,
                                         esTarea: evento.es_tarea,
                                         tareaId: evento.tarea_id
                                       });
-                                    }}
-                                    className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  >
-                                    ✓ Tarea hecha
-                                  </Button>
-                                )}
+                                    }
+                                  }}
+                                  className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                  ✓ Tarea hecha
+                                </Button>
                               </div>
                             </div>
                           </div>
