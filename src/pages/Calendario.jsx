@@ -51,18 +51,36 @@ export default function Calendario() {
     queryFn: () => base44.entities.Cliente.list(),
   });
 
+  const { data: tareas = [] } = useQuery({
+    queryKey: ['tareas'],
+    queryFn: () => base44.entities.Tarea.list(),
+  });
+
   const createEventMutation = useMutation({
-    mutationFn: async ({ clienteId, evento }) => {
-      const cliente = clientes.find(c => c.id === clienteId);
-      const eventosActuales = cliente.eventos || [];
-      const nuevosEventos = [...eventosActuales, evento];
-      
-      await base44.entities.Cliente.update(clienteId, {
-        eventos: nuevosEventos
-      });
+    mutationFn: async ({ clienteId, evento, esTarea }) => {
+      if (esTarea) {
+        // Crear tarea independiente
+        await base44.entities.Tarea.create({
+          fecha: evento.fecha,
+          descripcion: evento.descripcion,
+          color: evento.color,
+          propietario_email: user.email,
+          completada: false
+        });
+      } else {
+        // Crear evento asociado a cliente
+        const cliente = clientes.find(c => c.id === clienteId);
+        const eventosActuales = cliente.eventos || [];
+        const nuevosEventos = [...eventosActuales, evento];
+        
+        await base44.entities.Cliente.update(clienteId, {
+          eventos: nuevosEventos
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
+      queryClient.invalidateQueries(['tareas']);
       setShowCreateDialog(false);
       setNewEvent({ cliente_id: "", descripcion: "", color: "verde" });
       toast.success("Evento creado");
@@ -70,17 +88,24 @@ export default function Calendario() {
   });
 
   const deleteEventMutation = useMutation({
-    mutationFn: async ({ clienteId, eventoId }) => {
-      const cliente = clientes.find(c => c.id === clienteId);
-      const eventosActuales = cliente.eventos || [];
-      const nuevosEventos = eventosActuales.filter(e => e.id !== eventoId);
-      
-      await base44.entities.Cliente.update(clienteId, {
-        eventos: nuevosEventos
-      });
+    mutationFn: async ({ clienteId, eventoId, esTarea, tareaId }) => {
+      if (esTarea) {
+        // Marcar tarea como completada (o eliminarla)
+        await base44.entities.Tarea.delete(tareaId);
+      } else {
+        // Eliminar evento de cliente
+        const cliente = clientes.find(c => c.id === clienteId);
+        const eventosActuales = cliente.eventos || [];
+        const nuevosEventos = eventosActuales.filter(e => e.id !== eventoId);
+        
+        await base44.entities.Cliente.update(clienteId, {
+          eventos: nuevosEventos
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
+      queryClient.invalidateQueries(['tareas']);
       toast.success("Tarea completada");
     },
   });
@@ -100,8 +125,8 @@ export default function Calendario() {
     ? clientes 
     : clientes.filter(c => c.propietario_email === user.email);
 
-  // Filtrar eventos según rol
-  const eventosRelevantes = clientes.flatMap(cliente => {
+  // Filtrar eventos de clientes según rol
+  const eventosClientes = clientes.flatMap(cliente => {
     const eventos = cliente.eventos || [];
     return eventos
       .filter(evento => {
@@ -118,9 +143,34 @@ export default function Calendario() {
         cliente_id: cliente.id,
         cliente_nombre: cliente.nombre_negocio,
         cliente_propietario: cliente.propietario_iniciales,
-        es_mi_cliente: cliente.propietario_email === user.email
+        es_mi_cliente: cliente.propietario_email === user.email,
+        es_tarea: false
       }));
   });
+
+  // Filtrar tareas independientes según rol
+  const tareasIndependientes = tareas
+    .filter(tarea => !tarea.completada)
+    .filter(tarea => {
+      if (isAdmin) {
+        return tarea.color === "rojo";
+      } else {
+        return tarea.propietario_email === user.email;
+      }
+    })
+    .map(tarea => ({
+      id: tarea.id,
+      fecha: tarea.fecha,
+      descripcion: tarea.descripcion,
+      color: tarea.color,
+      cliente_nombre: "Tarea personal",
+      es_tarea: true,
+      tarea_id: tarea.id,
+      es_mi_cliente: tarea.propietario_email === user.email
+    }));
+
+  // Combinar eventos de clientes y tareas independientes
+  const eventosRelevantes = [...eventosClientes, ...tareasIndependientes];
 
   // Función para convertir fecha a string local (sin zona horaria)
   const dateToLocalString = (date) => {
@@ -197,8 +247,15 @@ export default function Calendario() {
   };
 
   const handleCreateEvent = () => {
-    if (!newEvent.cliente_id || !newEvent.descripcion) {
-      toast.error("Selecciona un cliente y añade descripción");
+    if (!newEvent.descripcion) {
+      toast.error("Añade una descripción");
+      return;
+    }
+
+    const esTarea = !newEvent.cliente_id;
+
+    if (!esTarea && !newEvent.cliente_id) {
+      toast.error("Selecciona un cliente o crea una tarea personal");
       return;
     }
 
@@ -211,7 +268,8 @@ export default function Calendario() {
 
     createEventMutation.mutate({
       clienteId: newEvent.cliente_id,
-      evento
+      evento,
+      esTarea
     });
   };
 
@@ -359,14 +417,14 @@ export default function Calendario() {
                             />
                             <div className="flex-1 min-w-0">
                               <div 
-                                className="cursor-pointer hover:underline"
-                                onClick={() => navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
+                                className={evento.es_tarea ? "" : "cursor-pointer hover:underline"}
+                                onClick={() => !evento.es_tarea && navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
                               >
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold text-sm text-[#004D9D] truncate">
+                                  <span className={`font-semibold text-sm truncate ${evento.es_tarea ? "text-purple-600" : "text-[#004D9D]"}`}>
                                     {evento.cliente_nombre}
                                   </span>
-                                  {!evento.es_mi_cliente && (
+                                  {!evento.es_mi_cliente && !evento.es_tarea && (
                                     <Badge variant="outline" className="text-xs">
                                       {evento.cliente_propietario}
                                     </Badge>
@@ -394,7 +452,9 @@ export default function Calendario() {
                                       if (window.confirm("¿Marcar esta tarea como completada?")) {
                                         deleteEventMutation.mutate({
                                           clienteId: evento.cliente_id,
-                                          eventoId: evento.id
+                                          eventoId: evento.id,
+                                          esTarea: evento.es_tarea,
+                                          tareaId: evento.tarea_id
                                         });
                                       }
                                     }}
@@ -439,15 +499,20 @@ export default function Calendario() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Cliente *</label>
+              <label className="text-sm font-medium mb-1 block">
+                Cliente <span className="text-gray-400">(opcional - déjalo vacío para crear una tarea personal)</span>
+              </label>
               <Select
                 value={newEvent.cliente_id}
                 onValueChange={(value) => setNewEvent({ ...newEvent, cliente_id: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un cliente" />
+                  <SelectValue placeholder="Sin cliente - Tarea personal" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={null}>
+                    <span className="text-gray-500 italic">Sin cliente - Tarea personal</span>
+                  </SelectItem>
                   {misClientes.map(cliente => (
                     <SelectItem key={cliente.id} value={cliente.id}>
                       {cliente.nombre_negocio}
