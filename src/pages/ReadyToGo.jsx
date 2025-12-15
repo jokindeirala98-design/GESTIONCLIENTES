@@ -536,6 +536,8 @@ export default function ReadyToGo() {
                                 ⏳ Esperando aprobación del admin
                               </p>
                             )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
