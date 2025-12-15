@@ -86,7 +86,7 @@ export default function Layout({ children }) {
     },
     {
       title: "Comisiones",
-      url: createPageUrl("ComisionesAdmin"),
+      url: createPageUrl("Comisiones"),
       icon: DollarSign,
     },
     {
