@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { MUNICIPIOS_NAVARRA } from "../../pages/Rutas";
+import { MUNICIPIOS_NAVARRA } from "../shared/municipios";
 
 export default function CreateClienteDialog({ open, onClose, user, zonaPreseleccionada = null }) {
   const queryClient = useQueryClient();
