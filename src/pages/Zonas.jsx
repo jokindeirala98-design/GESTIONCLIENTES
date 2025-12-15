@@ -206,28 +206,30 @@ export default function Zonas() {
         </Button>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="zonas">
-          {(provided) => (
-            <div 
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            >
-              {isLoading ? (
-                Array(6).fill(0).map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardHeader className="h-24 bg-gray-200" />
-                    <CardContent className="h-32 bg-gray-100" />
-                  </Card>
-                ))
-              ) : filteredZonas.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-[#666666]">No hay áreas creadas</p>
-                </div>
-              ) : (
-                filteredZonas.map((zona, index) => {
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array(6).fill(0).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="h-24 bg-gray-200" />
+              <CardContent className="h-32 bg-gray-100" />
+            </Card>
+          ))}
+        </div>
+      ) : filteredZonas.length === 0 ? (
+        <div className="text-center py-12">
+          <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-[#666666]">No hay áreas creadas</p>
+        </div>
+      ) : (
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="zonas" direction="horizontal">
+            {(provided) => (
+              <div 
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+              >
+                {filteredZonas.map((zona, index) => {
             const clientesCount = getClientesEnZona(zona.id).length;
             const misClientesCount = getClientesEnZona(zona.id).filter(c => c.propietario_email === user.email).length;
             const informesListos = getClientesInformeListo(zona.id);
@@ -235,24 +237,26 @@ export default function Zonas() {
             const porcentajeReady = getPorcentajeInformesListos(zona.id);
             const isPriority = isPriorityZone(zona.id);
 
-            return (
-              <Draggable key={zona.id} draggableId={zona.id} index={index}>
-                {(provided, snapshot) => (
-                  <Card 
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    className={`hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden ${
-                      isPriority ? 'border-green-500 shadow-lg shadow-green-100' : 'border-gray-100'
-                    } ${snapshot.isDragging ? 'shadow-2xl scale-105' : ''}`}
-                    onClick={() => navigate(createPageUrl(`DetalleZona?id=${zona.id}`))}
-                  >
-                    <div 
-                      {...provided.dragHandleProps}
-                      className="absolute top-2 right-2 z-10 bg-white/80 backdrop-blur-sm rounded-lg p-2 hover:bg-white transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <GripVertical className="w-4 h-4 text-gray-600" />
-                    </div>
+                  return (
+                    <Draggable key={zona.id} draggableId={zona.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                        >
+                          <Card 
+                            className={`hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden relative ${
+                              isPriority ? 'border-green-500 shadow-lg shadow-green-100' : 'border-gray-100'
+                            } ${snapshot.isDragging ? 'shadow-2xl rotate-3' : ''}`}
+                            onClick={() => navigate(createPageUrl(`DetalleZona?id=${zona.id}`))}
+                          >
+                            <div 
+                              {...provided.dragHandleProps}
+                              className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm rounded-lg p-2 hover:bg-white transition-colors cursor-grab active:cursor-grabbing shadow-md"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <GripVertical className="w-5 h-5 text-gray-700" />
+                            </div>
                 <CardHeader className={`p-0 ${
                   isPriority 
                     ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
@@ -339,18 +343,19 @@ export default function Zonas() {
                       </div>
                     )}
                   </div>
-                </CardContent>
-                  </Card>
-                )}
-              </Draggable>
-            );
-          })
-        )}
-        {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                          </CardContent>
+                          </Card>
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      )}
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
