@@ -31,6 +31,11 @@ export default function Comisiones() {
     queryFn: () => base44.entities.Cliente.list(),
   });
 
+  const { data: facturasComercial = [] } = useQuery({
+    queryKey: ['facturasComercial'],
+    queryFn: () => base44.entities.FacturaComercial.list(),
+  });
+
   if (!user) return null;
 
   // Obtener todos los suministros cerrados del usuario
