@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { MUNICIPIOS_NAVARRA } from "../../pages/Rutas";
+import { MUNICIPIOS_NAVARRA } from "../../constants/municipios";
 
 export default function EditClienteDialog({ open, onClose, cliente }) {
   const queryClient = useQueryClient();
