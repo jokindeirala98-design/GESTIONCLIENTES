@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, MapPin, Calendar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function Zonas() {
   const navigate = useNavigate();
@@ -119,15 +118,6 @@ export default function Zonas() {
   };
 
   const sortedZonas = [...zonas].sort((a, b) => {
-    // Si ambas tienen orden manual, ordenar por orden
-    if (a.orden !== undefined && b.orden !== undefined) {
-      return a.orden - b.orden;
-    }
-    // Si solo una tiene orden, ponerla primero
-    if (a.orden !== undefined) return -1;
-    if (b.orden !== undefined) return 1;
-    
-    // Orden automático (si no hay orden manual)
     const aPriority = isPriorityZone(a.id);
     const bPriority = isPriorityZone(b.id);
     
@@ -148,33 +138,6 @@ export default function Zonas() {
   const filteredZonas = sortedZonas.filter(zona => 
     zona.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleDragEnd = async (result) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(filteredZonas);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    // Actualizar el orden de todas las zonas
-    const updates = items.map((zona, index) => ({
-      id: zona.id,
-      orden: index
-    }));
-    
-    // Actualizar todas las zonas con su nuevo orden
-    try {
-      await Promise.all(
-        updates.map(({ id, orden }) => 
-          base44.entities.Zona.update(id, { orden })
-        )
-      );
-      queryClient.invalidateQueries(['zonas']);
-      toast.success("Orden actualizado");
-    } catch (error) {
-      toast.error("Error al actualizar el orden");
-    }
-  };
 
   if (!user) return null;
 
@@ -206,30 +169,21 @@ export default function Zonas() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array(6).fill(0).map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+          Array(6).fill(0).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="h-24 bg-gray-200" />
               <CardContent className="h-32 bg-gray-100" />
             </Card>
-          ))}
-        </div>
-      ) : filteredZonas.length === 0 ? (
-        <div className="text-center py-12">
-          <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-[#666666]">No hay áreas creadas</p>
-        </div>
-      ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="zonas">
-            {(provided) => (
-              <div 
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="flex flex-wrap gap-4"
-              >
-                {filteredZonas.map((zona, index) => {
+          ))
+        ) : filteredZonas.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-[#666666]">No hay áreas creadas</p>
+          </div>
+        ) : (
+          filteredZonas.map((zona) => {
             const clientesCount = getClientesEnZona(zona.id).length;
             const misClientesCount = getClientesEnZona(zona.id).filter(c => c.propietario_email === user.email).length;
             const informesListos = getClientesInformeListo(zona.id);
@@ -237,25 +191,14 @@ export default function Zonas() {
             const porcentajeReady = getPorcentajeInformesListos(zona.id);
             const isPriority = isPriorityZone(zona.id);
 
-                  return (
-                    <Draggable key={zona.id} draggableId={zona.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
-                        >
-                          <Card 
-                            className={`hover:shadow-xl transition-all duration-300 cursor-grab active:cursor-grabbing border-2 overflow-hidden relative ${
-                              isPriority ? 'border-green-500 shadow-lg shadow-green-100' : 'border-gray-100'
-                            } ${snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105' : ''}`}
-                            onClick={(e) => {
-                              if (!snapshot.isDragging) {
-                                navigate(createPageUrl(`DetalleZona?id=${zona.id}`));
-                              }
-                            }}
-                          >
+            return (
+              <Card 
+                key={zona.id} 
+                className={`hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden ${
+                  isPriority ? 'border-green-500 shadow-lg shadow-green-100' : 'border-gray-100'
+                }`}
+                onClick={() => navigate(createPageUrl(`DetalleZona?id=${zona.id}`))}
+              >
                 <CardHeader className={`p-0 ${
                   isPriority 
                     ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
@@ -342,19 +285,12 @@ export default function Zonas() {
                       </div>
                     )}
                   </div>
-                          </CardContent>
-                          </Card>
-                        </div>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-      )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
