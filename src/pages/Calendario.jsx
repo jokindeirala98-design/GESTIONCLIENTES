@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +48,7 @@ export default function Calendario() {
     fecha: ""
   });
   const [tareasMultiples, setTareasMultiples] = useState(["", "", ""]);
+  const inputRefs = useRef([]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -988,6 +989,7 @@ export default function Calendario() {
                     {tareasMultiples.map((tarea, index) => (
                       <Input
                         key={index}
+                        ref={(el) => (inputRefs.current[index] = el)}
                         value={tarea}
                         onChange={(e) => {
                           const nuevas = [...tareasMultiples];
@@ -1001,7 +1003,13 @@ export default function Calendario() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setTareasMultiples([...tareasMultiples, ""])}
+                    onClick={() => {
+                      setTareasMultiples([...tareasMultiples, ""]);
+                      setTimeout(() => {
+                        const lastIndex = tareasMultiples.length;
+                        inputRefs.current[lastIndex]?.focus();
+                      }, 0);
+                    }}
                     className="mt-2 w-full"
                   >
                     <Plus className="w-4 h-4 mr-1" />
