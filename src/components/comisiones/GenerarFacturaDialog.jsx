@@ -159,14 +159,15 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
                 <p>Comisión por mediación comercia y puesta</p>
                 <p>a disposición de cartera de clientes</p>
               </div>
-              <div className="w-64">
+              <div className="w-64 flex items-center gap-2">
                 <Input
                   type="number"
                   step="0.01"
                   value={editableData.precio}
                   onChange={(e) => setEditableData({...editableData, precio: e.target.value, total: e.target.value})}
-                  className="h-12 text-center border-2 border-blue-500"
+                  className="h-12 text-center border-2 border-blue-500 flex-1"
                 />
+                <span className="font-bold text-lg">€</span>
               </div>
             </div>
 
@@ -176,13 +177,16 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
             {/* Total */}
             <div className="flex items-center justify-end mt-8">
               <div className="bg-black text-white px-6 py-2 mr-4 font-bold">TOTAL</div>
-              <Input
-                type="number"
-                step="0.01"
-                value={editableData.total}
-                onChange={(e) => setEditableData({...editableData, total: e.target.value})}
-                className="w-64 h-12 text-center border-2 border-blue-500"
-              />
+              <div className="w-64 flex items-center gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editableData.total}
+                  onChange={(e) => setEditableData({...editableData, total: e.target.value})}
+                  className="h-12 text-center border-2 border-blue-500 flex-1"
+                />
+                <span className="font-bold text-lg">€</span>
+              </div>
             </div>
           </div>
 
