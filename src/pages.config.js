@@ -11,6 +11,7 @@ import DetalleZona from './pages/DetalleZona';
 import CierresVerificados from './pages/CierresVerificados';
 import Calendario from './pages/Calendario';
 import CorregirIniciales from './pages/CorregirIniciales';
+import ComisionesAdmin from './pages/ComisionesAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "CierresVerificados": CierresVerificados,
     "Calendario": Calendario,
     "CorregirIniciales": CorregirIniciales,
+    "ComisionesAdmin": ComisionesAdmin,
 }
 
 export const pagesConfig = {

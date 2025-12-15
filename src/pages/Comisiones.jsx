@@ -18,7 +18,7 @@ export default function Comisiones() {
     const loadUser = async () => {
       const currentUser = await base44.auth.me();
       if (currentUser.role === 'admin') {
-        navigate(createPageUrl("Dashboard"));
+        navigate(createPageUrl("ComisionesAdmin"));
         return;
       }
       setUser(currentUser);
