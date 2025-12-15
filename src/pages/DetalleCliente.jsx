@@ -700,24 +700,36 @@ export default function DetalleCliente() {
                         {archivosValidos.length > 0 ? (
                           <div className="flex gap-2">
                             {archivosValidos.map((archivo, idx) => (
-                              <Button
+                              <a
                                 key={idx}
-                                size="sm"
-                                onClick={() => window.open(archivo.url, '_blank')}
-                                className="bg-green-600 hover:bg-green-700"
+                                href={archivo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download
                               >
-                                📄 {archivo.nombre || `Informe ${idx + 1}`}
-                              </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  📄 {archivo.nombre || `Informe ${idx + 1}`}
+                                </Button>
+                              </a>
                             ))}
                           </div>
                         ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => window.open(suministro.informe_final.url, '_blank')}
-                            className="bg-green-600 hover:bg-green-700"
+                          <a
+                            href={suministro.informe_final.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
                           >
-                            📄 {suministro.informe_final.nombre || 'Descargar Informe'}
-                          </Button>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              📄 {suministro.informe_final.nombre || 'Descargar Informe'}
+                            </Button>
+                          </a>
                         )}
                       </div>
                     </CardContent>
