@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { toast } from "sonner";
 
 export default function Comisiones() {
   const navigate = useNavigate();
@@ -30,11 +29,6 @@ export default function Comisiones() {
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
-  });
-
-  const { data: facturasComercial = [] } = useQuery({
-    queryKey: ['facturasComercial'],
-    queryFn: () => base44.entities.FacturaComercial.list(),
   });
 
   if (!user) return null;
@@ -82,135 +76,16 @@ export default function Comisiones() {
     return format(date, 'MMMM yyyy', { locale: es });
   };
 
-  const generarFactura = async () => {
-    if (!user) return;
-
-    // Calcular total de comisiones hasta hoy
-    const totalComisiones = suministrosCerrados.reduce((sum, s) => sum + (s.comision || 0), 0);
-
-    // Obtener último número de factura
-    const misFacturas = facturasComercial.filter(f => f.comercial_email === user.email);
-    const ultimoNumero = misFacturas.length > 0 
-      ? Math.max(...misFacturas.map(f => f.numero_factura))
-      : 0;
-    const nuevoNumero = ultimoNumero + 1;
-
-    // Fecha actual
-    const fechaHoy = format(new Date(), 'dd/MM/yyyy');
-    const fechaISO = format(new Date(), 'yyyy-MM-dd');
-
-    // Guardar registro de factura
-    await base44.entities.FacturaComercial.create({
-      comercial_email: user.email,
-      numero_factura: nuevoNumero,
-      fecha_generacion: fechaISO,
-      importe: totalComisiones,
-      periodo: mesSeleccionado
-    });
-
-    // Generar contenido HTML para Word
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: Arial, sans-serif; padding: 40px; }
-    .header { text-align: right; margin-bottom: 40px; }
-    .factura-title { font-size: 72px; font-weight: bold; margin: 0; }
-    .cliente-info { margin-top: 40px; }
-    .cliente-info p { margin: 5px 0; }
-    .factura-numero { text-align: right; margin-top: -100px; }
-    .factura-numero p { margin: 10px 0; font-weight: bold; font-size: 16px; }
-    .tabla { width: 100%; margin-top: 40px; border-collapse: collapse; }
-    .tabla-header { background-color: black; color: white; padding: 15px; text-align: left; font-weight: bold; }
-    .tabla-row { border-bottom: 1px solid #ccc; padding: 20px 15px; }
-    .total-row { background-color: black; color: white; padding: 15px; text-align: right; font-weight: bold; font-size: 18px; margin-top: 20px; }
-    .pago-info { margin-top: 60px; }
-    .pago-info h3 { font-size: 20px; font-weight: bold; }
-    .pago-info p { margin: 5px 0; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 class="factura-title">Factura</h1>
-  </div>
-
-  <div class="cliente-info">
-    <p><strong>Cliente</strong></p>
-    <p>Nicolás Imizcoz García</p>
-    <p>73464830R</p>
-    <p>Travesía Monasterio de Urdax, 4 5ºA</p>
-    <p>31011 PAMPLONA</p>
-    <p>nicolasvoltis@gmail.com</p>
-  </div>
-
-  <div class="factura-numero">
-    <p><strong>Factura N°</strong></p>
-    <p>${nuevoNumero}</p>
-    <br>
-    <p><strong>Fecha</strong></p>
-    <p>${fechaHoy}</p>
-  </div>
-
-  <table class="tabla">
-    <tr>
-      <td class="tabla-header">DESCRIPCIÓN</td>
-      <td class="tabla-header" style="text-align: right; width: 150px;">PRECIO</td>
-    </tr>
-    <tr>
-      <td class="tabla-row">Comisión por mediación comercial y puesta a disposición de cartera de clientes</td>
-      <td class="tabla-row" style="text-align: right;">${totalComisiones.toFixed(2)}€</td>
-    </tr>
-  </table>
-
-  <div class="total-row">
-    TOTAL: ${totalComisiones.toFixed(2)}€
-  </div>
-
-  <div class="pago-info">
-    <h3>Información para el pago</h3>
-    <p>Beneficiario: Jokin de Irala</p>
-    <p>Dirección: Calle Ixurmendi 34 Cizur Mayor, 31180 Navarra</p>
-    <p>NIF: 73468068L</p>
-    <p>Teléfono: 618511959</p>
-    <p>Número de cuenta: ES2620803625173040135371</p>
-  </div>
-</body>
-</html>
-    `;
-
-    // Crear ventana para imprimir a PDF
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    
-    // Esperar a que cargue y abrir diálogo de impresión
-    printWindow.onload = () => {
-      printWindow.print();
-    };
-
-    toast.success(`Factura N°${nuevoNumero} lista para descargar como PDF`);
-  };
-
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-            <DollarSign className="w-8 h-8" />
-            Comisiones
-          </h1>
-          <p className="text-[#666666]">
-            Gestiona tus comisiones mensuales
-          </p>
-        </div>
-        <Button
-          onClick={generarFactura}
-          className="bg-[#004D9D] hover:bg-[#00AEEF]"
-        >
-          📄 Generar Factura
-        </Button>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
+          <DollarSign className="w-8 h-8" />
+          Comisiones
+        </h1>
+        <p className="text-[#666666]">
+          Gestiona tus comisiones mensuales
+        </p>
       </div>
 
       <Card className="border-none shadow-lg mb-6 bg-gradient-to-r from-green-500 to-green-600">
