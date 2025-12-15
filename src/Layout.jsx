@@ -109,11 +109,6 @@ export default function Layout({ children }) {
       icon: FileText,
     },
     {
-      title: "Ready to Go",
-      url: createPageUrl("ReadyToGo"),
-      icon: CheckCircle2,
-    },
-    {
       title: "Zonas",
       url: createPageUrl("Zonas"),
       icon: MapPin,
