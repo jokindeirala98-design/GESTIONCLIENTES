@@ -180,18 +180,17 @@ export default function Comisiones() {
 </html>
     `;
 
-    // Crear blob y descargar como .doc
-    const blob = new Blob([htmlContent], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Factura_${nuevoNumero}_${fechaISO}.doc`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Crear ventana para imprimir a PDF
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    // Esperar a que cargue y abrir diálogo de impresión
+    printWindow.onload = () => {
+      printWindow.print();
+    };
 
-    toast.success(`Factura N°${nuevoNumero} generada correctamente`);
+    toast.success(`Factura N°${nuevoNumero} lista para descargar como PDF`);
   };
 
   return (
