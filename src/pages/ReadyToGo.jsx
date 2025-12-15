@@ -470,7 +470,7 @@ export default function ReadyToGo() {
                                   
                                   {/* Botones de descarga */}
                                   {informeValido ? (
-                                    <div className="flex gap-2 flex-wrap">
+                                    <div className="flex flex-col gap-2">
                                       {archivosValidos.map((archivo, idx) => (
                                         <a
                                           key={idx}
@@ -479,7 +479,6 @@ export default function ReadyToGo() {
                                           rel="noopener noreferrer"
                                           download
                                           onClick={(e) => e.stopPropagation()}
-                                          className="flex-1 min-w-[140px]"
                                         >
                                           <Button
                                             size="sm"
