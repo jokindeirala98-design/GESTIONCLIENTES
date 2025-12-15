@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, User, Calendar, FileText, Download } from "lucide-react";
+import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, User, Calendar, FileText, Download, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -64,6 +64,14 @@ export default function ComisionesAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries(['facturas']);
       toast.success("Factura marcada como revisada");
+    },
+  });
+
+  const deleteFacturaMutation = useMutation({
+    mutationFn: (id) => base44.entities.Factura.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['facturas']);
+      toast.success("Factura eliminada");
     },
   });
 
@@ -590,6 +598,18 @@ export default function ComisionesAdmin() {
                                 Revisada
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (window.confirm("¿Eliminar esta factura?")) {
+                                  deleteFacturaMutation.mutate(factura.id);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       </CardContent>

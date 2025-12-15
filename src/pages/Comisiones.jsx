@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, FileText, Download, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 import GenerarFacturaDialog from "../components/comisiones/GenerarFacturaDialog.jsx";
 
 export default function Comisiones() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [mesSeleccionado, setMesSeleccionado] = useState(format(new Date(), 'yyyy-MM'));
   const [showFacturaDialog, setShowFacturaDialog] = useState(false);
@@ -32,6 +35,20 @@ export default function Comisiones() {
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
     enabled: !!user,
+  });
+
+  const { data: facturas = [] } = useQuery({
+    queryKey: ['facturas'],
+    queryFn: () => base44.entities.Factura.list('-created_date'),
+    enabled: !!user,
+  });
+
+  const deleteFacturaMutation = useMutation({
+    mutationFn: (id) => base44.entities.Factura.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['facturas']);
+      toast.success("Factura eliminada");
+    },
   });
 
   if (!user) {
@@ -237,6 +254,95 @@ export default function Comisiones() {
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sección de Facturas Generadas */}
+      {user.email === "jokin@voltisenergia.com" && (
+        <Card className="border-none shadow-md mt-6">
+          <CardHeader className="border-b">
+            <CardTitle className="text-[#004D9D] flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Mis Facturas Generadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {(() => {
+              const misFacturas = facturas.filter(f => f.comercial_email === user.email);
+
+              if (misFacturas.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No has generado facturas aún</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {misFacturas.map(factura => (
+                    <Card key={factura.id} className={`${
+                      factura.estado === "pendiente_revision" ? "border-orange-300 bg-orange-50" : ""
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-[#004D9D]">#{factura.numero_factura}</p>
+                              <p className="text-xs text-[#666666]">Factura</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-800">
+                                {format(new Date(factura.fecha_creacion), "d 'de' MMMM, yyyy", { locale: es })}
+                              </p>
+                              <p className="text-sm text-[#666666]">
+                                Mes: {format(new Date(factura.mes_comision + '-01'), 'MMMM yyyy', { locale: es })}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={
+                                  factura.estado === "pendiente_revision" 
+                                    ? "bg-orange-500 text-white"
+                                    : "bg-green-500 text-white"
+                                }>
+                                  {factura.estado === "pendiente_revision" ? "Pendiente revisión" : "Revisada"}
+                                </Badge>
+                                <span className="text-lg font-bold text-green-600">
+                                  €{factura.importe_total.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(factura.pdf_url, '_blank')}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Descargar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (window.confirm("¿Eliminar esta factura?")) {
+                                  deleteFacturaMutation.mutate(factura.id);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
