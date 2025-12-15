@@ -461,14 +461,12 @@ export default function Calendario() {
                                     variant="ghost"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (window.confirm("¿Marcar esta tarea como completada?")) {
-                                        deleteEventMutation.mutate({
-                                          clienteId: evento.cliente_id,
-                                          eventoId: evento.id,
-                                          esTarea: evento.es_tarea,
-                                          tareaId: evento.tarea_id
-                                        });
-                                      }
+                                      deleteEventMutation.mutate({
+                                        clienteId: evento.cliente_id,
+                                        eventoId: evento.id,
+                                        esTarea: evento.es_tarea,
+                                        tareaId: evento.tarea_id
+                                      });
                                     }}
                                     className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
                                   >
