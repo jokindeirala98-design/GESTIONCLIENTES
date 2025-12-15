@@ -377,166 +377,165 @@ export default function ReadyToGo() {
                       key={cliente.id}
                       className={`hover:shadow-lg transition-all duration-300 border-l-4 ${borderColor}`}
                     >
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row md:items-start gap-4">
-                          <div className="flex-1">
-                            <div 
-                              className="flex items-start gap-3 mb-3 cursor-pointer"
-                              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-                            >
-                              <Building2 className="w-6 h-6 text-[#004D9D] flex-shrink-0 mt-1" />
-                              <div className="flex-1">
-                                <h3 className="font-bold text-[#004D9D] text-lg mb-1 hover:underline">
-                                  {cliente.nombre_negocio}
-                                </h3>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-sm text-gray-600">{cliente.propietario_iniciales || 'n/s'}</span>
-                                  
-                                  {isPendienteAprobacion ? (
-                                    <Badge className="bg-emerald-600 text-white">
-                                      ✅ Firmado - Pendiente admin
-                                    </Badge>
-                                  ) : isPendienteFirma ? (
-                                    <Badge className="bg-orange-600 text-white">
-                                      ⏳ Pendiente de firma
-                                    </Badge>
-                                  ) : (
-                                    <Badge className="bg-green-600 text-white">
-                                      ✓ Informe listo
-                                    </Badge>
-                                  )}
-                                  
-                                  {tipoMax && (
-                                    <Badge className={tipoColors[tipoMax]}>
-                                      Max: {tipoMax}
-                                    </Badge>
-                                  )}
-                                  <Badge variant="outline">
-                                    {cliente.suministros?.length || 0} suministro(s)
-                                  </Badge>
-                                  {cliente.comision && (
-                                    <Badge className="bg-yellow-600 text-white">
-                                      <DollarSign className="w-3 h-3 mr-1" />
-                                      {cliente.comision}€
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {cliente.suministros && cliente.suministros.filter(s => !s.cerrado).length > 0 && (
-                              <div className="mt-4 space-y-2">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FileText className={`w-4 h-4 ${
-                                    isPendienteAprobacion ? "text-emerald-600" :
-                                    isPendienteFirma ? "text-orange-600" : "text-green-600"
-                                  }`} />
-                                  <p className={`text-sm font-semibold ${
-                                    isPendienteAprobacion ? "text-emerald-700" :
-                                    isPendienteFirma ? "text-orange-700" : "text-green-700"
-                                  }`}>
-                                    Informes disponibles:
-                                  </p>
-                                </div>
-                                {cliente.suministros.filter(s => !s.cerrado).map(suministro => {
-                                  const archivosValidos = getArchivosValidos(suministro);
-                                  const informeValido = archivosValidos.length > 0;
-                                  
-                                  return (
-                                    <div key={suministro.id} className={`${bgColor} border ${
-                                      isPendienteAprobacion ? "border-emerald-200" :
-                                      isPendienteFirma ? "border-orange-200" : "border-green-200"
-                                    } rounded-lg p-3`}>
-                                      <div className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                          <Badge className={tipoColors[suministro.tipo_factura]} variant="outline">
-                                            {suministro.tipo_factura}
-                                          </Badge>
-                                          <span className="text-sm font-medium text-gray-700 truncate">{suministro.nombre}</span>
-                                          {suministro.comision && (
-                                            <span className={`text-sm font-semibold ${
-                                              isPendienteAprobacion ? "text-emerald-600" :
-                                              isPendienteFirma ? "text-orange-600" : "text-green-600"
-                                            }`}>
-                                              ({suministro.comision}€)
-                                            </span>
-                                          )}
-                                        </div>
-                                        
-                                        {informeValido ? (
-                                          <div className="flex gap-2">
-                                            {archivosValidos.map((archivo, idx) => (
-                                              <Button
-                                                key={idx}
-                                                size="sm"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  window.open(archivo.url, '_blank');
-                                                }}
-                                                className={
-                                                  isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                                  isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                                }
-                                              >
-                                                <Download className="w-4 h-4 mr-1" />
-                                                {archivo.nombre}
-                                              </Button>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <Badge variant="outline" className="text-red-600 border-red-300 flex-shrink-0">
-                                            Sin informe
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      
-                                      {informeValido && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                          {archivosValidos.map((archivo, idx) => (
-                                            <p key={idx}>📄 {archivo.nombre}</p>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                      <CardContent className="p-4 md:p-6">
+                        {/* Header del cliente */}
+                        <div 
+                          className="cursor-pointer mb-4"
+                          onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <Building2 className="w-5 h-5 text-[#004D9D]" />
+                            <h3 className="font-bold text-[#004D9D] text-base md:text-lg hover:underline">
+                              {cliente.nombre_negocio}
+                            </h3>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 flex-wrap mb-2">
+                            <span className="text-xs text-gray-600 font-medium">{cliente.propietario_iniciales || 'n/s'}</span>
+                            
+                            {isPendienteAprobacion ? (
+                              <Badge className="bg-emerald-600 text-white text-xs">
+                                ✅ Firmado
+                              </Badge>
+                            ) : isPendienteFirma ? (
+                              <Badge className="bg-orange-600 text-white text-xs">
+                                ⏳ Pend. firma
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-green-600 text-white text-xs">
+                                ✓ Listo
+                              </Badge>
+                            )}
+                            
+                            {tipoMax && (
+                              <Badge className={`${tipoColors[tipoMax]} text-xs`}>
+                                {tipoMax}
+                              </Badge>
                             )}
                           </div>
-
-                          {puedoActualizar && (
-                            <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-                              <p className="text-sm font-semibold text-gray-600 mb-1">Cambiar estado:</p>
-                              <Select
-                                value={cliente.estado}
-                                onValueChange={(value) => handleCambiarEstado(cliente, value)}
-                                disabled={isPendienteAprobacion && !isAdmin}
-                              >
-                                <SelectTrigger className="w-[220px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
-                                  <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
-                                  <SelectItem value="Pendiente de aprobación">🎉 Firmado con éxito</SelectItem>
-                                  <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              
-                              {isPendienteFirma && (
-                                <p className="text-xs text-orange-600 mt-1">
-                                  💡 Esperando firma del cliente
-                                </p>
-                              )}
-                              
-                              {isPendienteAprobacion && (
-                                <p className="text-xs text-emerald-600 mt-1">
-                                  ⏳ Esperando aprobación del admin
-                                </p>
-                              )}
-                            </div>
-                          )}
+                          
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-xs">
+                              {cliente.suministros?.length || 0} sum.
+                            </Badge>
+                            {cliente.comision && (
+                              <Badge className="bg-yellow-600 text-white text-xs">
+                                <DollarSign className="w-3 h-3 mr-1" />
+                                {cliente.comision}€
+                              </Badge>
+                            )}
+                          </div>
                         </div>
+
+                        {/* Suministros e Informes */}
+                        {cliente.suministros && cliente.suministros.filter(s => !s.cerrado).length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className={`w-4 h-4 ${
+                                isPendienteAprobacion ? "text-emerald-600" :
+                                isPendienteFirma ? "text-orange-600" : "text-green-600"
+                              }`} />
+                              <p className={`text-xs md:text-sm font-semibold ${
+                                isPendienteAprobacion ? "text-emerald-700" :
+                                isPendienteFirma ? "text-orange-700" : "text-green-700"
+                              }`}>
+                                Informes:
+                              </p>
+                            </div>
+                            
+                            {cliente.suministros.filter(s => !s.cerrado).map(suministro => {
+                              const archivosValidos = getArchivosValidos(suministro);
+                              const informeValido = archivosValidos.length > 0;
+                              
+                              return (
+                                <div key={suministro.id} className={`${bgColor} border ${
+                                  isPendienteAprobacion ? "border-emerald-200" :
+                                  isPendienteFirma ? "border-orange-200" : "border-green-200"
+                                } rounded-lg p-3`}>
+                                  {/* Info del suministro */}
+                                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                    <Badge className={`${tipoColors[suministro.tipo_factura]} text-xs`}>
+                                      {suministro.tipo_factura}
+                                    </Badge>
+                                    <span className="text-xs md:text-sm font-medium text-gray-700">{suministro.nombre}</span>
+                                    {suministro.comision && (
+                                      <Badge className={`text-xs ${
+                                        isPendienteAprobacion ? "bg-emerald-100 text-emerald-700" :
+                                        isPendienteFirma ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
+                                      }`}>
+                                        {suministro.comision}€
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Botones de descarga */}
+                                  {informeValido ? (
+                                    <div className="flex gap-2 flex-wrap">
+                                      {archivosValidos.map((archivo, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={archivo.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          download
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="flex-1 min-w-[140px]"
+                                        >
+                                          <Button
+                                            size="sm"
+                                            className={`w-full text-xs ${
+                                              isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                              isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                            }`}
+                                          >
+                                            <Download className="w-3 h-3 mr-1" />
+                                            {archivo.nombre}
+                                          </Button>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <Badge variant="outline" className="text-red-600 border-red-300 text-xs">
+                                      Sin informe
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Cambiar estado */}
+                        {puedoActualizar && (
+                          <div className="mt-4 pt-4 border-t" onClick={(e) => e.stopPropagation()}>
+                            <p className="text-xs md:text-sm font-semibold text-gray-600 mb-2">Cambiar estado:</p>
+                            <Select
+                              value={cliente.estado}
+                              onValueChange={(value) => handleCambiarEstado(cliente, value)}
+                              disabled={isPendienteAprobacion && !isAdmin}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
+                                <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
+                                <SelectItem value="Pendiente de aprobación">🎉 Firmado con éxito</SelectItem>
+                                <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            
+                            {isPendienteFirma && (
+                              <p className="text-xs text-orange-600 mt-2">
+                                💡 Esperando firma del cliente
+                              </p>
+                            )}
+                            
+                            {isPendienteAprobacion && (
+                              <p className="text-xs text-emerald-600 mt-2">
+                                ⏳ Esperando aprobación del admin
+                              </p>
+                            )}
                       </CardContent>
                     </Card>
                   );
