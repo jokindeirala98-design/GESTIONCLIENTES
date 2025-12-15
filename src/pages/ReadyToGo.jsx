@@ -29,6 +29,38 @@ export default function ReadyToGo() {
     loadUser();
   }, []);
 
+  // Rechazar automáticamente clientes pendientes de firma con más de 30 días
+  useEffect(() => {
+    if (!clientes || clientes.length === 0) return;
+
+    const ahora = new Date();
+    const clientesARechazar = clientes.filter(c => {
+      if (c.estado !== "Pendiente de firma") return false;
+      if (!c.fecha_cambio_pendiente_firma) return false;
+
+      const fechaCambio = new Date(c.fecha_cambio_pendiente_firma);
+      const diasTranscurridos = Math.floor((ahora - fechaCambio) / (1000 * 60 * 60 * 24));
+      
+      return diasTranscurridos >= 30;
+    });
+
+    if (clientesARechazar.length > 0) {
+      clientesARechazar.forEach(async (cliente) => {
+        try {
+          await base44.entities.Cliente.update(cliente.id, { 
+            estado: "Rechazado",
+            anotaciones: (cliente.anotaciones || '') + `\n[Auto-rechazado: ${ahora.toLocaleDateString('es-ES')} - Más de 30 días en Pendiente de firma]`
+          });
+        } catch (error) {
+          console.error(`Error al rechazar cliente ${cliente.id}:`, error);
+        }
+      });
+      
+      queryClient.invalidateQueries(['clientes']);
+      toast.info(`${clientesARechazar.length} cliente(s) auto-rechazado(s) por inactividad`);
+    }
+  }, [clientes, queryClient]);
+
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
@@ -42,6 +74,10 @@ export default function ReadyToGo() {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ clienteId, nuevoEstado, cliente }) => {
       const updateData = { estado: nuevoEstado };
+      
+      if (nuevoEstado === "Pendiente de firma") {
+        updateData.fecha_cambio_pendiente_firma = new Date().toISOString().split('T')[0];
+      }
       
       if (nuevoEstado === "Pendiente de aprobación") {
         const fechaCierre = new Date().toISOString().split('T')[0];
