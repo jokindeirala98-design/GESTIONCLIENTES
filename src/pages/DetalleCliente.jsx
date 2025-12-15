@@ -100,22 +100,7 @@ export default function DetalleCliente() {
     },
   });
 
-  // Inicializar eventos si no existen
-  useEffect(() => {
-    if (cliente && (!cliente.eventos || cliente.eventos.length === 0)) {
-      updateMutation.mutate({
-        id: clienteId,
-        data: {
-          eventos: [{
-            id: Date.now().toString(),
-            fecha: new Date().toISOString().split('T')[0],
-            descripcion: "Primer contacto",
-            color: "verde"
-          }]
-        }
-      });
-    }
-  }, [cliente?.id]);
+
 
   // NUEVO: Verificar y corregir estados automáticamente al cargar
   useEffect(() => {
