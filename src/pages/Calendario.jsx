@@ -41,11 +41,13 @@ export default function Calendario() {
   });
   const [showCorchoDialog, setShowCorchoDialog] = useState(false);
   const [editingTareaCorcho, setEditingTareaCorcho] = useState(null);
+  const [modoMultiple, setModoMultiple] = useState(false);
   const [newTareaCorcho, setNewTareaCorcho] = useState({
     descripcion: "",
     notas: "",
     fecha: ""
   });
+  const [tareasMultiples, setTareasMultiples] = useState(["", "", ""]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -144,7 +146,31 @@ export default function Calendario() {
       queryClient.invalidateQueries(['tareasCorcho']);
       setShowCorchoDialog(false);
       setNewTareaCorcho({ descripcion: "", notas: "", fecha: "" });
+      setTareasMultiples(["", "", ""]);
+      setModoMultiple(false);
       toast.success("Tarea creada");
+    },
+  });
+
+  const createTareasMultiplesMutation = useMutation({
+    mutationFn: async (tareas) => {
+      const maxOrden = tareasCorcho.filter(t => !t.completada).reduce((max, t) => Math.max(max, t.orden || 0), 0);
+      for (let i = 0; i < tareas.length; i++) {
+        await base44.entities.TareaCorcho.create({
+          descripcion: tareas[i],
+          orden: maxOrden + i + 1,
+          completada: false,
+          tiene_alerta: false,
+          creador_email: user.email
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tareasCorcho']);
+      setShowCorchoDialog(false);
+      setTareasMultiples(["", "", ""]);
+      setModoMultiple(false);
+      toast.success("Tareas creadas");
     },
   });
 
@@ -904,36 +930,86 @@ export default function Calendario() {
       <Dialog open={showCorchoDialog} onOpenChange={setShowCorchoDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-[#004D9D]">Nueva Tarea del Corcho</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-[#004D9D]">Nueva Tarea del Corcho</DialogTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setModoMultiple(!modoMultiple);
+                  if (!modoMultiple) {
+                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "" });
+                  } else {
+                    setTareasMultiples(["", "", ""]);
+                  }
+                }}
+                className="text-xs"
+              >
+                {modoMultiple ? "Modo Individual" : "Varias Tareas"}
+              </Button>
+            </div>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Descripción *</label>
-              <Textarea
-                value={newTareaCorcho.descripcion}
-                onChange={(e) => setNewTareaCorcho({ ...newTareaCorcho, descripcion: e.target.value })}
-                placeholder="¿Qué hay que hacer?"
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Notas</label>
-              <Textarea
-                value={newTareaCorcho.notas}
-                onChange={(e) => setNewTareaCorcho({ ...newTareaCorcho, notas: e.target.value })}
-                placeholder="Detalles adicionales..."
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Fecha (opcional)</label>
-              <Input
-                type="date"
-                value={newTareaCorcho.fecha}
-                onChange={(e) => setNewTareaCorcho({ ...newTareaCorcho, fecha: e.target.value })}
-              />
-              <p className="text-xs text-gray-500 mt-1">Si añades fecha, aparecerá en el calendario</p>
-            </div>
+            {!modoMultiple ? (
+              <>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Descripción *</label>
+                  <Textarea
+                    value={newTareaCorcho.descripcion}
+                    onChange={(e) => setNewTareaCorcho({ ...newTareaCorcho, descripcion: e.target.value })}
+                    placeholder="¿Qué hay que hacer?"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Notas</label>
+                  <Textarea
+                    value={newTareaCorcho.notas}
+                    onChange={(e) => setNewTareaCorcho({ ...newTareaCorcho, notas: e.target.value })}
+                    placeholder="Detalles adicionales..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Fecha (opcional)</label>
+                  <Input
+                    type="date"
+                    value={newTareaCorcho.fecha}
+                    onChange={(e) => setNewTareaCorcho({ ...newTareaCorcho, fecha: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Si añades fecha, aparecerá en el calendario</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Descripciones de tareas *</label>
+                  <div className="space-y-2">
+                    {tareasMultiples.map((tarea, index) => (
+                      <Input
+                        key={index}
+                        value={tarea}
+                        onChange={(e) => {
+                          const nuevas = [...tareasMultiples];
+                          nuevas[index] = e.target.value;
+                          setTareasMultiples(nuevas);
+                        }}
+                        placeholder={`Tarea ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setTareasMultiples([...tareasMultiples, ""])}
+                    className="mt-2 w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Añadir más
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -941,21 +1017,32 @@ export default function Calendario() {
               onClick={() => {
                 setShowCorchoDialog(false);
                 setNewTareaCorcho({ descripcion: "", notas: "", fecha: "" });
+                setTareasMultiples(["", "", ""]);
+                setModoMultiple(false);
               }}
             >
               Cancelar
             </Button>
             <Button 
               onClick={() => {
-                if (!newTareaCorcho.descripcion) {
-                  toast.error("Añade una descripción");
-                  return;
+                if (!modoMultiple) {
+                  if (!newTareaCorcho.descripcion) {
+                    toast.error("Añade una descripción");
+                    return;
+                  }
+                  createTareaCorchoMutation.mutate(newTareaCorcho);
+                } else {
+                  const tareasValidas = tareasMultiples.filter(t => t.trim() !== "");
+                  if (tareasValidas.length === 0) {
+                    toast.error("Añade al menos una descripción");
+                    return;
+                  }
+                  createTareasMultiplesMutation.mutate(tareasValidas);
                 }
-                createTareaCorchoMutation.mutate(newTareaCorcho);
               }}
               className="bg-[#004D9D]"
             >
-              Crear Tarea
+              Crear {modoMultiple && tareasMultiples.filter(t => t.trim()).length > 0 ? `(${tareasMultiples.filter(t => t.trim()).length})` : "Tarea"}
             </Button>
           </DialogFooter>
         </DialogContent>
