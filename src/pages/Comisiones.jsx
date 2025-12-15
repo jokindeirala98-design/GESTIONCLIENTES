@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -34,21 +33,29 @@ export default function Comisiones() {
 
   if (!user) return null;
 
-  // Solo mostrar clientes que están firmados con éxito, tienen comisión Y han sido aprobados por el admin
+  // Obtener todos los suministros cerrados del usuario
   const misClientesCerrados = clientes.filter(
-    c => c.propietario_email === user.email && 
-         c.estado === "Firmado con éxito" && 
-         c.comision &&
-         c.aprobado_admin === true
+    c => c.propietario_email === user.email && c.aprobado_admin === true
   );
 
-  const clientesDelMes = misClientesCerrados.filter(
-    c => c.mes_comision === mesSeleccionado
+  // Extraer todos los suministros cerrados con su información
+  const suministrosCerrados = misClientesCerrados.flatMap(cliente => 
+    (cliente.suministros || [])
+      .filter(s => s.cerrado && s.comision)
+      .map(s => ({
+        ...s,
+        clienteNombre: cliente.nombre_negocio,
+        clienteId: cliente.id
+      }))
   );
 
-  const totalMes = clientesDelMes.reduce((sum, c) => sum + (c.comision || 0), 0);
+  const suministrosDelMes = suministrosCerrados.filter(
+    s => s.mes_comision_suministro === mesSeleccionado
+  );
 
-  const mesesDisponibles = [...new Set(misClientesCerrados.map(c => c.mes_comision))]
+  const totalMes = suministrosDelMes.reduce((sum, s) => sum + (s.comision || 0), 0);
+
+  const mesesDisponibles = [...new Set(suministrosCerrados.map(s => s.mes_comision_suministro))]
     .filter(Boolean)
     .sort()
     .reverse();
@@ -90,7 +97,7 @@ export default function Comisiones() {
             </p>
             <div className="flex items-center justify-center gap-2 text-white/90 text-sm mt-3">
               <TrendingUp className="w-4 h-4" />
-              <span>{clientesDelMes.length} cliente(s) cerrado(s)</span>
+              <span>{suministrosDelMes.length} suministro(s) cerrado(s)</span>
             </div>
           </div>
         </CardContent>
@@ -121,7 +128,7 @@ export default function Comisiones() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {clientesDelMes.length === 0 ? (
+          {suministrosDelMes.length === 0 ? (
             <div className="text-center py-12">
               <DollarSign className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-[#666666]">
@@ -130,9 +137,9 @@ export default function Comisiones() {
             </div>
           ) : (
             <div className="space-y-3">
-              {clientesDelMes.map(cliente => (
+              {suministrosDelMes.map(suministro => (
                 <div 
-                  key={cliente.id}
+                  key={`${suministro.clienteId}-${suministro.id}`}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-1">
@@ -141,18 +148,21 @@ export default function Comisiones() {
                     </div>
                     <div>
                       <p className="font-medium text-[#004D9D]">
-                        {cliente.nombre_negocio}
+                        {suministro.clienteNombre}
                       </p>
-                      {cliente.fecha_cierre && (
+                      <p className="text-xs text-[#666666]">
+                        {suministro.nombre}
+                      </p>
+                      {suministro.fecha_cierre_suministro && (
                         <p className="text-xs text-[#666666]">
-                          Cerrado: {format(new Date(cliente.fecha_cierre), "d 'de' MMMM", { locale: es })}
+                          Cerrado: {format(new Date(suministro.fecha_cierre_suministro), "d 'de' MMMM", { locale: es })}
                         </p>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-green-600">
-                      €{cliente.comision.toFixed(2)}
+                      €{suministro.comision.toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -181,8 +191,8 @@ export default function Comisiones() {
           <CardContent className="p-6">
             <div className="space-y-2">
               {mesesDisponibles.map(mes => {
-                const clientesMes = misClientesCerrados.filter(c => c.mes_comision === mes);
-                const totalMesHist = clientesMes.reduce((sum, c) => sum + (c.comision || 0), 0);
+                const suministrosMes = suministrosCerrados.filter(s => s.mes_comision_suministro === mes);
+                const totalMesHist = suministrosMes.reduce((sum, s) => sum + (s.comision || 0), 0);
                 
                 return (
                   <button
@@ -202,7 +212,7 @@ export default function Comisiones() {
                         €{totalMesHist.toFixed(2)}
                       </p>
                       <p className={`text-xs ${mes === mesSeleccionado ? 'text-white/80' : 'text-[#666666]'}`}>
-                        {clientesMes.length} cliente(s)
+                        {suministrosMes.length} suministro(s)
                       </p>
                     </div>
                   </button>

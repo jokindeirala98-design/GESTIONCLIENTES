@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import {
@@ -49,14 +49,21 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
         id: nuevoId,
         nombre: nuevoSuministro.nombre,
         tipo_factura: nuevoSuministro.tipo_factura,
-        facturas: []
-        // CRÍTICO: NO crear informe_final aquí, solo cuando el admin lo suba
+        facturas: [],
+        cerrado: false
       }
     ];
+    
+    // Si el cliente estaba cerrado, cambiar a "Esperando facturas" al añadir nuevo suministro
+    const estadoCerrado = cliente.estado === "Firmado con éxito";
+    const updateData = estadoCerrado 
+      ? { suministros: nuevosSuministros, estado: "Esperando facturas" }
+      : { suministros: nuevosSuministros };
+    
     setSuministros(nuevosSuministros);
-    onUpdate({ suministros: nuevosSuministros });
+    onUpdate(updateData);
     setShowCreateDialog(false);
-    toast.success("Suministro añadido");
+    toast.success(estadoCerrado ? "Suministro añadido - Cliente reactivado" : "Suministro añadido");
   };
 
   const handleDeleteSuministro = (suministroId) => {
@@ -138,6 +145,9 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     }
   };
 
+  const suministrosActivos = suministros.filter(s => !s.cerrado);
+  const suministrosCerrados = suministros.filter(s => s.cerrado);
+
   return (
     <Card className="border-2 border-blue-200 bg-blue-50">
       <CardHeader>
@@ -153,7 +163,12 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
             <p className="text-sm">No hay suministros. Añade uno para empezar.</p>
           </div>
         ) : (
-          suministros.map((suministro, idx) => (
+          <>
+            {/* Suministros Activos */}
+            {suministrosActivos.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-[#004D9D] text-sm">Suministros Activos</h3>
+                {suministrosActivos.map((suministro, idx) => (
             <Card key={suministro.id} className="bg-white">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -363,7 +378,82 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                 )}
               </CardContent>
             </Card>
-          ))
+                ))}
+              </div>
+            )}
+
+            {/* Suministros Cerrados */}
+            {suministrosCerrados.length > 0 && (
+              <div className="space-y-4 mt-6 pt-6 border-t-2 border-green-300">
+                <h3 className="font-semibold text-green-700 text-sm flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Suministros Cerrados y Comisionados
+                </h3>
+                {suministrosCerrados.map((suministro) => (
+                  <Card key={suministro.id} className="bg-green-50 border-green-200">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-green-800">{suministro.nombre}</h3>
+                          <Badge className="bg-green-600 text-white">Cerrado</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getTipoColor(suministro.tipo_factura)}>
+                            {suministro.tipo_factura}
+                          </Badge>
+                          {suministro.comision && (
+                            <Badge className="bg-yellow-600 text-white">
+                              {suministro.comision}€
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {suministro.fecha_cierre_suministro && (
+                        <p className="text-xs text-green-700">
+                          📅 Cerrado: {new Date(suministro.fecha_cierre_suministro).toLocaleDateString('es-ES')}
+                        </p>
+                      )}
+                      {suministro.informe_final && (
+                        <div className="mt-2">
+                          <p className="text-xs text-green-700 mb-2 font-semibold">📄 Informe(s):</p>
+                          {suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
+                            <div className="space-y-2">
+                              {suministro.informe_final.archivos.map((archivo, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-white border border-green-300 p-2 rounded">
+                                  <span className="text-sm text-green-800 truncate">{archivo.nombre}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => window.open(archivo.url, '_blank')}
+                                    className="text-xs text-green-700 hover:text-green-800"
+                                  >
+                                    <Download className="w-3 h-3 mr-1" />
+                                    Ver
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : suministro.informe_final.url ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => window.open(suministro.informe_final.url, '_blank')}
+                              className="text-xs text-green-700"
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              Ver informe
+                            </Button>
+                          ) : null}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {isOwnerOrAdmin && (

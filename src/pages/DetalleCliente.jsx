@@ -121,18 +121,32 @@ export default function DetalleCliente() {
   useEffect(() => {
     if (!cliente || !cliente.suministros || cliente.suministros.length === 0) return;
     
+    // Solo considerar suministros NO cerrados
+    const suministrosActivos = cliente.suministros.filter(s => !s.cerrado);
+    
+    if (suministrosActivos.length === 0) {
+      // Todos los suministros cerrados → mantener en "Firmado con éxito"
+      if (cliente.estado !== "Firmado con éxito") {
+        updateMutation.mutate({
+          id: clienteId,
+          data: { estado: "Firmado con éxito" }
+        });
+      }
+      return;
+    }
+    
     const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
     
     // No tocar clientes en estados finales (o estados que requieren aprobación)
     if (estadosFinales.includes(cliente.estado)) return;
 
-    // Verificar si todos los suministros tienen al menos 1 factura
-    const todosConFacturas = cliente.suministros.every(s => 
+    // Verificar si todos los suministros ACTIVOS tienen al menos 1 factura
+    const todosConFacturas = suministrosActivos.every(s => 
       s.facturas && s.facturas.length > 0
     );
     
-    // Verificar si todos los suministros tienen informe final (solo URL requerida)
-    const todosConInforme = cliente.suministros.every(s => {
+    // Verificar si todos los suministros ACTIVOS tienen informe final
+    const todosConInforme = suministrosActivos.every(s => {
       if (!s.informe_final) return false;
       const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
         a && a.url && a.url.trim() !== '' && a.url !== 'null'
@@ -241,13 +255,27 @@ export default function DetalleCliente() {
           return s;
         });
       
-      const todosConFacturas = data.suministros.length > 0 && data.suministros.every(s => 
+      // Solo considerar suministros NO cerrados para el cálculo del estado
+      const suministrosActivos = data.suministros.filter(s => !s.cerrado);
+      
+      if (suministrosActivos.length === 0) {
+        // Todos cerrados → mantener en "Firmado con éxito"
+        if (cliente.estado !== "Firmado con éxito") {
+          updateMutation.mutate({
+            id: clienteId,
+            data: { ...data, estado: "Firmado con éxito", eventos: eventosActualizados }
+          });
+        }
+        return;
+      }
+      
+      const todosConFacturas = suministrosActivos.every(s => 
         s.facturas && s.facturas.length > 0
       );
       
       const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
       if (todosConFacturas && !estadosFinales.includes(cliente.estado)) {
-        console.log("Cambiando a Facturas presentadas - todos los suministros tienen facturas");
+        console.log("Cambiando a Facturas presentadas - todos los suministros activos tienen facturas");
         eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_facturas");
         updateMutation.mutate({
           id: clienteId,
@@ -256,7 +284,7 @@ export default function DetalleCliente() {
         return;
       }
 
-      const todosConInforme = data.suministros.length > 0 && data.suministros.every(s => {
+      const todosConInforme = suministrosActivos.every(s => {
         if (!s.informe_final) return false;
         const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
           a && a.url && a.url.trim() !== '' && a.url !== 'null'
@@ -266,7 +294,7 @@ export default function DetalleCliente() {
       });
 
       if (todosConInforme && cliente.estado === "Facturas presentadas") {
-        console.log("Cambiando a Informe listo - todos los suministros tienen informe");
+        console.log("Cambiando a Informe listo - todos los suministros activos tienen informe");
         updateMutation.mutate({
           id: clienteId,
           data: { ...data, estado: "Informe listo", eventos: eventosActualizados }
@@ -298,27 +326,38 @@ export default function DetalleCliente() {
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
       
-      let updateData = {};
+      // Marcar todos los suministros NO cerrados como cerrados
+      const suministrosActualizados = (cliente.suministros || []).map(s => {
+        if (s.cerrado) return s; // Ya cerrado, no tocar
+        return {
+          ...s,
+          cerrado: true,
+          fecha_cierre_suministro: fechaCierre,
+          mes_comision_suministro: mesComision
+        };
+      });
+      
+      let updateData = { suministros: suministrosActualizados };
 
       if (isAdmin && cliente.estado === "Pendiente de aprobación") {
-        // Admin is approving a client that was previously marked as "Pendiente de aprobación" by an owner.
         updateData = {
+          ...updateData,
           estado: "Firmado con éxito",
-          fecha_cierre: cliente.fecha_cierre || fechaCierre, // Keep existing if present
-          mes_comision: cliente.mes_comision || mesComision, // Keep existing if present
+          fecha_cierre: cliente.fecha_cierre || fechaCierre,
+          mes_comision: cliente.mes_comision || mesComision,
           aprobado_admin: true
         };
       } else if (isAdmin && (cliente.estado === "Informe listo" || cliente.estado === "Pendiente de firma")) {
-        // Admin directly marks as Firmado con éxito, bypassing "Pendiente de aprobación"
         updateData = {
+          ...updateData,
           estado: "Firmado con éxito",
           fecha_cierre: fechaCierre,
           mes_comision: mesComision,
           aprobado_admin: true
         };
       } else {
-        // Owner marks as "Firmado con éxito", sets to "Pendiente de aprobación"
         updateData = {
+          ...updateData,
           estado: "Pendiente de aprobación",
           fecha_cierre: fechaCierre,
           mes_comision: mesComision,
