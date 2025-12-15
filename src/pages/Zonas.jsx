@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, MapPin, Calendar, Sparkles, GripVertical } from "lucide-react";
+import { Plus, MapPin, Calendar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
@@ -243,20 +243,18 @@ export default function Zonas() {
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
+                          {...provided.dragHandleProps}
                         >
                           <Card 
-                            className={`hover:shadow-xl transition-all duration-300 cursor-pointer border-2 overflow-hidden relative ${
+                            className={`hover:shadow-xl transition-all duration-300 cursor-grab active:cursor-grabbing border-2 overflow-hidden relative ${
                               isPriority ? 'border-green-500 shadow-lg shadow-green-100' : 'border-gray-100'
-                            } ${snapshot.isDragging ? 'shadow-2xl rotate-3' : ''}`}
-                            onClick={() => navigate(createPageUrl(`DetalleZona?id=${zona.id}`))}
+                            } ${snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105' : ''}`}
+                            onClick={(e) => {
+                              if (!snapshot.isDragging) {
+                                navigate(createPageUrl(`DetalleZona?id=${zona.id}`));
+                              }
+                            }}
                           >
-                            <div 
-                              {...provided.dragHandleProps}
-                              className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm rounded-lg p-2 hover:bg-white transition-colors cursor-grab active:cursor-grabbing shadow-md"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <GripVertical className="w-5 h-5 text-gray-700" />
-                            </div>
                 <CardHeader className={`p-0 ${
                   isPriority 
                     ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
