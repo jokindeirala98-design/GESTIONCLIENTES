@@ -996,6 +996,19 @@ export default function Calendario() {
                           nuevas[index] = e.target.value;
                           setTareasMultiples(nuevas);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (index === tareasMultiples.length - 1) {
+                              setTareasMultiples([...tareasMultiples, ""]);
+                              setTimeout(() => {
+                                inputRefs.current[index + 1]?.focus();
+                              }, 0);
+                            } else {
+                              inputRefs.current[index + 1]?.focus();
+                            }
+                          }
+                        }}
                         placeholder={`Tarea ${index + 1}`}
                       />
                     ))}
