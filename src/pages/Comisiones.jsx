@@ -5,14 +5,16 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2 } from "lucide-react";
+import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import GenerarFacturaDialog from "../components/comisiones/GenerarFacturaDialog.jsx";
 
 export default function Comisiones() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [mesSeleccionado, setMesSeleccionado] = useState(format(new Date(), 'yyyy-MM'));
+  const [showFacturaDialog, setShowFacturaDialog] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -99,6 +101,15 @@ export default function Comisiones() {
               <TrendingUp className="w-4 h-4" />
               <span>{suministrosDelMes.length} suministro(s) cerrado(s)</span>
             </div>
+            {user.email === "jokin@voltisenergia.com" && totalMes > 0 && (
+              <Button
+                onClick={() => setShowFacturaDialog(true)}
+                className="mt-4 bg-white text-green-600 hover:bg-gray-100"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Generar Factura
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -222,6 +233,14 @@ export default function Comisiones() {
           </CardContent>
         </Card>
       )}
+
+      <GenerarFacturaDialog
+        open={showFacturaDialog}
+        onClose={() => setShowFacturaDialog(false)}
+        mesSeleccionado={mesSeleccionado}
+        totalMes={totalMes}
+        user={user}
+      />
     </div>
   );
 }

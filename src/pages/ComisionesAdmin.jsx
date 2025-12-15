@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, User, Calendar } from "lucide-react";
+import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, User, Calendar, FileText, Download, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -25,10 +25,12 @@ import {
 
 export default function ComisionesAdmin() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [comercialSeleccionado, setComercialSeleccionado] = useState("todos");
   const [mesSeleccionado, setMesSeleccionado] = useState(format(new Date(), 'yyyy-MM'));
   const [añoSeleccionado, setAñoSeleccionado] = useState(new Date().getFullYear().toString());
+  const [facturaPreview, setFacturaPreview] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -50,6 +52,19 @@ export default function ComisionesAdmin() {
   const { data: usuarios = [] } = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
+  });
+
+  const { data: facturas = [] } = useQuery({
+    queryKey: ['facturas'],
+    queryFn: () => base44.entities.Factura.list('-created_date'),
+  });
+
+  const marcarFacturaRevisadaMutation = useMutation({
+    mutationFn: ({ id }) => base44.entities.Factura.update(id, { estado: "revisada" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['facturas']);
+      toast.success("Factura marcada como revisada");
+    },
   });
 
   if (!user) return null;
@@ -198,37 +213,48 @@ export default function ComisionesAdmin() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid md:grid-cols-2 gap-4">
-              {datosPorComercial.map(comercial => (
-                <Card 
-                  key={comercial.email}
-                  className="cursor-pointer hover:shadow-lg transition-shadow border-2"
-                  onClick={() => setComercialSeleccionado(comercial.email)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#004D9D] to-[#00AEEF] flex items-center justify-center">
-                        <span className="text-white font-bold">{comercial.iniciales}</span>
+              {datosPorComercial.map(comercial => {
+                const facturasPendientes = facturas.filter(f => 
+                  f.comercial_email === comercial.email && f.estado === "pendiente_revision"
+                );
+                
+                return (
+                  <Card 
+                    key={comercial.email}
+                    className="cursor-pointer hover:shadow-lg transition-shadow border-2"
+                    onClick={() => setComercialSeleccionado(comercial.email)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#004D9D] to-[#00AEEF] flex items-center justify-center">
+                          <span className="text-white font-bold">{comercial.iniciales}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-[#004D9D]">{comercial.nombre}</p>
+                          <p className="text-xs text-[#666666]">Comercial</p>
+                        </div>
+                        {facturasPendientes.length > 0 && (
+                          <Badge className="bg-orange-500 text-white">
+                            {facturasPendientes.length} factura(s)
+                          </Badge>
+                        )}
                       </div>
-                      <div>
-                        <p className="font-bold text-[#004D9D]">{comercial.nombre}</p>
-                        <p className="text-xs text-[#666666]">Comercial</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <p className="text-xs text-[#666666] mb-1">Este mes</p>
+                          <p className="text-lg font-bold text-green-600">€{comercial.totalMes.toFixed(2)}</p>
+                          <p className="text-xs text-[#666666]">{comercial.cantidadMes} suministros</p>
+                        </div>
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <p className="text-xs text-[#666666] mb-1">{añoSeleccionado}</p>
+                          <p className="text-lg font-bold text-blue-600">€{comercial.totalAño.toFixed(2)}</p>
+                          <p className="text-xs text-[#666666]">{comercial.cantidadAño} suministros</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <p className="text-xs text-[#666666] mb-1">Este mes</p>
-                        <p className="text-lg font-bold text-green-600">€{comercial.totalMes.toFixed(2)}</p>
-                        <p className="text-xs text-[#666666]">{comercial.cantidadMes} suministros</p>
-                      </div>
-                      <div className="bg-blue-50 rounded-lg p-3">
-                        <p className="text-xs text-[#666666] mb-1">{añoSeleccionado}</p>
-                        <p className="text-lg font-bold text-blue-600">€{comercial.totalAño.toFixed(2)}</p>
-                        <p className="text-xs text-[#666666]">{comercial.cantidadAño} suministros</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -488,7 +514,118 @@ export default function ComisionesAdmin() {
             </Card>
           )}
         </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
+        </Tabs>
+
+        {/* Sección de Facturas - Solo cuando hay un comercial seleccionado */}
+        {comercialSeleccionado !== "todos" && (
+        <Card className="border-none shadow-md mt-6">
+          <CardHeader className="border-b">
+            <CardTitle className="text-[#004D9D] flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Facturas Generadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {(() => {
+              const facturasComercial = facturas.filter(f => f.comercial_email === comercialSeleccionado);
+
+              if (facturasComercial.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No hay facturas generadas por este comercial</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {facturasComercial.map(factura => (
+                    <Card key={factura.id} className={`${
+                      factura.estado === "pendiente_revision" ? "border-orange-300 bg-orange-50" : ""
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-[#004D9D]">#{factura.numero_factura}</p>
+                              <p className="text-xs text-[#666666]">Factura</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-800">
+                                {format(new Date(factura.fecha_creacion), "d 'de' MMMM, yyyy", { locale: es })}
+                              </p>
+                              <p className="text-sm text-[#666666]">
+                                Mes: {format(new Date(factura.mes_comision + '-01'), 'MMMM yyyy', { locale: es })}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={
+                                  factura.estado === "pendiente_revision" 
+                                    ? "bg-orange-500 text-white"
+                                    : "bg-green-500 text-white"
+                                }>
+                                  {factura.estado === "pendiente_revision" ? "Pendiente revisión" : "Revisada"}
+                                </Badge>
+                                <span className="text-lg font-bold text-green-600">
+                                  €{factura.importe_total.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setFacturaPreview(factura.pdf_url)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(factura.pdf_url, '_blank')}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Descargar
+                            </Button>
+                            {factura.estado === "pendiente_revision" && (
+                              <Button
+                                size="sm"
+                                onClick={() => marcarFacturaRevisadaMutation.mutate({ id: factura.id })}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Marcar Revisada
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+        )}
+        </div>
+
+        {/* Dialog para preview de factura */}
+        <Dialog open={!!facturaPreview} onOpenChange={() => setFacturaPreview(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Vista Previa de Factura</DialogTitle>
+        </DialogHeader>
+        {facturaPreview && (
+          <iframe
+            src={facturaPreview}
+            className="w-full h-[70vh] border rounded"
+            title="Preview Factura"
+          />
+        )}
+        </DialogContent>
+        </Dialog>
+        </div>
+        );
+        }
