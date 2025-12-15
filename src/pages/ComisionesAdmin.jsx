@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, User, Calendar, FileText, Download, Eye } from "lucide-react";
+import { DollarSign, ChevronLeft, ChevronRight, TrendingUp, Building2, User, Calendar, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -23,12 +23,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 export default function ComisionesAdmin() {
   const navigate = useNavigate();
@@ -37,7 +31,6 @@ export default function ComisionesAdmin() {
   const [comercialSeleccionado, setComercialSeleccionado] = useState("todos");
   const [mesSeleccionado, setMesSeleccionado] = useState(format(new Date(), 'yyyy-MM'));
   const [añoSeleccionado, setAñoSeleccionado] = useState(new Date().getFullYear().toString());
-  const [facturaPreview, setFacturaPreview] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -583,14 +576,6 @@ export default function ComisionesAdmin() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setFacturaPreview(factura.pdf_url)}
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Ver
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
                               onClick={() => window.open(factura.pdf_url, '_blank')}
                             >
                               <Download className="w-4 h-4 mr-1" />
@@ -602,7 +587,7 @@ export default function ComisionesAdmin() {
                                 onClick={() => marcarFacturaRevisadaMutation.mutate({ id: factura.id })}
                                 className="bg-green-600 hover:bg-green-700"
                               >
-                                Marcar Revisada
+                                Revisada
                               </Button>
                             )}
                           </div>
@@ -616,22 +601,6 @@ export default function ComisionesAdmin() {
           </CardContent>
         </Card>
       )}
-
-      {/* Dialog para preview de factura */}
-      <Dialog open={!!facturaPreview} onOpenChange={() => setFacturaPreview(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Vista Previa de Factura</DialogTitle>
-          </DialogHeader>
-          {facturaPreview && (
-            <iframe
-              src={facturaPreview}
-              className="w-full h-[70vh] border rounded"
-              title="Preview Factura"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
