@@ -125,16 +125,25 @@ export default function Calendario() {
     ? clientes 
     : clientes.filter(c => c.propietario_email === user.email);
 
+  // Obtener lista de usuarios para identificar admins
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: isAdmin,
+  });
+
+  const emailsAdmins = usuarios.filter(u => u.role === 'admin').map(u => u.email);
+
   // Filtrar eventos de clientes según rol
   const eventosClientes = clientes.flatMap(cliente => {
     const eventos = cliente.eventos || [];
     return eventos
       .filter(evento => {
         if (isAdmin) {
-          // Admins ven solo eventos rojos de todos
-          return evento.color === "rojo";
+          // Admins ven eventos de otros admins
+          return emailsAdmins.includes(cliente.propietario_email);
         } else {
-          // Comerciales ven solo sus eventos (verdes, rojos y amarillos)
+          // Comerciales ven solo sus eventos
           return cliente.propietario_email === user.email;
         }
       })
@@ -153,8 +162,10 @@ export default function Calendario() {
     .filter(tarea => !tarea.completada)
     .filter(tarea => {
       if (isAdmin) {
-        return tarea.color === "rojo";
+        // Admins ven tareas de otros admins
+        return emailsAdmins.includes(tarea.propietario_email);
       } else {
+        // Comerciales ven solo sus tareas
         return tarea.propietario_email === user.email;
       }
     })
@@ -166,7 +177,8 @@ export default function Calendario() {
       cliente_nombre: "Tarea personal",
       es_tarea: true,
       tarea_id: tarea.id,
-      es_mi_cliente: tarea.propietario_email === user.email
+      es_mi_cliente: tarea.propietario_email === user.email,
+      propietario_email: tarea.propietario_email
     }));
 
   // Combinar eventos de clientes y tareas independientes
@@ -282,8 +294,8 @@ export default function Calendario() {
         </h1>
         <p className="text-[#666666]">
           {isAdmin 
-            ? "Eventos rojos prioritarios de todos los comerciales" 
-            : "Tus eventos programados"}
+            ? "Calendario compartido de administradores" 
+            : "Tu calendario personal"}
         </p>
       </div>
 
@@ -424,9 +436,11 @@ export default function Calendario() {
                                   <span className={`font-semibold text-sm truncate ${evento.es_tarea ? "text-purple-600" : "text-[#004D9D]"}`}>
                                     {evento.cliente_nombre}
                                   </span>
-                                  {!evento.es_mi_cliente && !evento.es_tarea && (
+                                  {!evento.es_mi_cliente && (
                                     <Badge variant="outline" className="text-xs">
-                                      {evento.cliente_propietario}
+                                      {evento.es_tarea 
+                                        ? usuarios.find(u => u.email === evento.propietario_email)?.full_name || 'Admin'
+                                        : evento.cliente_propietario}
                                     </Badge>
                                   )}
                                 </div>
