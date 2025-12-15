@@ -14,9 +14,7 @@ import {
   X,
   LogOut,
   UserCircle2,
-  Sparkles,
-  Calendar as CalendarIcon,
-  Route
+  Calendar as CalendarIcon
 } from "lucide-react";
 import {
   Sidebar,
@@ -82,11 +80,6 @@ export default function Layout({ children }) {
       icon: CalendarIcon,
     },
     {
-      title: "Planificador IA",
-      url: createPageUrl("PlanificadorRutas"),
-      icon: Sparkles,
-    },
-    {
       title: "Ready to Go",
       url: createPageUrl("ReadyToGo"),
       icon: CheckCircle2,
@@ -104,7 +97,7 @@ export default function Layout({ children }) {
     ];
 
     // Menú para administradores
-  const menuAdmin = [
+    const menuAdmin = [
     {
       title: "Calendario",
       url: createPageUrl("Calendario"),
@@ -136,16 +129,6 @@ export default function Layout({ children }) {
       icon: CheckCircle2,
     },
     {
-      title: "Planificador IA",
-      url: createPageUrl("PlanificadorRutas"),
-      icon: Sparkles,
-    },
-    {
-      title: "Rutas",
-      url: createPageUrl("Rutas"),
-      icon: Route,
-    },
-    {
       title: "Gestión de Usuarios",
       url: createPageUrl("GestionUsuarios"),
       icon: UserCircle2,
@@ -155,7 +138,7 @@ export default function Layout({ children }) {
       url: createPageUrl("Configuracion"),
       icon: Settings,
     },
-  ];
+    ];
 
   const navigationItems = isAdmin ? menuAdmin : menuComercial;
 

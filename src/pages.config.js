@@ -9,8 +9,6 @@ import GestionUsuarios from './pages/GestionUsuarios';
 import Configuracion from './pages/Configuracion';
 import DetalleZona from './pages/DetalleZona';
 import CierresVerificados from './pages/CierresVerificados';
-import Rutas from './pages/Rutas';
-import PlanificadorRutas from './pages/PlanificadorRutas';
 import Calendario from './pages/Calendario';
 import CorregirIniciales from './pages/CorregirIniciales';
 import __Layout from './Layout.jsx';
@@ -28,8 +26,6 @@ export const PAGES = {
     "Configuracion": Configuracion,
     "DetalleZona": DetalleZona,
     "CierresVerificados": CierresVerificados,
-    "Rutas": Rutas,
-    "PlanificadorRutas": PlanificadorRutas,
     "Calendario": Calendario,
     "CorregirIniciales": CorregirIniciales,
 }
