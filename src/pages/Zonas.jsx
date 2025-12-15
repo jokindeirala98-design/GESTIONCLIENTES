@@ -227,7 +227,7 @@ export default function Zonas() {
               <div 
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                className="flex flex-wrap gap-4"
               >
                 {filteredZonas.map((zona, index) => {
             const clientesCount = getClientesEnZona(zona.id).length;
@@ -244,6 +244,7 @@ export default function Zonas() {
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
+                          className="w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
                         >
                           <Card 
                             className={`hover:shadow-xl transition-all duration-300 cursor-grab active:cursor-grabbing border-2 overflow-hidden relative ${
