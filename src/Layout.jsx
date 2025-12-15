@@ -129,6 +129,11 @@ export default function Layout({ children }) {
       icon: CheckCircle2,
     },
     {
+      title: "Comisiones",
+      url: createPageUrl("ComisionesAdmin"),
+      icon: DollarSign,
+    },
+    {
       title: "Gestión de Usuarios",
       url: createPageUrl("GestionUsuarios"),
       icon: UserCircle2,
