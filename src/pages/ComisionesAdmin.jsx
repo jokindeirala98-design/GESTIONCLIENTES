@@ -22,6 +22,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function ComisionesAdmin() {
   const navigate = useNavigate();
@@ -514,10 +521,10 @@ export default function ComisionesAdmin() {
             </Card>
           )}
         </TabsContent>
-        </Tabs>
+      </Tabs>
 
-        {/* Sección de Facturas - Solo cuando hay un comercial seleccionado */}
-        {comercialSeleccionado !== "todos" && (
+      {/* Sección de Facturas - Solo cuando hay un comercial seleccionado */}
+      {comercialSeleccionado !== "todos" && (
         <Card className="border-none shadow-md mt-6">
           <CardHeader className="border-b">
             <CardTitle className="text-[#004D9D] flex items-center gap-2">
@@ -608,24 +615,23 @@ export default function ComisionesAdmin() {
             })()}
           </CardContent>
         </Card>
-        )}
-        </div>
+      )}
 
-        {/* Dialog para preview de factura */}
-        <Dialog open={!!facturaPreview} onOpenChange={() => setFacturaPreview(null)}>
+      {/* Dialog para preview de factura */}
+      <Dialog open={!!facturaPreview} onOpenChange={() => setFacturaPreview(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Vista Previa de Factura</DialogTitle>
-        </DialogHeader>
-        {facturaPreview && (
-          <iframe
-            src={facturaPreview}
-            className="w-full h-[70vh] border rounded"
-            title="Preview Factura"
-          />
-        )}
+          <DialogHeader>
+            <DialogTitle>Vista Previa de Factura</DialogTitle>
+          </DialogHeader>
+          {facturaPreview && (
+            <iframe
+              src={facturaPreview}
+              className="w-full h-[70vh] border rounded"
+              title="Preview Factura"
+            />
+          )}
         </DialogContent>
-        </Dialog>
-        </div>
-        );
-        }
+      </Dialog>
+    </div>
+  );
+}
