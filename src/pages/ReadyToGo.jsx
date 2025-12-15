@@ -475,8 +475,6 @@ export default function ReadyToGo() {
                                         <a
                                           key={idx}
                                           href={archivo.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
                                           download
                                           onClick={(e) => e.stopPropagation()}
                                         >
