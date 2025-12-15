@@ -647,7 +647,7 @@ export default function Calendario() {
                                   }}
                                   className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
                                 >
-                                  ✓ Tarea hecha
+                                  ✓ Hecho
                                 </Button>
                               </div>
                             </div>
