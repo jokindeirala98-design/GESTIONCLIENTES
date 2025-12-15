@@ -56,6 +56,11 @@ export default function Calendario() {
     queryFn: () => base44.entities.Tarea.list(),
   });
 
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+  });
+
   const createEventMutation = useMutation({
     mutationFn: async ({ clienteId, evento, esTarea }) => {
       if (esTarea) {
@@ -124,13 +129,6 @@ export default function Calendario() {
   const misClientes = isAdmin 
     ? clientes 
     : clientes.filter(c => c.propietario_email === user.email);
-
-  // Obtener lista de usuarios para identificar admins
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['usuarios'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: isAdmin,
-  });
 
   const emailsAdmins = usuarios.filter(u => u.role === 'admin').map(u => u.email);
 
