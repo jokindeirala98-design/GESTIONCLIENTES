@@ -29,6 +29,11 @@ export default function ReadyToGo() {
     loadUser();
   }, []);
 
+  const { data: clientes = [], isLoading } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => base44.entities.Cliente.list(),
+  });
+
   // Rechazar automáticamente clientes pendientes de firma con más de 30 días
   useEffect(() => {
     const verificarAutoRechazo = async () => {
@@ -64,11 +69,6 @@ export default function ReadyToGo() {
 
     verificarAutoRechazo();
   }, [clientes?.length, queryClient]);
-
-  const { data: clientes = [], isLoading } = useQuery({
-    queryKey: ['clientes'],
-    queryFn: () => base44.entities.Cliente.list(),
-  });
 
   const { data: zonas = [] } = useQuery({
     queryKey: ['zonas'],
