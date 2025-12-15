@@ -35,16 +35,9 @@ export default function Comisiones() {
   const { data: facturasComercial = [] } = useQuery({
     queryKey: ['facturasComercial'],
     queryFn: () => base44.entities.FacturaComercial.list(),
-    enabled: !!user,
   });
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (!user) return null;
 
   // Obtener todos los suministros cerrados del usuario
   const misClientesCerrados = clientes.filter(
