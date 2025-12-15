@@ -222,12 +222,12 @@ export default function Zonas() {
         </div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="zonas" direction="horizontal">
+          <Droppable droppableId="zonas">
             {(provided) => (
               <div 
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
               >
                 {filteredZonas.map((zona, index) => {
             const clientesCount = getClientesEnZona(zona.id).length;
