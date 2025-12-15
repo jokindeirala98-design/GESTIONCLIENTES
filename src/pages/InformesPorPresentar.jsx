@@ -71,19 +71,21 @@ export default function InformesPorPresentar() {
       clientes.forEach(cliente => {
         if (!cliente.suministros || cliente.suministros.length === 0) return;
         
+        // Solo considerar suministros NO cerrados
+        const suministrosActivos = cliente.suministros.filter(s => !s.cerrado);
+        if (suministrosActivos.length === 0) return; // Todos cerrados, no tocar
+        
         const estadosFinales = ["Informe listo", "Pendiente de firma", "Firmado con éxito", "Rechazado"];
         if (estadosFinales.includes(cliente.estado)) return;
 
-        const todosConFacturas = cliente.suministros.every(s => 
+        const todosConFacturas = suministrosActivos.every(s => 
           s.facturas && s.facturas.length > 0
         );
         
-        const todosConInforme = cliente.suministros.every(s => {
+        const todosConInforme = suministrosActivos.every(s => {
           if (!s.informe_final) return false;
-          // Validar archivos array (nuevo formato)
           const tieneArchivosValidos = s.informe_final.archivos?.length > 0 && 
             s.informe_final.archivos.every(a => a.url && a.url.trim() !== '' && a.url !== 'null' && a.nombre && a.nombre.trim() !== '' && a.nombre !== 'null');
-          // Validar URL legacy (formato viejo)
           const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
           return tieneArchivosValidos || tieneUrlValida;
         });
@@ -259,13 +261,14 @@ export default function InformesPorPresentar() {
         return s;
       });
 
-      const todosConInforme = nuevosSuministros.every(s => {
+      // Solo considerar suministros NO cerrados
+      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
+      
+      const todosConInforme = suministrosActivos.every(s => {
         if (!s.informe_final) return false;
-        // Validar archivos array (solo URL requerida)
         const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
           a && a.url && a.url.trim() !== '' && a.url !== 'null'
         );
-        // Validar URL legacy
         const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
         return tieneArchivosValidos || tieneUrlValida;
       });
@@ -643,11 +646,11 @@ export default function InformesPorPresentar() {
                   <CollapsibleContent>
                     <CardContent className="pt-0">
                       <div className="space-y-4">
-                        {cliente.suministros?.map((suministro) => {
-                          const informeSubido = informesSubidos[suministro.id];
-                          const estaGuardando = guardando[suministro.id];
-                          
-                          return (
+                       {cliente.suministros?.filter(s => !s.cerrado).map((suministro) => {
+                         const informeSubido = informesSubidos[suministro.id];
+                         const estaGuardando = guardando[suministro.id];
+
+                         return (
                             <Card key={suministro.id} className="bg-gray-50">
                               <CardContent className="p-4">
                                 <div className="flex flex-col gap-4">

@@ -384,7 +384,7 @@ export default function ReadyToGo() {
                               </div>
                             </div>
 
-                            {cliente.suministros && cliente.suministros.length > 0 && (
+                            {cliente.suministros && cliente.suministros.filter(s => !s.cerrado).length > 0 && (
                               <div className="mt-4 space-y-2">
                                 <div className="flex items-center gap-2 mb-2">
                                   <FileText className={`w-4 h-4 ${
@@ -398,7 +398,7 @@ export default function ReadyToGo() {
                                     Informes disponibles:
                                   </p>
                                 </div>
-                                {cliente.suministros.map(suministro => {
+                                {cliente.suministros.filter(s => !s.cerrado).map(suministro => {
                                   const archivosValidos = getArchivosValidos(suministro);
                                   const informeValido = archivosValidos.length > 0;
                                   
