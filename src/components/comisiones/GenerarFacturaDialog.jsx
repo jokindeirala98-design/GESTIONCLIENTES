@@ -31,6 +31,28 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
     total: totalMes.toFixed(2)
   });
 
+  // Datos de beneficiario según el comercial
+  const datosComerciales = {
+    "jokin@voltisenergia.com": {
+      nombre: "Jokin de Irala",
+      direccion: "Calle Ixurmendi 34 Cizur Mayor",
+      direccion2: "31180 Navarra",
+      nif: "73468068L",
+      telefono: "618511959",
+      cuenta: "ES2620803625173040135371"
+    },
+    "jose@voltisenergia.com": {
+      nombre: "Jose García González",
+      direccion: "Calle Sancho El Mayor 5 4º izda",
+      direccion2: "31001 Pamplona, Navarra",
+      nif: "73140962L",
+      telefono: "663768060",
+      cuenta: "ES0900495280522416157219"
+    }
+  };
+
+  const datosComercial = datosComerciales[user.email] || datosComerciales["jokin@voltisenergia.com"];
+
   const createFacturaMutation = useMutation({
     mutationFn: async (data) => {
       return await base44.entities.Factura.create(data);
@@ -196,27 +218,27 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
             <div className="space-y-1">
               <div className="flex">
                 <span className="font-bold w-48">BENEFICIARIO:</span>
-                <span>Jokin de Irala</span>
+                <span>{datosComercial.nombre}</span>
               </div>
               <div className="flex">
                 <span className="font-bold w-48">DIRECCIÓN:</span>
-                <span>Calle Ixurmendi 34 Cizur Mayor</span>
+                <span>{datosComercial.direccion}</span>
               </div>
               <div className="flex">
                 <span className="font-bold w-48"></span>
-                <span>31180 Navarra</span>
+                <span>{datosComercial.direccion2}</span>
               </div>
               <div className="flex">
                 <span className="font-bold w-48">NIF:</span>
-                <span>73468068L</span>
+                <span>{datosComercial.nif}</span>
               </div>
               <div className="flex">
                 <span className="font-bold w-48">TELÉFONO:</span>
-                <span>618511959</span>
+                <span>{datosComercial.telefono}</span>
               </div>
               <div className="flex">
                 <span className="font-bold w-48">NÚMERO DE CUENTA:</span>
-                <span>ES2620803625173040135371</span>
+                <span>{datosComercial.cuenta}</span>
               </div>
             </div>
           </div>

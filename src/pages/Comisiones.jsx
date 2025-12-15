@@ -125,7 +125,7 @@ export default function Comisiones() {
               <TrendingUp className="w-4 h-4" />
               <span>{suministrosDelMes.length} suministro(s) cerrado(s)</span>
             </div>
-            {user.email === "jokin@voltisenergia.com" && totalMes > 0 && (
+            {(user.email === "jokin@voltisenergia.com" || user.email === "jose@voltisenergia.com") && totalMes > 0 && (
               <Button
                 onClick={() => setShowFacturaDialog(true)}
                 className="mt-4 bg-white text-green-600 hover:bg-gray-100"
@@ -259,7 +259,7 @@ export default function Comisiones() {
       )}
 
       {/* Sección de Facturas Generadas */}
-      {user.email === "jokin@voltisenergia.com" && (
+      {(user.email === "jokin@voltisenergia.com" || user.email === "jose@voltisenergia.com") && (
         <Card className="border-none shadow-md mt-6">
           <CardHeader className="border-b">
             <CardTitle className="text-[#004D9D] flex items-center gap-2">
