@@ -132,16 +132,16 @@ export default function Calendario() {
 
   const emailsAdmins = usuarios.filter(u => u.role === 'admin').map(u => u.email);
 
-  // Filtrar eventos de clientes según rol
+  // Filtrar eventos de clientes según rol (lógica original restaurada)
   const eventosClientes = clientes.flatMap(cliente => {
     const eventos = cliente.eventos || [];
     return eventos
       .filter(evento => {
         if (isAdmin) {
-          // Admins ven eventos de otros admins
-          return emailsAdmins.includes(cliente.propietario_email);
+          // Admins ven eventos rojos de TODOS los comerciales
+          return evento.color === "rojo";
         } else {
-          // Comerciales ven solo sus eventos
+          // Comerciales ven solo sus eventos (todos los colores)
           return cliente.propietario_email === user.email;
         }
       })
