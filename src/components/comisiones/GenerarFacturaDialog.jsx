@@ -110,7 +110,21 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         comision: s.comision
       }));
 
-      // Marcar los suministros como facturados ANTES de crear la factura
+      // Crear la factura primero
+      const facturaCreada = await createFacturaMutation.mutateAsync({
+        numero_factura: numeroFactura,
+        fecha_creacion: fechaHoy,
+        mes_comision: mesSeleccionado,
+        comercial_email: user.email,
+        comercial_nombre: user.full_name,
+        importe_comision: parseFloat(valores.base),
+        importe_total: parseFloat(valores.total),
+        estado: "pendiente_revision",
+        pdf_url: file_url,
+        suministros_incluidos: suministrosIds
+      });
+
+      // Ahora marcar los suministros como facturados
       const clientesList = await base44.entities.Cliente.list();
       const updatePromises = [];
       
@@ -131,20 +145,6 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
       // Esperar a que TODAS las actualizaciones se completen
       await Promise.all(updatePromises);
-
-      // Ahora crear la factura
-      await createFacturaMutation.mutateAsync({
-        numero_factura: numeroFactura,
-        fecha_creacion: fechaHoy,
-        mes_comision: mesSeleccionado,
-        comercial_email: user.email,
-        comercial_nombre: user.full_name,
-        importe_comision: parseFloat(valores.base),
-        importe_total: parseFloat(valores.total),
-        estado: "pendiente_revision",
-        pdf_url: file_url,
-        suministros_incluidos: suministrosIds
-      });
 
       // Invalida queries para refrescar los datos
       await queryClient.invalidateQueries(['facturas']);
