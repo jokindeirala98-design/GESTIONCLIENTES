@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Plus, CheckCircle2, Eye } from "lucide-react";
+import { AlertTriangle, Plus, CheckCircle2, Eye, MessageSquare } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,8 @@ export default function Incidencias() {
     descripcion: "",
     prioridad: "media"
   });
+  const [resolviendoIncidencia, setResolviendoIncidencia] = useState(null);
+  const [respuestaAdmin, setRespuestaAdmin] = useState("");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -69,12 +71,13 @@ export default function Incidencias() {
   });
 
   const resolverIncidenciaMutation = useMutation({
-    mutationFn: async ({ id, comercialEmail, clienteId, clienteNombre }) => {
+    mutationFn: async ({ id, comercialEmail, clienteId, clienteNombre, respuesta }) => {
       // Actualizar incidencia a resuelta
       const fechaResolucion = new Date().toISOString().split('T')[0];
       await base44.entities.Incidencia.update(id, {
         estado: "resuelta",
-        fecha_resolucion: fechaResolucion
+        fecha_resolucion: fechaResolucion,
+        respuesta_admin: respuesta
       });
 
       // Crear evento en calendario del comercial
@@ -95,6 +98,8 @@ export default function Incidencias() {
     onSuccess: () => {
       queryClient.invalidateQueries(['incidencias']);
       queryClient.invalidateQueries(['clientes']);
+      setResolviendoIncidencia(null);
+      setRespuestaAdmin("");
       toast.success("Incidencia resuelta");
     },
   });
@@ -271,12 +276,10 @@ export default function Incidencias() {
                       </div>
                       {isAdmin && (
                         <Button
-                          onClick={() => resolverIncidenciaMutation.mutate({
-                            id: incidencia.id,
-                            comercialEmail: incidencia.comercial_email,
-                            clienteId: incidencia.cliente_id,
-                            clienteNombre: incidencia.cliente_nombre
-                          })}
+                          onClick={() => {
+                            setResolviendoIncidencia(incidencia);
+                            setRespuestaAdmin("");
+                          }}
                           className={`${prioridadColors[incidencia.prioridad]} hover:opacity-80 rounded-full w-24 h-24 flex flex-col items-center justify-center`}
                         >
                           <CheckCircle2 className="w-6 h-6 mb-1" />
@@ -315,6 +318,17 @@ export default function Incidencias() {
                           <Badge className="bg-green-600 text-white">RESUELTA</Badge>
                         </div>
                         <p className="text-gray-700 text-sm whitespace-pre-wrap">{incidencia.descripcion}</p>
+                        {incidencia.respuesta_admin && (
+                          <div className="mt-3 p-3 bg-white border-l-4 border-green-600 rounded">
+                            <div className="flex items-start gap-2">
+                              <MessageSquare className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-green-800 mb-1">Respuesta del administrador:</p>
+                                <p className="text-sm text-gray-800 whitespace-pre-wrap">{incidencia.respuesta_admin}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         <p className="text-xs text-green-700 mt-2">
                           Resuelta el {new Date(incidencia.fecha_resolucion).toLocaleDateString('es-ES')}
                         </p>
@@ -430,6 +444,67 @@ export default function Incidencias() {
             </Button>
             <Button onClick={handleCreateIncidencia} className="bg-[#004D9D]">
               Crear Incidencia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para resolver incidencia con anotación */}
+      <Dialog open={!!resolviendoIncidencia} onOpenChange={() => setResolviendoIncidencia(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D]">Resolver Incidencia</DialogTitle>
+          </DialogHeader>
+          {resolviendoIncidencia && (
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 rounded-lg border">
+                <p className="text-sm font-semibold text-gray-700 mb-1">
+                  {resolviendoIncidencia.cliente_nombre}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {resolviendoIncidencia.descripcion}
+                </p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Anotación / Respuesta (opcional)
+                </label>
+                <Textarea
+                  value={respuestaAdmin}
+                  onChange={(e) => setRespuestaAdmin(e.target.value)}
+                  placeholder="Añade detalles sobre cómo se resolvió la incidencia..."
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResolviendoIncidencia(null);
+                setRespuestaAdmin("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                if (resolviendoIncidencia) {
+                  resolverIncidenciaMutation.mutate({
+                    id: resolviendoIncidencia.id,
+                    comercialEmail: resolviendoIncidencia.comercial_email,
+                    clienteId: resolviendoIncidencia.cliente_id,
+                    clienteNombre: resolviendoIncidencia.cliente_nombre,
+                    respuesta: respuestaAdmin
+                  });
+                }
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Marcar como Resuelta
             </Button>
           </DialogFooter>
         </DialogContent>
