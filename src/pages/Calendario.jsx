@@ -37,7 +37,7 @@ export default function Calendario() {
   const [newEvent, setNewEvent] = useState({
     cliente_id: "",
     descripcion: "",
-    color: "rojo"
+    color: "verde"
   });
   const [searchClienteTerm, setSearchClienteTerm] = useState("");
   const [showCorchoDialog, setShowCorchoDialog] = useState(false);
@@ -111,7 +111,7 @@ export default function Calendario() {
       queryClient.invalidateQueries(['clientes']);
       queryClient.invalidateQueries(['tareas']);
       setShowCreateDialog(false);
-      setNewEvent({ cliente_id: "", descripcion: "", color: "verde" });
+      setNewEvent({ cliente_id: "", descripcion: "", color: isAdmin ? "rojo" : "verde" });
       setSearchClienteTerm("");
       toast.success("Evento creado");
     },
@@ -1375,18 +1375,43 @@ export default function Calendario() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rojo">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full" />
-                      <span>Alta</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="amarillo">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-                      <span>Media</span>
-                    </div>
-                  </SelectItem>
+                  {isAdmin ? (
+                    <>
+                      <SelectItem value="rojo">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-red-500 rounded-full" />
+                          <span>Alta</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="amarillo">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+                          <span>Media</span>
+                        </div>
+                      </SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="verde">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-green-500 rounded-full" />
+                          <span>Normal (solo tú)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rojo">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-red-500 rounded-full" />
+                          <span>Alta (visible para admins)</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="amarillo">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+                          <span>Automático</span>
+                        </div>
+                      </SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -1396,7 +1421,7 @@ export default function Calendario() {
               variant="outline"
               onClick={() => {
                 setShowCreateDialog(false);
-                setNewEvent({ cliente_id: "", descripcion: "", color: "rojo" });
+                setNewEvent({ cliente_id: "", descripcion: "", color: isAdmin ? "rojo" : "verde" });
                 setSearchClienteTerm("");
               }}
               >
