@@ -117,10 +117,35 @@ export default function Calendario() {
     },
   });
 
+  const completarEventMutation = useMutation({
+    mutationFn: async ({ clienteId, eventoId, esTarea, tareaId }) => {
+      if (esTarea) {
+        // Marcar tarea como completada
+        await base44.entities.Tarea.update(tareaId, { completada: true });
+      } else {
+        // Marcar evento de cliente como completado
+        const cliente = clientes.find(c => c.id === clienteId);
+        const eventosActuales = cliente.eventos || [];
+        const nuevosEventos = eventosActuales.map(e => 
+          e.id === eventoId ? { ...e, completada: true } : e
+        );
+        
+        await base44.entities.Cliente.update(clienteId, {
+          eventos: nuevosEventos
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clientes']);
+      queryClient.invalidateQueries(['tareas']);
+      toast.success("Tarea completada");
+    },
+  });
+
   const deleteEventMutation = useMutation({
     mutationFn: async ({ clienteId, eventoId, esTarea, tareaId }) => {
       if (esTarea) {
-        // Marcar tarea como completada (o eliminarla)
+        // Eliminar tarea
         await base44.entities.Tarea.delete(tareaId);
       } else {
         // Eliminar evento de cliente
@@ -136,7 +161,7 @@ export default function Calendario() {
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
       queryClient.invalidateQueries(['tareas']);
-      toast.success("Tarea completada");
+      toast.success("Evento eliminado");
     },
   });
 
@@ -347,13 +372,13 @@ export default function Calendario() {
         cliente_nombre: cliente.nombre_negocio,
         cliente_propietario: cliente.propietario_iniciales,
         es_mi_cliente: cliente.propietario_email === user.email,
-        es_tarea: false
+        es_tarea: false,
+        completada: evento.completada || false
       }));
   });
 
   // Filtrar tareas independientes según rol
   const tareasIndependientes = tareas
-    .filter(tarea => !tarea.completada)
     .filter(tarea => {
       if (isAdmin) {
         // Admins ven tareas de otros admins
@@ -372,12 +397,13 @@ export default function Calendario() {
       es_tarea: true,
       tarea_id: tarea.id,
       es_mi_cliente: tarea.propietario_email === user.email,
-      propietario_email: tarea.propietario_email
+      propietario_email: tarea.propietario_email,
+      completada: tarea.completada
     }));
 
   // Agregar tareas del corcho con fecha al calendario (solo para admins)
   const tareasConFecha = isAdmin ? tareasCorcho
-    .filter(t => !t.completada && t.fecha)
+    .filter(t => t.fecha)
     .map(t => ({
       id: `corcho-${t.id}`,
       tarea_corcho_id: t.id,
@@ -386,7 +412,8 @@ export default function Calendario() {
       color: "azul",
       cliente_nombre: "Tarea",
       es_tarea_corcho: true,
-      tiene_alerta: t.tiene_alerta
+      tiene_alerta: t.tiene_alerta,
+      completada: t.completada
     })) : [];
 
   // Combinar eventos de clientes y tareas independientes
@@ -445,7 +472,12 @@ export default function Calendario() {
 
   const getEventosForDay = (date) => {
     const dateStr = dateToLocalString(date);
-    return eventosRelevantes.filter(e => e.fecha === dateStr);
+    const eventos = eventosRelevantes.filter(e => e.fecha === dateStr);
+    // Ordenar: no completados primero, luego completados
+    return eventos.sort((a, b) => {
+      if (a.completada === b.completada) return 0;
+      return a.completada ? 1 : -1;
+    });
   };
 
   const days = getDaysInMonth(currentDate);
@@ -625,83 +657,94 @@ export default function Calendario() {
                 {eventosDelDia.length > 0 && (
                   <div className="space-y-3 mb-3">
                     {eventosDelDia.map((evento) => (
-                      <Card 
-                        key={evento.id}
-                        className="hover:shadow-md transition-shadow"
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-start gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
-                                evento.color === "verde" ? "bg-green-500" : 
-                                evento.color === "rojo" ? "bg-red-500" : 
-                                evento.color === "azul" ? "bg-blue-500" : "bg-yellow-500"
-                              }`}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div 
-                                className={evento.es_tarea || evento.es_tarea_corcho ? "" : "cursor-pointer hover:underline"}
-                                onClick={() => !evento.es_tarea && !evento.es_tarea_corcho && navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
-                              >
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`font-semibold text-sm truncate ${evento.es_tarea ? "text-purple-600" : evento.es_tarea_corcho ? "text-blue-600" : "text-[#004D9D]"}`}>
-                                    {evento.cliente_nombre}
-                                  </span>
-                                  {evento.tiene_alerta && (
-                                    <AlertCircle className="w-4 h-4 text-red-500" />
-                                  )}
+                     <Card 
+                       key={evento.id}
+                       className={`hover:shadow-md transition-shadow ${
+                         evento.completada ? "bg-green-50 border-green-200" : ""
+                       }`}
+                     >
+                       <CardContent className="p-3">
+                         <div className="flex items-start gap-2">
+                           <div
+                             className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${
+                               evento.completada ? "bg-green-500" :
+                               evento.color === "verde" ? "bg-green-500" : 
+                               evento.color === "rojo" ? "bg-red-500" : 
+                               evento.color === "azul" ? "bg-blue-500" : "bg-yellow-500"
+                             }`}
+                           />
+                           <div className="flex-1 min-w-0">
+                             <div 
+                               className={evento.es_tarea || evento.es_tarea_corcho ? "" : "cursor-pointer hover:underline"}
+                               onClick={() => !evento.es_tarea && !evento.es_tarea_corcho && navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
+                             >
+                               <div className="flex items-center gap-2 mb-1">
+                                 <span className={`font-semibold text-sm truncate ${
+                                   evento.completada ? "text-green-700 line-through" :
+                                   evento.es_tarea ? "text-purple-600" : 
+                                   evento.es_tarea_corcho ? "text-blue-600" : "text-[#004D9D]"
+                                 }`}>
+                                   {evento.cliente_nombre}
+                                 </span>
+                                 {evento.tiene_alerta && !evento.completada && (
+                                   <AlertCircle className="w-4 h-4 text-red-500" />
+                                 )}
 
-                                </div>
-                                <p className="text-xs text-gray-600">{evento.descripcion}</p>
-                              </div>
-                              <div className="flex items-center gap-1 mt-2">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (evento.es_tarea_corcho) {
-                                      completarTareaCorchoMutation.mutate(evento.tarea_corcho_id);
-                                    } else {
-                                      deleteEventMutation.mutate({
-                                        clienteId: evento.cliente_id,
-                                        eventoId: evento.id,
-                                        esTarea: evento.es_tarea,
-                                        tareaId: evento.tarea_id
-                                      });
-                                    }
-                                  }}
-                                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (window.confirm("¿Eliminar este evento?")) {
-                                      if (evento.es_tarea_corcho) {
-                                        deleteTareaCorchoMutation.mutate(evento.tarea_corcho_id);
-                                      } else {
-                                        deleteEventMutation.mutate({
-                                          clienteId: evento.cliente_id,
-                                          eventoId: evento.id,
-                                          esTarea: evento.es_tarea,
-                                          tareaId: evento.tarea_id
-                                        });
-                                      }
-                                    }
-                                  }}
-                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                               </div>
+                               <p className={`text-xs ${evento.completada ? "text-gray-500 line-through" : "text-gray-600"}`}>
+                                 {evento.descripcion}
+                               </p>
+                             </div>
+                             <div className="flex items-center gap-1 mt-2">
+                               {!evento.completada && (
+                                 <Button
+                                   size="icon"
+                                   variant="ghost"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     if (evento.es_tarea_corcho) {
+                                       completarTareaCorchoMutation.mutate(evento.tarea_corcho_id);
+                                     } else {
+                                       completarEventMutation.mutate({
+                                         clienteId: evento.cliente_id,
+                                         eventoId: evento.id,
+                                         esTarea: evento.es_tarea,
+                                         tareaId: evento.tarea_id
+                                       });
+                                     }
+                                   }}
+                                   className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                 >
+                                   <CheckCircle2 className="w-4 h-4" />
+                                 </Button>
+                               )}
+                               <Button
+                                 size="icon"
+                                 variant="ghost"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   if (window.confirm("¿Eliminar este evento?")) {
+                                     if (evento.es_tarea_corcho) {
+                                       deleteTareaCorchoMutation.mutate(evento.tarea_corcho_id);
+                                     } else {
+                                       deleteEventMutation.mutate({
+                                         clienteId: evento.cliente_id,
+                                         eventoId: evento.id,
+                                         esTarea: evento.es_tarea,
+                                         tareaId: evento.tarea_id
+                                       });
+                                     }
+                                   }
+                                 }}
+                                 className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                               >
+                                 <Trash2 className="w-4 h-4" />
+                               </Button>
+                             </div>
+                           </div>
+                         </div>
+                       </CardContent>
+                     </Card>
                     ))}
                   </div>
                 )}
