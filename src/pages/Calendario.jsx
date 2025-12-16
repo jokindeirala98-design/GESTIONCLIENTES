@@ -1010,31 +1010,20 @@ export default function Calendario() {
                                 >
                                   <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1">
-                                      <p className="font-semibold text-gray-700 line-through mb-1">{tarea.descripcion}</p>
-                                      {tarea.notas && (
-                                        <p className="text-sm text-gray-500 mt-2">{tarea.notas}</p>
-                                      )}
-                                      {tarea.audio_url && (
-                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg opacity-70">
-                                          <div className="flex items-center gap-2">
-                                            <Volume2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                            <audio controls src={tarea.audio_url} className="flex-1 max-w-full" style={{ height: '32px' }} />
+                                      <div className="flex-1">
+                                        <p className="font-semibold text-gray-700 line-through mb-1">{tarea.descripcion}</p>
+                                        {tarea.notas && (
+                                          <p className="text-sm text-gray-500 mt-2">{tarea.notas}</p>
+                                        )}
+                                        {tarea.audio_url && (
+                                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg opacity-70">
+                                            <div className="flex items-center gap-2">
+                                              <Volume2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                              <audio controls src={tarea.audio_url} className="flex-1 max-w-full" style={{ height: '32px' }} />
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                      {tarea.fecha_completada && (
-                                        <Badge className="mt-2 bg-green-600 text-white">
-                                          ✓ {new Date(tarea.fecha_completada).toLocaleString('es-ES', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                          })}
-                                        </Badge>
-                                      )}
-                                    </div>
+                                        )}
+                                      </div>
                                       <Button
                                         size="sm"
                                         variant="ghost"
@@ -1044,6 +1033,18 @@ export default function Calendario() {
                                         <Trash2 className="w-4 h-4" />
                                       </Button>
                                     </div>
+                                    {tarea.fecha_completada && (
+                                      <div className="text-right mt-2">
+                                        <span className="text-xs text-gray-500">
+                                          {new Date(tarea.fecha_completada).toLocaleString('es-ES', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                      </div>
+                                    )}
                                   </CardContent>
                                 </Card>
                               )}
