@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCircle, Trash2, StickyNote } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCircle, Trash2, StickyNote, Volume2 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { CheckCircle2 } from "lucide-react";
+import AudioRecorder from "../components/calendario/AudioRecorder.jsx";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +46,8 @@ export default function Calendario() {
   const [newTareaCorcho, setNewTareaCorcho] = useState({
     descripcion: "",
     notas: "",
-    fecha: ""
+    fecha: "",
+    audio_url: null
   });
   const [tareasMultiples, setTareasMultiples] = useState(["", "", ""]);
   const inputRefs = useRef([]);
@@ -146,7 +148,7 @@ export default function Calendario() {
     onSuccess: () => {
       queryClient.invalidateQueries(['tareasCorcho']);
       setShowCorchoDialog(false);
-      setNewTareaCorcho({ descripcion: "", notas: "", fecha: "" });
+      setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null });
       setTareasMultiples(["", "", ""]);
       setModoMultiple(false);
       toast.success("Tarea creada");
@@ -770,6 +772,10 @@ export default function Calendario() {
                                           value={editingTareaCorcho.fecha || ""}
                                           onChange={(e) => setEditingTareaCorcho({...editingTareaCorcho, fecha: e.target.value})}
                                         />
+                                        <AudioRecorder
+                                          existingAudioUrl={editingTareaCorcho.audio_url}
+                                          onAudioSaved={(url) => setEditingTareaCorcho({...editingTareaCorcho, audio_url: url})}
+                                        />
                                         <div className="flex gap-2">
                                           <Button
                                             size="sm"
@@ -779,7 +785,8 @@ export default function Calendario() {
                                                 data: {
                                                   descripcion: editingTareaCorcho.descripcion,
                                                   notas: editingTareaCorcho.notas,
-                                                  fecha: editingTareaCorcho.fecha
+                                                  fecha: editingTareaCorcho.fecha,
+                                                  audio_url: editingTareaCorcho.audio_url
                                                 }
                                               });
                                             }}
@@ -803,6 +810,14 @@ export default function Calendario() {
                                             <p className="font-semibold text-gray-800 mb-1">{tarea.descripcion}</p>
                                             {tarea.notas && (
                                               <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{tarea.notas}</p>
+                                            )}
+                                            {tarea.audio_url && (
+                                              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <div className="flex items-center gap-2">
+                                                  <Volume2 className="w-4 h-4 text-blue-600" />
+                                                  <audio controls src={tarea.audio_url} className="flex-1 h-8" />
+                                                </div>
+                                              </div>
                                             )}
                                             {tarea.fecha && (
                                               <Badge className="mt-2 bg-blue-100 text-blue-700">
@@ -885,17 +900,25 @@ export default function Calendario() {
                                 >
                                   <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
-                                      <div className="flex-1">
-                                        <p className="font-semibold text-gray-700 line-through mb-1">{tarea.descripcion}</p>
-                                        {tarea.notas && (
-                                          <p className="text-sm text-gray-500 mt-2">{tarea.notas}</p>
-                                        )}
-                                        {tarea.fecha_completada && (
-                                          <Badge className="mt-2 bg-green-600 text-white">
-                                            ✓ {new Date(tarea.fecha_completada).toLocaleDateString('es-ES')}
-                                          </Badge>
-                                        )}
-                                      </div>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-gray-700 line-through mb-1">{tarea.descripcion}</p>
+                                      {tarea.notas && (
+                                        <p className="text-sm text-gray-500 mt-2">{tarea.notas}</p>
+                                      )}
+                                      {tarea.audio_url && (
+                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg opacity-70">
+                                          <div className="flex items-center gap-2">
+                                            <Volume2 className="w-4 h-4 text-green-600" />
+                                            <audio controls src={tarea.audio_url} className="flex-1 h-8" />
+                                          </div>
+                                        </div>
+                                      )}
+                                      {tarea.fecha_completada && (
+                                        <Badge className="mt-2 bg-green-600 text-white">
+                                          ✓ {new Date(tarea.fecha_completada).toLocaleDateString('es-ES')}
+                                        </Badge>
+                                      )}
+                                    </div>
                                       <Button
                                         size="sm"
                                         variant="ghost"
@@ -939,7 +962,7 @@ export default function Calendario() {
                 onClick={() => {
                   setModoMultiple(!modoMultiple);
                   if (!modoMultiple) {
-                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "" });
+                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null });
                   } else {
                     setTareasMultiples(["", "", ""]);
                   }
@@ -971,6 +994,9 @@ export default function Calendario() {
                     rows={3}
                   />
                 </div>
+                <AudioRecorder
+                  onAudioSaved={(url) => setNewTareaCorcho({ ...newTareaCorcho, audio_url: url })}
+                />
                 <div>
                   <label className="text-sm font-medium mb-1 block">Fecha (opcional)</label>
                   <Input
@@ -1037,7 +1063,7 @@ export default function Calendario() {
               variant="outline"
               onClick={() => {
                 setShowCorchoDialog(false);
-                setNewTareaCorcho({ descripcion: "", notas: "", fecha: "" });
+                setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null });
                 setTareasMultiples(["", "", ""]);
                 setModoMultiple(false);
               }}
