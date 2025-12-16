@@ -814,8 +814,8 @@ export default function Calendario() {
                                             {tarea.audio_url && (
                                               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                                                 <div className="flex items-center gap-2">
-                                                  <Volume2 className="w-4 h-4 text-blue-600" />
-                                                  <audio controls src={tarea.audio_url} className="flex-1 h-8" />
+                                                  <Volume2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                                  <audio controls src={tarea.audio_url} className="flex-1 max-w-full" style={{ height: '32px' }} />
                                                 </div>
                                               </div>
                                             )}
@@ -908,8 +908,8 @@ export default function Calendario() {
                                       {tarea.audio_url && (
                                         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg opacity-70">
                                           <div className="flex items-center gap-2">
-                                            <Volume2 className="w-4 h-4 text-green-600" />
-                                            <audio controls src={tarea.audio_url} className="flex-1 h-8" />
+                                            <Volume2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                            <audio controls src={tarea.audio_url} className="flex-1 max-w-full" style={{ height: '32px' }} />
                                           </div>
                                         </div>
                                       )}
