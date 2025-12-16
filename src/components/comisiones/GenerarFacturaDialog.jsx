@@ -126,14 +126,13 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
     onSuccess: async () => {
       console.log("🔄 INVALIDANDO QUERIES - Forzar recarga de datos...");
       
-      // PASO 3: Invalidar y esperar recarga de queries para sincronizar el frontend
-      // Esto es CRÍTICO para que Comisiones.jsx vea los datos actualizados
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      // PASO 3: Invalidar y esperar recarga completa de queries
+      await queryClient.invalidateQueries({ queryKey: ['clientes'], refetchType: 'all' });
+      await queryClient.invalidateQueries({ queryKey: ['facturas'], refetchType: 'all' });
       
       console.log("⏳ ESPERANDO REFETCH - Los datos se están recargando...");
-      await queryClient.refetchQueries({ queryKey: ['clientes'], exact: true });
-      await queryClient.refetchQueries({ queryKey: ['facturas'], exact: true });
+      await queryClient.refetchQueries({ queryKey: ['clientes'] });
+      await queryClient.refetchQueries({ queryKey: ['facturas'] });
       console.log("✅ REFETCH COMPLETO - Datos sincronizados con BD");
       
       // Verificación de sincronización
@@ -146,13 +145,11 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       ) || [];
       console.log("✅ Suministros facturados en cache:", suministrosVerificados.length);
       
-      toast.success("✅ Factura generada - Comisiones actualizadas");
+      toast.success("✅ Factura generada y comisiones actualizadas");
       
-      // PASO 4: Esperar 300ms para que React Query propague cambios a componentes
-      setTimeout(() => {
-        console.log("🚪 Cerrando diálogo - totalMes debe ser €0 ahora");
-        onClose();
-      }, 300);
+      // PASO 4: Cerrar inmediatamente después del refetch completo
+      console.log("🚪 Cerrando diálogo - datos sincronizados");
+      onClose();
     },
     onError: (error) => {
       console.error("❌ ERROR al generar factura:", error);
