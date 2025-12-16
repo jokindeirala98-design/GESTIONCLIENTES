@@ -29,6 +29,11 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
   const [baseImponible, setBaseImponible] = useState(totalMes.toFixed(2));
 
+  // Actualizar base imponible cuando cambia totalMes
+  React.useEffect(() => {
+    setBaseImponible(totalMes.toFixed(2));
+  }, [totalMes]);
+
   // Cálculos automáticos
   const calcularFactura = (base) => {
     const baseNum = parseFloat(base) || 0;
