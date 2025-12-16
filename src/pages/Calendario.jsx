@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCircle, Trash2, StickyNote, Volume2 } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCircle, Trash2, StickyNote, Volume2, Search } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -40,6 +40,7 @@ export default function Calendario() {
     descripcion: "",
     color: "verde"
   });
+  const [searchClienteTerm, setSearchClienteTerm] = useState("");
   const [showCorchoDialog, setShowCorchoDialog] = useState(false);
   const [editingTareaCorcho, setEditingTareaCorcho] = useState(null);
   const [modoMultiple, setModoMultiple] = useState(false);
@@ -107,6 +108,7 @@ export default function Calendario() {
       queryClient.invalidateQueries(['tareas']);
       setShowCreateDialog(false);
       setNewEvent({ cliente_id: "", descripcion: "", color: "verde" });
+      setSearchClienteTerm("");
       toast.success("Evento creado");
     },
   });
@@ -1104,30 +1106,71 @@ export default function Calendario() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">
-                Cliente <span className="text-gray-400">(opcional - déjalo vacío para crear una tarea personal)</span>
-              </label>
-              <Select
-                value={newEvent.cliente_id}
-                onValueChange={(value) => setNewEvent({ ...newEvent, cliente_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sin cliente - Tarea personal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>
-                    <span className="text-gray-500 italic">Sin cliente - Tarea personal</span>
-                  </SelectItem>
-                  {misClientes.map(cliente => (
-                    <SelectItem key={cliente.id} value={cliente.id}>
-                      {cliente.nombre_negocio}
-                      {isAdmin && ` (${cliente.propietario_iniciales})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+           <div>
+             <label className="text-sm font-medium mb-1 block">
+               Cliente <span className="text-gray-400">(opcional - déjalo vacío para crear una tarea personal)</span>
+             </label>
+             <div className="relative">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <Input
+                 placeholder="Buscar cliente o dejar vacío para tarea personal..."
+                 value={searchClienteTerm}
+                 onChange={(e) => setSearchClienteTerm(e.target.value)}
+                 className="pl-9"
+               />
+             </div>
+
+             <div className="mt-2 max-h-48 overflow-y-auto border rounded-lg">
+               {searchClienteTerm === "" && (
+                 <button
+                   onClick={() => {
+                     setNewEvent({ ...newEvent, cliente_id: "" });
+                     setSearchClienteTerm("");
+                   }}
+                   className={`w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors ${
+                     newEvent.cliente_id === "" ? "bg-blue-50 border-l-4 border-blue-500" : ""
+                   }`}
+                 >
+                   <span className="text-gray-500 italic text-sm">Sin cliente - Tarea personal</span>
+                 </button>
+               )}
+               {misClientes
+                 .filter(c => 
+                   c.nombre_negocio?.toLowerCase().includes(searchClienteTerm.toLowerCase()) ||
+                   c.nombre_cliente?.toLowerCase().includes(searchClienteTerm.toLowerCase())
+                 )
+                 .map(cliente => (
+                   <button
+                     key={cliente.id}
+                     onClick={() => {
+                       setNewEvent({ ...newEvent, cliente_id: cliente.id });
+                       setSearchClienteTerm(cliente.nombre_negocio);
+                     }}
+                     className={`w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors ${
+                       newEvent.cliente_id === cliente.id ? "bg-blue-50 border-l-4 border-blue-500" : ""
+                     }`}
+                   >
+                     <div className="flex items-center justify-between">
+                       <span className="text-sm font-medium">{cliente.nombre_negocio}</span>
+                       {isAdmin && (
+                         <span className="text-xs text-gray-500">({cliente.propietario_iniciales})</span>
+                       )}
+                     </div>
+                     {cliente.nombre_cliente && (
+                       <span className="text-xs text-gray-500">{cliente.nombre_cliente}</span>
+                     )}
+                   </button>
+                 ))}
+               {misClientes.filter(c => 
+                 c.nombre_negocio?.toLowerCase().includes(searchClienteTerm.toLowerCase()) ||
+                 c.nombre_cliente?.toLowerCase().includes(searchClienteTerm.toLowerCase())
+               ).length === 0 && searchClienteTerm !== "" && (
+                 <div className="px-3 py-6 text-center text-gray-500 text-sm">
+                   No se encontraron clientes
+                 </div>
+               )}
+             </div>
+           </div>
             
             <div>
               <label className="text-sm font-medium mb-1 block">Descripción *</label>
@@ -1177,6 +1220,7 @@ export default function Calendario() {
               onClick={() => {
                 setShowCreateDialog(false);
                 setNewEvent({ cliente_id: "", descripcion: "", color: "verde" });
+                setSearchClienteTerm("");
               }}
             >
               Cancelar
