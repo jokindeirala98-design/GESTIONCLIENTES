@@ -24,12 +24,28 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
     queryFn: () => base44.entities.Factura.list(),
   });
 
-  const [editableData, setEditableData] = useState({
-    numero: facturas.length + 1,
-    fecha: new Date().toISOString().split('T')[0],
-    precio: totalMes.toFixed(2),
-    total: totalMes.toFixed(2)
-  });
+  // Calcular número de factura progresivo por comercial
+  const numeroFactura = (facturas.filter(f => f.comercial_email === user.email).length || 0) + 1;
+
+  const [baseImponible, setBaseImponible] = useState(totalMes.toFixed(2));
+
+  // Cálculos automáticos
+  const calcularFactura = (base) => {
+    const baseNum = parseFloat(base) || 0;
+    const iva = baseNum * 0.21;
+    const retencion = baseNum * -0.15;
+    const total = baseNum + iva + retencion;
+    
+    return {
+      base: baseNum.toFixed(2),
+      iva: iva.toFixed(2),
+      retencion: retencion.toFixed(2),
+      total: total.toFixed(2)
+    };
+  };
+
+  const valores = calcularFactura(baseImponible);
+  const fechaHoy = new Date().toISOString().split('T')[0];
 
   // Datos de beneficiario según el comercial
   const datosComerciales = {
@@ -78,7 +94,7 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
       // Descargar PDF
-      const fileName = `Factura_${editableData.numero}_${user.full_name.replace(/\s+/g, '_')}.pdf`;
+      const fileName = `Factura_${numeroFactura}_${user.full_name.replace(/\s+/g, '_')}.pdf`;
       pdf.save(fileName);
 
       // Convertir a blob y subir
@@ -89,13 +105,13 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
       // Guardar en base de datos
       await createFacturaMutation.mutateAsync({
-        numero_factura: parseInt(editableData.numero),
-        fecha_creacion: editableData.fecha,
+        numero_factura: numeroFactura,
+        fecha_creacion: fechaHoy,
         mes_comision: mesSeleccionado,
         comercial_email: user.email,
         comercial_nombre: user.full_name,
-        importe_comision: parseFloat(editableData.precio),
-        importe_total: parseFloat(editableData.total),
+        importe_comision: parseFloat(valores.base),
+        importe_total: parseFloat(valores.total),
         estado: "pendiente_revision",
         pdf_url: file_url
       });
@@ -120,51 +136,35 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
         <div ref={facturaRef} className="bg-white p-8 border rounded-lg">
           {/* Header */}
-          <div className="flex justify-between items-start mb-12">
+          <div className="flex justify-between items-start mb-8">
             <h1 className="text-6xl font-bold">Factura</h1>
-            <div className="w-8 h-8 bg-black"></div>
+            <div className="w-16 h-16 border-8 border-black border-r-0 border-t-0"></div>
           </div>
 
           {/* Cliente y Factura N° */}
           <div className="flex justify-between mb-8">
             <div>
               <h2 className="font-bold text-lg mb-2">CLIENTE</h2>
-              <p>Nicolás Imizcoz García</p>
+              <p>Nicolás Imízcoz García</p>
               <p>73464830R</p>
-              <p>Travesía Monasterio de Urdax, 4 5ºA</p>
-              <p>31011 Pamplona</p>
+              <p>Travesía Monasterio de Urdax, 4 5ºA 31011</p>
+              <p>Pamplona</p>
               <p>nicolasvoltis@gmail.com</p>
             </div>
             
             <div className="space-y-4">
               <div>
                 <h2 className="font-bold text-lg mb-2">Factura N°</h2>
-                <Input
-                  type="number"
-                  value={editableData.numero}
-                  onChange={(e) => setEditableData({...editableData, numero: e.target.value})}
-                  className="w-64 h-12 text-center border-2 border-blue-500"
-                />
+                <div className="w-64 h-12 border-2 border-blue-500 flex items-center justify-center text-xl font-semibold">
+                  {numeroFactura}
+                </div>
               </div>
               
               <div>
                 <h2 className="font-bold text-lg mb-2">Fecha</h2>
-                <Input
-                  type="text"
-                  value={formatearFecha(editableData.fecha)}
-                  onChange={(e) => {
-                    // Permitir editar en formato dd/mm/yyyy
-                    const valor = e.target.value;
-                    if (valor.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                      const [day, month, year] = valor.split('/');
-                      setEditableData({...editableData, fecha: `${year}-${month}-${day}`});
-                    } else {
-                      setEditableData({...editableData, fecha: valor});
-                    }
-                  }}
-                  className="w-64 h-12 text-center border-2 border-blue-500"
-                  placeholder="DD/MM/YYYY"
-                />
+                <div className="w-64 h-12 border-2 border-blue-500 flex items-center justify-center text-xl font-semibold">
+                  {formatearFecha(fechaHoy)}
+                </div>
               </div>
             </div>
           </div>
@@ -181,33 +181,49 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
                 <p>Comisión por mediación comercia y puesta</p>
                 <p>a disposición de cartera de clientes</p>
               </div>
-              <div className="w-64 flex items-center gap-2">
+              <div className="w-64 flex items-center justify-end gap-2">
                 <Input
                   type="number"
                   step="0.01"
-                  value={editableData.precio}
-                  onChange={(e) => setEditableData({...editableData, precio: e.target.value, total: e.target.value})}
-                  className="h-12 text-center border-2 border-blue-500 flex-1"
+                  value={baseImponible}
+                  onChange={(e) => setBaseImponible(e.target.value)}
+                  className="h-12 text-right border-2 border-blue-500 flex-1 font-semibold"
                 />
-                <span className="font-bold text-lg">€</span>
               </div>
             </div>
 
             <div className="border-b border-gray-300 py-3"></div>
             <div className="border-b border-gray-300 py-3"></div>
 
+            {/* Desglose de impuestos */}
+            <div className="space-y-2 mt-4">
+              <div className="flex justify-end items-center">
+                <span className="mr-4">Base imponible:…………………………</span>
+                <div className="w-32 h-10 border-2 border-blue-500 flex items-center justify-center font-semibold">
+                  {valores.base} €
+                </div>
+              </div>
+              
+              <div className="flex justify-end items-center">
+                <span className="mr-4">21% IVA:……………………………………</span>
+                <div className="w-32 h-10 border-2 border-blue-500 flex items-center justify-center font-semibold">
+                  {valores.iva} €
+                </div>
+              </div>
+              
+              <div className="flex justify-end items-center">
+                <span className="mr-4">Retención IRPF -15%:……………</span>
+                <div className="w-32 h-10 border-2 border-blue-500 flex items-center justify-center font-semibold">
+                  {valores.retencion} €
+                </div>
+              </div>
+            </div>
+
             {/* Total */}
-            <div className="flex items-center justify-end mt-8">
-              <div className="bg-black text-white px-6 py-2 mr-4 font-bold">TOTAL</div>
-              <div className="w-64 flex items-center gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editableData.total}
-                  onChange={(e) => setEditableData({...editableData, total: e.target.value})}
-                  className="h-12 text-center border-2 border-blue-500 flex-1"
-                />
-                <span className="font-bold text-lg">€</span>
+            <div className="flex items-center justify-end mt-6">
+              <div className="bg-black text-white px-8 py-3 mr-4 font-bold text-lg">TOTAL</div>
+              <div className="w-64 h-14 border-2 border-blue-500 flex items-center justify-center text-2xl font-bold">
+                {valores.total} €
               </div>
             </div>
           </div>
