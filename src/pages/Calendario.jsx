@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCircle, Trash2, StickyNote, Volume2, Search } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCircle, Trash2, StickyNote, Volume2, Search, CheckCircle2 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -38,7 +38,7 @@ export default function Calendario() {
   const [newEvent, setNewEvent] = useState({
     cliente_id: "",
     descripcion: "",
-    color: "verde"
+    color: "rojo"
   });
   const [searchClienteTerm, setSearchClienteTerm] = useState("");
   const [showCorchoDialog, setShowCorchoDialog] = useState(false);
@@ -651,32 +651,13 @@ export default function Calendario() {
                                   {evento.tiene_alerta && (
                                     <AlertCircle className="w-4 h-4 text-red-500" />
                                   )}
-                                  {!evento.es_mi_cliente && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {evento.es_tarea 
-                                        ? usuarios.find(u => u.email === evento.propietario_email)?.full_name || 'Admin'
-                                        : evento.cliente_propietario}
-                                    </Badge>
-                                  )}
+
                                 </div>
                                 <p className="text-xs text-gray-600">{evento.descripcion}</p>
                               </div>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge className={`text-xs ${
-                                  evento.color === "verde" 
-                                    ? "bg-green-100 text-green-700" 
-                                    : evento.color === "rojo"
-                                    ? "bg-red-100 text-red-700"
-                                    : evento.color === "azul"
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                                }`}>
-                                  {evento.color === "verde" ? "Usuario" : 
-                                   evento.color === "rojo" ? "Admin" : 
-                                   evento.color === "azul" ? "Corcho" : "Automático"}
-                                </Badge>
+                              <div className="flex items-center gap-1 mt-2">
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -691,9 +672,31 @@ export default function Calendario() {
                                       });
                                     }
                                   }}
-                                  className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
                                 >
-                                  ✓ Hecho
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm("¿Eliminar este evento?")) {
+                                      if (evento.es_tarea_corcho) {
+                                        deleteTareaCorchoMutation.mutate(evento.tarea_corcho_id);
+                                      } else {
+                                        deleteEventMutation.mutate({
+                                          clienteId: evento.cliente_id,
+                                          eventoId: evento.id,
+                                          esTarea: evento.es_tarea,
+                                          tareaId: evento.tarea_id
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
                             </div>
@@ -1292,22 +1295,16 @@ export default function Calendario() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="verde">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full" />
-                      <span>Normal (solo tú)</span>
-                    </div>
-                  </SelectItem>
                   <SelectItem value="rojo">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-red-500 rounded-full" />
-                      <span>Alta (visible para admins)</span>
+                      <span>Alta</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="amarillo">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-                      <span>Automático</span>
+                      <span>Media</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -1319,12 +1316,12 @@ export default function Calendario() {
               variant="outline"
               onClick={() => {
                 setShowCreateDialog(false);
-                setNewEvent({ cliente_id: "", descripcion: "", color: "verde" });
+                setNewEvent({ cliente_id: "", descripcion: "", color: "rojo" });
                 setSearchClienteTerm("");
               }}
-            >
+              >
               Cancelar
-            </Button>
+              </Button>
             <Button onClick={handleCreateEvent} className="bg-[#004D9D]">
               Crear Evento
             </Button>
