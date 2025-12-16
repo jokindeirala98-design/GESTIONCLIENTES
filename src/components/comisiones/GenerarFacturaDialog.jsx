@@ -73,12 +73,6 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
     mutationFn: async (data) => {
       return await base44.entities.Factura.create(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['facturas']);
-      queryClient.invalidateQueries(['clientes']);
-      toast.success("Factura generada correctamente");
-      onClose();
-    },
   });
 
   const handleDescargar = async () => {
@@ -139,6 +133,12 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         pdf_url: file_url,
         suministros_incluidos: suministrosIds
       });
+
+      // Invalida queries y cierra el diálogo
+      queryClient.invalidateQueries(['facturas']);
+      queryClient.invalidateQueries(['clientes']);
+      toast.success("Factura generada correctamente");
+      onClose();
 
     } catch (error) {
       console.error("Error al generar factura:", error);
