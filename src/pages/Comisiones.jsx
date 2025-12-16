@@ -55,14 +55,6 @@ export default function Comisiones() {
     },
   });
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   // Calcular suministros usando useMemo para optimizar renders
   const misClientesCerrados = React.useMemo(() => 
     clientes.filter(c => c.propietario_email === user?.email && c.aprobado_admin === true),
@@ -131,6 +123,14 @@ export default function Comisiones() {
       .reverse(),
     [suministrosCerrados]
   );
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-[#004D9D] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const cambiarMes = (direccion) => {
     const currentIndex = mesesDisponibles.indexOf(mesSeleccionado);
