@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Plus, CheckCircle2, Eye, MessageSquare } from "lucide-react";
+import { AlertTriangle, Plus, CheckCircle2, Eye, MessageSquare, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,8 +36,8 @@ export default function Incidencias() {
     descripcion: "",
     prioridad: "media"
   });
-  const [resolviendoIncidencia, setResolviendoIncidencia] = useState(null);
-  const [respuestaAdmin, setRespuestaAdmin] = useState("");
+  const [incidenciaAbierta, setIncidenciaAbierta] = useState(null);
+  const [nuevoMensaje, setNuevoMensaje] = useState("");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -59,7 +59,10 @@ export default function Incidencias() {
 
   const createIncidenciaMutation = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.Incidencia.create(data);
+      await base44.entities.Incidencia.create({
+        ...data,
+        mensajes: []
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['incidencias']);
@@ -70,14 +73,37 @@ export default function Incidencias() {
     },
   });
 
+  const agregarMensajeMutation = useMutation({
+    mutationFn: async ({ incidenciaId, mensaje }) => {
+      const incidencia = incidencias.find(i => i.id === incidenciaId);
+      const mensajesActuales = incidencia.mensajes || [];
+      
+      const nuevoMensaje = {
+        id: Date.now().toString(),
+        autor_email: user.email,
+        autor_nombre: user.full_name,
+        contenido: mensaje,
+        fecha: new Date().toISOString(),
+        leido: false
+      };
+
+      await base44.entities.Incidencia.update(incidenciaId, {
+        mensajes: [...mensajesActuales, nuevoMensaje]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['incidencias']);
+      setNuevoMensaje("");
+      toast.success("Mensaje enviado");
+    },
+  });
+
   const resolverIncidenciaMutation = useMutation({
-    mutationFn: async ({ id, comercialEmail, clienteId, clienteNombre, respuesta }) => {
-      // Actualizar incidencia a resuelta
+    mutationFn: async ({ id, comercialEmail, clienteId, clienteNombre }) => {
       const fechaResolucion = new Date().toISOString().split('T')[0];
       await base44.entities.Incidencia.update(id, {
         estado: "resuelta",
-        fecha_resolucion: fechaResolucion,
-        respuesta_admin: respuesta
+        fecha_resolucion: fechaResolucion
       });
 
       // Crear evento en calendario del comercial
@@ -98,9 +124,25 @@ export default function Incidencias() {
     onSuccess: () => {
       queryClient.invalidateQueries(['incidencias']);
       queryClient.invalidateQueries(['clientes']);
-      setResolviendoIncidencia(null);
-      setRespuestaAdmin("");
+      setIncidenciaAbierta(null);
       toast.success("Incidencia resuelta");
+    },
+  });
+
+  const marcarMensajesLeidosMutation = useMutation({
+    mutationFn: async (incidenciaId) => {
+      const incidencia = incidencias.find(i => i.id === incidenciaId);
+      const mensajesActualizados = (incidencia.mensajes || []).map(m => ({
+        ...m,
+        leido: m.autor_email === user.email ? m.leido : true
+      }));
+
+      await base44.entities.Incidencia.update(incidenciaId, {
+        mensajes: mensajesActualizados
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['incidencias']);
     },
   });
 
@@ -135,12 +177,20 @@ export default function Incidencias() {
     : incidencias.filter(i => i.comercial_email === user.email && i.estado !== "revisada");
 
   // Separar por estado
-  const incidenciasPendientes = misIncidencias.filter(i => i.estado === "pendiente");
+  const incidenciasActivas = misIncidencias.filter(i => i.estado === "activa");
   const incidenciasResueltas = misIncidencias.filter(i => i.estado === "resuelta");
 
-  // Ordenar pendientes por prioridad
+  // Contar mensajes sin leer
+  const contarMensajesSinLeer = (incidencia) => {
+    if (!incidencia.mensajes) return 0;
+    return incidencia.mensajes.filter(m => 
+      m.autor_email !== user.email && !m.leido
+    ).length;
+  };
+
+  // Ordenar activas por prioridad
   const ordenPrioridad = { alta: 0, media: 1, baja: 2 };
-  const incidenciasOrdenadas = incidenciasPendientes.sort((a, b) => 
+  const incidenciasOrdenadas = incidenciasActivas.sort((a, b) => 
     ordenPrioridad[a.prioridad] - ordenPrioridad[b.prioridad]
   );
 
@@ -172,7 +222,7 @@ export default function Incidencias() {
       comercial_iniciales: user.iniciales || user.full_name?.substring(0, 3).toUpperCase(),
       descripcion: newIncidencia.descripcion,
       prioridad: newIncidencia.prioridad,
-      estado: "pendiente"
+      estado: "activa"
     });
   };
 
@@ -205,9 +255,9 @@ export default function Incidencias() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm mb-1">
-                  {isAdmin ? "Pendientes de resolver" : "Mis incidencias pendientes"}
+                  {isAdmin ? "Incidencias activas" : "Mis incidencias activas"}
                 </p>
-                <p className="text-4xl font-bold text-red-600">{incidenciasPendientes.length}</p>
+                <p className="text-4xl font-bold text-red-600">{incidenciasActivas.length}</p>
               </div>
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-8 h-8 text-red-600" />
@@ -233,63 +283,101 @@ export default function Incidencias() {
         )}
       </div>
 
-      {/* Incidencias Pendientes */}
+      {/* Incidencias Activas */}
       <Card className="border-none shadow-md mb-6">
         <CardHeader className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
           <CardTitle className="text-white">
-            {isAdmin ? "Incidencias Pendientes" : "Mis Incidencias Pendientes"}
+            {isAdmin ? "Incidencias Activas" : "Mis Incidencias Activas"}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           {incidenciasOrdenadas.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <CheckCircle2 className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p>No hay incidencias pendientes</p>
+              <p>No hay incidencias activas</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {incidenciasOrdenadas.map((incidencia) => (
-                <Card key={incidencia.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 
-                            className="font-bold text-[#004D9D] cursor-pointer hover:underline"
-                            onClick={() => navigate(createPageUrl(`DetalleCliente?id=${incidencia.cliente_id}`))}
-                          >
-                            {incidencia.cliente_nombre}
-                          </h3>
-                          {isAdmin && (
-                            <Badge variant="outline" className="text-xs">
-                              {incidencia.comercial_iniciales}
+              {incidenciasOrdenadas.map((incidencia) => {
+                const mensajesSinLeer = contarMensajesSinLeer(incidencia);
+                const totalMensajes = incidencia.mensajes?.length || 0;
+                
+                return (
+                  <Card key={incidencia.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 
+                              className="font-bold text-[#004D9D] cursor-pointer hover:underline"
+                              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${incidencia.cliente_id}`))}
+                            >
+                              {incidencia.cliente_nombre}
+                            </h3>
+                            {isAdmin && (
+                              <Badge variant="outline" className="text-xs">
+                                {incidencia.comercial_iniciales}
+                              </Badge>
+                            )}
+                            <Badge className={prioridadTextColors[incidencia.prioridad]}>
+                              {incidencia.prioridad.toUpperCase()}
                             </Badge>
-                          )}
-                          <Badge className={prioridadTextColors[incidencia.prioridad]}>
-                            {incidencia.prioridad.toUpperCase()}
-                          </Badge>
+                            {totalMensajes > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                {totalMensajes}
+                              </Badge>
+                            )}
+                            {mensajesSinLeer > 0 && (
+                              <Badge className="bg-red-500 text-white text-xs">
+                                {mensajesSinLeer} nuevos
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-gray-600 text-sm whitespace-pre-wrap">{incidencia.descripcion}</p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Creada el {new Date(incidencia.created_date).toLocaleDateString('es-ES')}
+                          </p>
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIncidenciaAbierta(incidencia);
+                                if (mensajesSinLeer > 0) {
+                                  marcarMensajesLeidosMutation.mutate(incidencia.id);
+                                }
+                              }}
+                            >
+                              <MessageSquare className="w-4 h-4 mr-1" />
+                              {totalMensajes === 0 ? "Responder" : "Ver conversación"}
+                            </Button>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  if (window.confirm("¿Marcar esta incidencia como resuelta?")) {
+                                    resolverIncidenciaMutation.mutate({
+                                      id: incidencia.id,
+                                      comercialEmail: incidencia.comercial_email,
+                                      clienteId: incidencia.cliente_id,
+                                      clienteNombre: incidencia.cliente_nombre
+                                    });
+                                  }
+                                }}
+                                className={`${prioridadColors[incidencia.prioridad]} hover:opacity-80`}
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Resolver
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-gray-600 text-sm whitespace-pre-wrap">{incidencia.descripcion}</p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          Creada el {new Date(incidencia.created_date).toLocaleDateString('es-ES')}
-                        </p>
                       </div>
-                      {isAdmin && (
-                        <Button
-                          onClick={() => {
-                            setResolviendoIncidencia(incidencia);
-                            setRespuestaAdmin("");
-                          }}
-                          className={`${prioridadColors[incidencia.prioridad]} hover:opacity-80 rounded-full w-24 h-24 flex flex-col items-center justify-center`}
-                        >
-                          <CheckCircle2 className="w-6 h-6 mb-1" />
-                          <span className="text-xs">Resuelta</span>
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -318,15 +406,18 @@ export default function Incidencias() {
                           <Badge className="bg-green-600 text-white">RESUELTA</Badge>
                         </div>
                         <p className="text-gray-700 text-sm whitespace-pre-wrap">{incidencia.descripcion}</p>
-                        {incidencia.respuesta_admin && (
-                          <div className="mt-3 p-3 bg-white border-l-4 border-green-600 rounded">
-                            <div className="flex items-start gap-2">
-                              <MessageSquare className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="text-xs font-semibold text-green-800 mb-1">Respuesta del administrador:</p>
-                                <p className="text-sm text-gray-800 whitespace-pre-wrap">{incidencia.respuesta_admin}</p>
+                        {incidencia.mensajes && incidencia.mensajes.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs font-semibold text-green-800">Conversación:</p>
+                            {incidencia.mensajes.slice(-2).map(mensaje => (
+                              <div key={mensaje.id} className="p-2 bg-white border-l-4 border-green-600 rounded text-xs">
+                                <p className="font-semibold text-green-800">{mensaje.autor_nombre}</p>
+                                <p className="text-gray-700">{mensaje.contenido}</p>
                               </div>
-                            </div>
+                            ))}
+                            {incidencia.mensajes.length > 2 && (
+                              <p className="text-xs text-gray-500">+ {incidencia.mensajes.length - 2} mensajes más</p>
+                            )}
                           </div>
                         )}
                         <p className="text-xs text-green-700 mt-2">
@@ -449,63 +540,125 @@ export default function Incidencias() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para resolver incidencia con anotación */}
-      <Dialog open={!!resolviendoIncidencia} onOpenChange={() => setResolviendoIncidencia(null)}>
-        <DialogContent>
+      {/* Dialog para conversación de incidencia */}
+      <Dialog open={!!incidenciaAbierta} onOpenChange={() => setIncidenciaAbierta(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="text-[#004D9D]">Resolver Incidencia</DialogTitle>
+            <DialogTitle className="text-[#004D9D]">
+              Conversación - {incidenciaAbierta?.cliente_nombre}
+            </DialogTitle>
           </DialogHeader>
-          {resolviendoIncidencia && (
+          {incidenciaAbierta && (
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 rounded-lg border">
-                <p className="text-sm font-semibold text-gray-700 mb-1">
-                  {resolviendoIncidencia.cliente_nombre}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {resolviendoIncidencia.descripcion}
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className={prioridadTextColors[incidenciaAbierta.prioridad]}>
+                    {incidenciaAbierta.prioridad.toUpperCase()}
+                  </Badge>
+                  <span className="text-xs text-gray-500">
+                    Creada el {new Date(incidenciaAbierta.created_date).toLocaleDateString('es-ES')}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-gray-700 mb-1">Descripción inicial:</p>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {incidenciaAbierta.descripcion}
                 </p>
               </div>
               
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Anotación / Respuesta (opcional)
-                </label>
+              {/* Mensajes */}
+              <div className="max-h-[300px] overflow-y-auto space-y-3 p-2">
+                {(!incidenciaAbierta.mensajes || incidenciaAbierta.mensajes.length === 0) ? (
+                  <p className="text-center text-gray-400 text-sm py-8">
+                    No hay mensajes aún. Inicia la conversación.
+                  </p>
+                ) : (
+                  incidenciaAbierta.mensajes.map((mensaje) => {
+                    const esMio = mensaje.autor_email === user.email;
+                    return (
+                      <div key={mensaje.id} className={`flex ${esMio ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-lg ${
+                          esMio 
+                            ? 'bg-[#004D9D] text-white' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          <p className="text-xs font-semibold mb-1">
+                            {mensaje.autor_nombre}
+                          </p>
+                          <p className="text-sm whitespace-pre-wrap">{mensaje.contenido}</p>
+                          <p className={`text-xs mt-1 ${esMio ? 'text-white/70' : 'text-gray-500'}`}>
+                            {new Date(mensaje.fecha).toLocaleString('es-ES', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Input para nuevo mensaje */}
+              <div className="flex gap-2">
                 <Textarea
-                  value={respuestaAdmin}
-                  onChange={(e) => setRespuestaAdmin(e.target.value)}
-                  placeholder="Añade detalles sobre cómo se resolvió la incidencia..."
-                  rows={4}
+                  value={nuevoMensaje}
+                  onChange={(e) => setNuevoMensaje(e.target.value)}
+                  placeholder="Escribe tu mensaje..."
+                  rows={2}
+                  className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (nuevoMensaje.trim()) {
+                        agregarMensajeMutation.mutate({
+                          incidenciaId: incidenciaAbierta.id,
+                          mensaje: nuevoMensaje
+                        });
+                      }
+                    }
+                  }}
                 />
+                <Button
+                  onClick={() => {
+                    if (nuevoMensaje.trim()) {
+                      agregarMensajeMutation.mutate({
+                        incidenciaId: incidenciaAbierta.id,
+                        mensaje: nuevoMensaje
+                      });
+                    }
+                  }}
+                  disabled={!nuevoMensaje.trim()}
+                  className="bg-[#004D9D]"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setResolviendoIncidencia(null);
-                setRespuestaAdmin("");
-              }}
-            >
-              Cancelar
+            <Button variant="outline" onClick={() => setIncidenciaAbierta(null)}>
+              Cerrar
             </Button>
-            <Button 
-              onClick={() => {
-                if (resolviendoIncidencia) {
-                  resolverIncidenciaMutation.mutate({
-                    id: resolviendoIncidencia.id,
-                    comercialEmail: resolviendoIncidencia.comercial_email,
-                    clienteId: resolviendoIncidencia.cliente_id,
-                    clienteNombre: resolviendoIncidencia.cliente_nombre,
-                    respuesta: respuestaAdmin
-                  });
-                }
-              }}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Marcar como Resuelta
-            </Button>
+            {isAdmin && incidenciaAbierta?.estado === "activa" && (
+              <Button
+                onClick={() => {
+                  if (window.confirm("¿Marcar esta incidencia como resuelta definitivamente?")) {
+                    resolverIncidenciaMutation.mutate({
+                      id: incidenciaAbierta.id,
+                      comercialEmail: incidenciaAbierta.comercial_email,
+                      clienteId: incidenciaAbierta.cliente_id,
+                      clienteNombre: incidenciaAbierta.cliente_nombre
+                    });
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Resolver Definitivamente
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

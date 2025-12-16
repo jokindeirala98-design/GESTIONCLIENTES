@@ -57,13 +57,27 @@ export default function Layout({ children }) {
       try {
         const incidencias = await base44.entities.Incidencia.list();
         if (user.role === "admin") {
-          const pendientes = incidencias.filter(i => i.estado === "pendiente").length;
-          setIncidenciasPendientes(pendientes);
+          // Admin: contar activas + mensajes sin leer
+          const activas = incidencias.filter(i => i.estado === "activa").length;
+          const mensajesSinLeer = incidencias.reduce((count, inc) => {
+            if (inc.estado === "activa" && inc.mensajes) {
+              return count + inc.mensajes.filter(m => m.autor_email !== user.email && !m.leido).length;
+            }
+            return count;
+          }, 0);
+          setIncidenciasPendientes(activas + mensajesSinLeer);
         } else {
+          // Comercial: contar resueltas + mensajes sin leer
           const resueltas = incidencias.filter(i => 
             i.comercial_email === user.email && i.estado === "resuelta"
           ).length;
-          setIncidenciasPendientes(resueltas);
+          const mensajesSinLeer = incidencias.reduce((count, inc) => {
+            if (inc.comercial_email === user.email && inc.estado === "activa" && inc.mensajes) {
+              return count + inc.mensajes.filter(m => m.autor_email !== user.email && !m.leido).length;
+            }
+            return count;
+          }, 0);
+          setIncidenciasPendientes(resueltas + mensajesSinLeer);
         }
       } catch (error) {
         console.error("Error cargando incidencias:", error);
