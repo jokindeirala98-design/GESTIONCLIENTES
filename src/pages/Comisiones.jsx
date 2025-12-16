@@ -124,10 +124,13 @@ export default function Comisiones() {
     }
   }, [clientes.length, suministrosDelMes, suministrosNoFacturados, suministrosFacturados, totalMes]);
 
-  const mesesDisponibles = [...new Set(suministrosCerrados.map(s => s.mes_comision_suministro))]
-    .filter(Boolean)
-    .sort()
-    .reverse();
+  const mesesDisponibles = React.useMemo(() => 
+    [...new Set(suministrosCerrados.map(s => s.mes_comision_suministro))]
+      .filter(Boolean)
+      .sort()
+      .reverse(),
+    [suministrosCerrados]
+  );
 
   const cambiarMes = (direccion) => {
     const currentIndex = mesesDisponibles.indexOf(mesSeleccionado);
@@ -168,7 +171,7 @@ export default function Comisiones() {
               <TrendingUp className="w-4 h-4" />
               <span>{suministrosNoFacturados.length} suministro(s) cerrado(s)</span>
             </div>
-            {(user.email === "jokin@voltisenergia.com" || user.email === "jose@voltisenergia.com") && totalMes > 0 && (
+            {(user.email === "jokin@voltisenergia.com" || user.email === "jose@voltisenergia.com") && suministrosNoFacturados.length > 0 && (
               <Button
                 onClick={() => setShowFacturaDialog(true)}
                 className="mt-4 bg-white text-green-600 hover:bg-gray-100"
@@ -426,14 +429,16 @@ export default function Comisiones() {
         </Card>
       )}
 
-      <GenerarFacturaDialog
-        open={showFacturaDialog}
-        onClose={() => setShowFacturaDialog(false)}
-        mesSeleccionado={mesSeleccionado}
-        totalMes={totalMes}
-        user={user}
-        suministrosDelMes={suministrosNoFacturados}
-      />
+      {showFacturaDialog && (
+        <GenerarFacturaDialog
+          open={showFacturaDialog}
+          onClose={() => setShowFacturaDialog(false)}
+          mesSeleccionado={mesSeleccionado}
+          totalMes={totalMes}
+          user={user}
+          suministrosDelMes={suministrosNoFacturados}
+        />
+      )}
     </div>
   );
 }
