@@ -76,6 +76,9 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
   const generarFacturaMutation = useMutation({
     mutationFn: async ({ file_url, suministrosIds }) => {
+      console.log("🚀 INICIANDO GENERACIÓN DE FACTURA");
+      console.log("📦 Suministros a facturar:", suministrosIds);
+      
       // 1. Marcar los suministros como facturados PRIMERO
       const clientesList = await base44.entities.Cliente.list();
       const updatePromises = [];
@@ -83,21 +86,28 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       for (const suministroInfo of suministrosIds) {
         const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
         if (cliente) {
+          console.log(`📝 Actualizando cliente ${cliente.nombre_negocio} - Suministro ${suministroInfo.suministro_id}`);
+          
           const suministrosActualizados = cliente.suministros.map(s => {
             if (s.id === suministroInfo.suministro_id) {
+              console.log(`✅ Marcando suministro ${s.nombre || s.id} como facturado: true`);
               return { ...s, facturado: true };
             }
             return s;
           });
+          
           updatePromises.push(
             base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados })
           );
         }
       }
 
+      console.log("⏳ Esperando actualización de suministros...");
       await Promise.all(updatePromises);
+      console.log("✅ Suministros actualizados correctamente");
 
       // 2. Crear la factura
+      console.log("📄 Creando factura...");
       await base44.entities.Factura.create({
         numero_factura: numeroFactura,
         fecha_creacion: fechaHoy,
@@ -110,20 +120,29 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         pdf_url: file_url,
         suministros_incluidos: suministrosIds
       });
-
-      // 3. Invalidar queries ANTES de cerrar el diálogo
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      console.log("✅ Factura creada correctamente");
     },
     onSuccess: async () => {
-      // Esperar a que las queries se refresquen antes de cerrar
+      console.log("🔄 Invalidando queries...");
+      
+      // Invalidar queries para forzar recarga
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      
+      console.log("⏳ Esperando refetch de clientes...");
       await queryClient.refetchQueries({ queryKey: ['clientes'] });
+      console.log("✅ Queries actualizados");
       
       toast.success("Factura generada correctamente");
-      onClose();
+      
+      // Pequeño delay antes de cerrar para asegurar la actualización visual
+      setTimeout(() => {
+        console.log("🚪 Cerrando diálogo");
+        onClose();
+      }, 300);
     },
     onError: (error) => {
-      console.error("Error al generar factura:", error);
+      console.error("❌ ERROR al generar factura:", error);
       toast.error("Error al generar la factura");
     }
   });

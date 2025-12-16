@@ -37,6 +37,33 @@ export default function Comisiones() {
     enabled: !!user,
   });
 
+  // DEBUG: Log para verificar el estado de facturado
+  useEffect(() => {
+    if (clientes.length > 0) {
+      const misClientesCerrados = clientes.filter(
+        c => c.propietario_email === user?.email && c.aprobado_admin === true
+      );
+      
+      const suministrosCerrados = misClientesCerrados.flatMap(cliente => 
+        (cliente.suministros || [])
+          .filter(s => s.cerrado && s.comision)
+          .map(s => ({
+            clienteNombre: cliente.nombre_negocio,
+            suministroId: s.id,
+            suministroNombre: s.nombre,
+            facturado: s.facturado,
+            tipoFacturado: typeof s.facturado,
+            mes: s.mes_comision_suministro,
+            comision: s.comision
+          }))
+      );
+      
+      console.log("🔍 DEBUG SUMINISTROS CERRADOS:", suministrosCerrados);
+      console.log("📊 DEBUG TOTAL NO FACTURADOS:", suministrosCerrados.filter(s => s.facturado !== true).length);
+      console.log("✅ DEBUG TOTAL FACTURADOS:", suministrosCerrados.filter(s => s.facturado === true).length);
+    }
+  }, [clientes, user]);
+
   const { data: facturas = [] } = useQuery({
     queryKey: ['facturas'],
     queryFn: () => base44.entities.Factura.list('-created_date'),
