@@ -98,10 +98,14 @@ export default function Comisiones() {
   );
 
   const suministrosDelMes = suministrosCerrados.filter(
-    s => s.mes_comision_suministro === mesSeleccionado && !s.facturado
+    s => s.mes_comision_suministro === mesSeleccionado
   );
 
-  const totalMes = suministrosDelMes.reduce((sum, s) => sum + (s.comision || 0), 0);
+  // Separar facturados de no facturados
+  const suministrosNoFacturados = suministrosDelMes.filter(s => !s.facturado);
+  const suministrosFacturados = suministrosDelMes.filter(s => s.facturado);
+
+  const totalMes = suministrosNoFacturados.reduce((sum, s) => sum + (s.comision || 0), 0);
 
   const mesesDisponibles = [...new Set(suministrosCerrados.map(s => s.mes_comision_suministro))]
     .filter(Boolean)
