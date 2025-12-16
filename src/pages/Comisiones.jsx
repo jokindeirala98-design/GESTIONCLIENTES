@@ -102,8 +102,8 @@ export default function Comisiones() {
   );
 
   // Separar facturados de no facturados
-  const suministrosNoFacturados = suministrosDelMes.filter(s => !s.facturado);
-  const suministrosFacturados = suministrosDelMes.filter(s => s.facturado);
+  const suministrosNoFacturados = suministrosDelMes.filter(s => s.facturado !== true);
+  const suministrosFacturados = suministrosDelMes.filter(s => s.facturado === true);
 
   const totalMes = suministrosNoFacturados.reduce((sum, s) => sum + (s.comision || 0), 0);
 
