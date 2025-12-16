@@ -723,17 +723,15 @@ export default function Calendario() {
                                  variant="ghost"
                                  onClick={(e) => {
                                    e.stopPropagation();
-                                   if (window.confirm("¿Eliminar este evento?")) {
-                                     if (evento.es_tarea_corcho) {
-                                       deleteTareaCorchoMutation.mutate(evento.tarea_corcho_id);
-                                     } else {
-                                       deleteEventMutation.mutate({
-                                         clienteId: evento.cliente_id,
-                                         eventoId: evento.id,
-                                         esTarea: evento.es_tarea,
-                                         tareaId: evento.tarea_id
-                                       });
-                                     }
+                                   if (evento.es_tarea_corcho) {
+                                     deleteTareaCorchoMutation.mutate(evento.tarea_corcho_id);
+                                   } else {
+                                     deleteEventMutation.mutate({
+                                       clienteId: evento.cliente_id,
+                                       eventoId: evento.id,
+                                       esTarea: evento.es_tarea,
+                                       tareaId: evento.tarea_id
+                                     });
                                    }
                                  }}
                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
