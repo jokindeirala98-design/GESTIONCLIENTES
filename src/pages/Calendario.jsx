@@ -10,7 +10,6 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, AlertCirc
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { CheckCircle2 } from "lucide-react";
 import AudioRecorder from "../components/calendario/AudioRecorder.jsx";
 import {
   Dialog,
