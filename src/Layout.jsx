@@ -11,6 +11,7 @@ import {
   DollarSign, 
   Settings, 
   Menu,
+  AlertTriangle,
   X,
   LogOut,
   UserCircle2,
@@ -36,6 +37,7 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [incidenciasPendientes, setIncidenciasPendientes] = useState(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -48,6 +50,29 @@ export default function Layout({ children }) {
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    const loadIncidencias = async () => {
+      if (!user) return;
+      try {
+        const incidencias = await base44.entities.Incidencia.list();
+        if (user.role === "admin") {
+          const pendientes = incidencias.filter(i => i.estado === "pendiente").length;
+          setIncidenciasPendientes(pendientes);
+        } else {
+          const resueltas = incidencias.filter(i => 
+            i.comercial_email === user.email && i.estado === "resuelta"
+          ).length;
+          setIncidenciasPendientes(resueltas);
+        }
+      } catch (error) {
+        console.error("Error cargando incidencias:", error);
+      }
+    };
+    loadIncidencias();
+    const interval = setInterval(loadIncidencias, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   if (!user) {
     return (
@@ -90,6 +115,11 @@ export default function Layout({ children }) {
       icon: DollarSign,
     },
     {
+      title: "Incidencias",
+      url: createPageUrl("Incidencias"),
+      icon: AlertTriangle,
+    },
+    {
       title: "Configuración",
       url: createPageUrl("Configuracion"),
       icon: Settings,
@@ -127,6 +157,11 @@ export default function Layout({ children }) {
       title: "Comisiones",
       url: createPageUrl("ComisionesAdmin"),
       icon: DollarSign,
+    },
+    {
+      title: "Incidencias",
+      url: createPageUrl("Incidencias"),
+      icon: AlertTriangle,
     },
     {
       title: "Gestión de Usuarios",
@@ -178,6 +213,13 @@ export default function Layout({ children }) {
                     <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
                       <item.icon className="w-5 h-5" />
                       <span className="font-medium text-sm">{item.title}</span>
+                      {item.title === "Incidencias" && incidenciasPendientes > 0 && (
+                        <span className={`ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
+                          user.role === "admin" ? "bg-red-500" : "bg-green-500"
+                        } text-white`}>
+                          {incidenciasPendientes}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -270,6 +312,13 @@ export default function Layout({ children }) {
                           >
                             <item.icon className="w-5 h-5" />
                             <span className="font-medium text-sm">{item.title}</span>
+                            {item.title === "Incidencias" && incidenciasPendientes > 0 && (
+                              <span className={`ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
+                                user.role === "admin" ? "bg-red-500" : "bg-green-500"
+                              } text-white`}>
+                                {incidenciasPendientes}
+                              </span>
+                            )}
                           </Link>
                         ))}
                       </nav>

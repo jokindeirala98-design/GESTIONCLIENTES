@@ -12,6 +12,7 @@ import CierresVerificados from './pages/CierresVerificados';
 import Calendario from './pages/Calendario';
 import CorregirIniciales from './pages/CorregirIniciales';
 import ComisionesAdmin from './pages/ComisionesAdmin';
+import Incidencias from './pages/Incidencias';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "Calendario": Calendario,
     "CorregirIniciales": CorregirIniciales,
     "ComisionesAdmin": ComisionesAdmin,
+    "Incidencias": Incidencias,
 }
 
 export const pagesConfig = {
