@@ -48,9 +48,14 @@ export default function Calendario() {
     descripcion: "",
     notas: "",
     fecha: "",
-    audio_url: null
+    audio_url: null,
+    prioridad: "verde"
   });
-  const [tareasMultiples, setTareasMultiples] = useState(["", "", ""]);
+  const [tareasMultiples, setTareasMultiples] = useState([
+    { descripcion: "", prioridad: "verde" },
+    { descripcion: "", prioridad: "verde" },
+    { descripcion: "", prioridad: "verde" }
+  ]);
   const inputRefs = useRef([]);
 
   useEffect(() => {
@@ -144,14 +149,19 @@ export default function Calendario() {
         orden: maxOrden + 1,
         completada: false,
         tiene_alerta: false,
+        prioridad: tarea.prioridad || "verde",
         creador_email: user.email
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tareasCorcho']);
       setShowCorchoDialog(false);
-      setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null });
-      setTareasMultiples(["", "", ""]);
+      setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde" });
+      setTareasMultiples([
+        { descripcion: "", prioridad: "verde" },
+        { descripcion: "", prioridad: "verde" },
+        { descripcion: "", prioridad: "verde" }
+      ]);
       setModoMultiple(false);
       toast.success("Tarea creada");
     },
@@ -162,7 +172,8 @@ export default function Calendario() {
       const maxOrden = tareasCorcho.filter(t => !t.completada).reduce((max, t) => Math.max(max, t.orden || 0), 0);
       for (let i = 0; i < tareas.length; i++) {
         await base44.entities.TareaCorcho.create({
-          descripcion: tareas[i],
+          descripcion: tareas[i].descripcion,
+          prioridad: tareas[i].prioridad || "verde",
           orden: maxOrden + i + 1,
           completada: false,
           tiene_alerta: false,
@@ -173,7 +184,11 @@ export default function Calendario() {
     onSuccess: () => {
       queryClient.invalidateQueries(['tareasCorcho']);
       setShowCorchoDialog(false);
-      setTareasMultiples(["", "", ""]);
+      setTareasMultiples([
+        { descripcion: "", prioridad: "verde" },
+        { descripcion: "", prioridad: "verde" },
+        { descripcion: "", prioridad: "verde" }
+      ]);
       setModoMultiple(false);
       toast.success("Tareas creadas");
     },
@@ -742,7 +757,15 @@ export default function Calendario() {
                       >
                         {tareasCorcho
                           .filter(t => !t.completada)
-                          .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+                          .sort((a, b) => {
+                            // Ordenar por prioridad primero (rojo > amarillo > verde)
+                            const prioridadOrden = { rojo: 0, amarillo: 1, verde: 2 };
+                            const prioA = prioridadOrden[a.prioridad] ?? 2;
+                            const prioB = prioridadOrden[b.prioridad] ?? 2;
+                            if (prioA !== prioB) return prioA - prioB;
+                            // Si tienen la misma prioridad, ordenar por orden
+                            return (a.orden || 0) - (b.orden || 0);
+                          })
                           .map((tarea, index) => (
                             <Draggable key={tarea.id} draggableId={tarea.id} index={index}>
                               {(provided, snapshot) => (
@@ -752,7 +775,11 @@ export default function Calendario() {
                                   {...provided.dragHandleProps}
                                   className={`${
                                     tarea.tiene_alerta ? 'border-2 border-red-500 bg-red-50' : 'hover:shadow-lg'
-                                  } transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
+                                  } transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''} border-l-4 ${
+                                    tarea.prioridad === 'rojo' ? 'border-l-red-500' : 
+                                    tarea.prioridad === 'amarillo' ? 'border-l-yellow-500' : 
+                                    'border-l-green-500'
+                                  }`}
                                 >
                                   <CardContent className="p-4">
                                     {editingTareaCorcho?.id === tarea.id ? (
@@ -808,6 +835,11 @@ export default function Calendario() {
                                     ) : (
                                       <>
                                         <div className="flex items-start gap-3 mb-3">
+                                          <div className={`w-1 h-1 rounded-full mt-2 flex-shrink-0 ${
+                                            tarea.prioridad === 'rojo' ? 'bg-red-500' : 
+                                            tarea.prioridad === 'amarillo' ? 'bg-yellow-500' : 
+                                            'bg-green-500'
+                                          }`} />
                                           <div className="flex-1">
                                             <p className="font-semibold text-gray-800 mb-1">{tarea.descripcion}</p>
                                             {tarea.notas && (
@@ -964,9 +996,13 @@ export default function Calendario() {
                 onClick={() => {
                   setModoMultiple(!modoMultiple);
                   if (!modoMultiple) {
-                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null });
+                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde" });
                   } else {
-                    setTareasMultiples(["", "", ""]);
+                    setTareasMultiples([
+                      { descripcion: "", prioridad: "verde" },
+                      { descripcion: "", prioridad: "verde" },
+                      { descripcion: "", prioridad: "verde" }
+                    ]);
                   }
                 }}
                 className="text-xs"
@@ -1000,6 +1036,32 @@ export default function Calendario() {
                   onAudioSaved={(url) => setNewTareaCorcho({ ...newTareaCorcho, audio_url: url })}
                 />
                 <div>
+                  <label className="text-sm font-medium mb-1 block">Prioridad</label>
+                  <div className="flex gap-2">
+                    {[
+                      { value: "rojo", label: "Alta", bg: "bg-red-500" },
+                      { value: "amarillo", label: "Media", bg: "bg-yellow-500" },
+                      { value: "verde", label: "Baja", bg: "bg-green-500" }
+                    ].map(({ value, label, bg }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setNewTareaCorcho({ ...newTareaCorcho, prioridad: value })}
+                        className={`flex-1 py-2 px-3 rounded-lg border-2 transition-all ${
+                          newTareaCorcho.prioridad === value
+                            ? `${bg} border-gray-800 text-white font-semibold`
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${bg}`} />
+                          <span className="text-sm">{label}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label className="text-sm font-medium mb-1 block">Fecha (opcional)</label>
                   <Input
                     type="date"
@@ -1015,37 +1077,71 @@ export default function Calendario() {
                   <label className="text-sm font-medium mb-2 block">Descripciones de tareas *</label>
                   <div className="space-y-2">
                     {tareasMultiples.map((tarea, index) => (
-                      <Input
-                        key={index}
-                        ref={(el) => (inputRefs.current[index] = el)}
-                        value={tarea}
-                        onChange={(e) => {
-                          const nuevas = [...tareasMultiples];
-                          nuevas[index] = e.target.value;
-                          setTareasMultiples(nuevas);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (index === tareasMultiples.length - 1) {
-                              setTareasMultiples([...tareasMultiples, ""]);
-                              setTimeout(() => {
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          ref={(el) => (inputRefs.current[index] = el)}
+                          value={tarea.descripcion}
+                          onChange={(e) => {
+                            const nuevas = [...tareasMultiples];
+                            nuevas[index] = { ...nuevas[index], descripcion: e.target.value };
+                            setTareasMultiples(nuevas);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (index === tareasMultiples.length - 1) {
+                                setTareasMultiples([...tareasMultiples, { descripcion: "", prioridad: "verde" }]);
+                                setTimeout(() => {
+                                  inputRefs.current[index + 1]?.focus();
+                                }, 0);
+                              } else {
                                 inputRefs.current[index + 1]?.focus();
-                              }, 0);
-                            } else {
-                              inputRefs.current[index + 1]?.focus();
+                              }
                             }
-                          }
-                        }}
-                        placeholder={`Tarea ${index + 1}`}
-                      />
+                          }}
+                          placeholder={`Tarea ${index + 1}`}
+                          className="flex-1"
+                        />
+                        <Select
+                          value={tarea.prioridad}
+                          onValueChange={(value) => {
+                            const nuevas = [...tareasMultiples];
+                            nuevas[index] = { ...nuevas[index], prioridad: value };
+                            setTareasMultiples(nuevas);
+                          }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="rojo">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-red-500 rounded-full" />
+                                <span>Alta</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="amarillo">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                                <span>Media</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="verde">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                <span>Baja</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     ))}
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      setTareasMultiples([...tareasMultiples, ""]);
+                      setTareasMultiples([...tareasMultiples, { descripcion: "", prioridad: "verde" }]);
                       setTimeout(() => {
                         const lastIndex = tareasMultiples.length;
                         inputRefs.current[lastIndex]?.focus();
@@ -1065,8 +1161,12 @@ export default function Calendario() {
               variant="outline"
               onClick={() => {
                 setShowCorchoDialog(false);
-                setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null });
-                setTareasMultiples(["", "", ""]);
+                setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde" });
+                setTareasMultiples([
+                  { descripcion: "", prioridad: "verde" },
+                  { descripcion: "", prioridad: "verde" },
+                  { descripcion: "", prioridad: "verde" }
+                ]);
                 setModoMultiple(false);
               }}
             >
@@ -1081,7 +1181,7 @@ export default function Calendario() {
                   }
                   createTareaCorchoMutation.mutate(newTareaCorcho);
                 } else {
-                  const tareasValidas = tareasMultiples.filter(t => t.trim() !== "");
+                  const tareasValidas = tareasMultiples.filter(t => t.descripcion.trim() !== "");
                   if (tareasValidas.length === 0) {
                     toast.error("Añade al menos una descripción");
                     return;
@@ -1090,9 +1190,9 @@ export default function Calendario() {
                 }
               }}
               className="bg-[#004D9D]"
-            >
-              Crear {modoMultiple && tareasMultiples.filter(t => t.trim()).length > 0 ? `(${tareasMultiples.filter(t => t.trim()).length})` : "Tarea"}
-            </Button>
+              >
+              Crear {modoMultiple && tareasMultiples.filter(t => t.descripcion.trim()).length > 0 ? `(${tareasMultiples.filter(t => t.descripcion.trim()).length})` : "Tarea"}
+              </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
