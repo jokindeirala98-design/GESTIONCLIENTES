@@ -126,20 +126,25 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       console.log("🔄 Invalidando queries...");
       
       // Invalidar queries para forzar recarga
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      await queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      await queryClient.invalidateQueries({ queryKey: ['facturas'] });
       
       console.log("⏳ Esperando refetch de clientes...");
-      await queryClient.refetchQueries({ queryKey: ['clientes'] });
+      await queryClient.refetchQueries({ queryKey: ['clientes'], exact: true });
+      await queryClient.refetchQueries({ queryKey: ['facturas'], exact: true });
       console.log("✅ Queries actualizados");
+      
+      // Verificar datos actualizados
+      const clientesActualizados = queryClient.getQueryData(['clientes']);
+      console.log("🔍 Verificando datos actualizados:", clientesActualizados?.length || 0, "clientes");
       
       toast.success("Factura generada correctamente");
       
-      // Pequeño delay antes de cerrar para asegurar la actualización visual
+      // Delay mínimo para asegurar que React Query propague los cambios
       setTimeout(() => {
         console.log("🚪 Cerrando diálogo");
         onClose();
-      }, 300);
+      }, 500);
     },
     onError: (error) => {
       console.error("❌ ERROR al generar factura:", error);
