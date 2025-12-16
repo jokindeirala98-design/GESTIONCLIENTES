@@ -110,11 +110,14 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         pdf_url: file_url,
         suministros_incluidos: suministrosIds
       });
-    },
-    onSuccess: () => {
-      // Invalidar queries para forzar recarga desde el backend
+
+      // 3. Invalidar queries ANTES de cerrar el diálogo
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
       queryClient.invalidateQueries({ queryKey: ['facturas'] });
+    },
+    onSuccess: async () => {
+      // Esperar a que las queries se refresquen antes de cerrar
+      await queryClient.refetchQueries({ queryKey: ['clientes'] });
       
       toast.success("Factura generada correctamente");
       onClose();
