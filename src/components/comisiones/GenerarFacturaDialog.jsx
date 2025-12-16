@@ -74,10 +74,55 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
   const datosComercial = datosComerciales[user.email] || datosComerciales["jokin@voltisenergia.com"];
 
-  const createFacturaMutation = useMutation({
-    mutationFn: async (data) => {
-      return await base44.entities.Factura.create(data);
+  const generarFacturaMutation = useMutation({
+    mutationFn: async ({ file_url, suministrosIds }) => {
+      // 1. Marcar los suministros como facturados PRIMERO
+      const clientesList = await base44.entities.Cliente.list();
+      const updatePromises = [];
+      
+      for (const suministroInfo of suministrosIds) {
+        const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
+        if (cliente) {
+          const suministrosActualizados = cliente.suministros.map(s => {
+            if (s.id === suministroInfo.suministro_id) {
+              return { ...s, facturado: true };
+            }
+            return s;
+          });
+          updatePromises.push(
+            base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados })
+          );
+        }
+      }
+
+      await Promise.all(updatePromises);
+
+      // 2. Crear la factura
+      await base44.entities.Factura.create({
+        numero_factura: numeroFactura,
+        fecha_creacion: fechaHoy,
+        mes_comision: mesSeleccionado,
+        comercial_email: user.email,
+        comercial_nombre: user.full_name,
+        importe_comision: parseFloat(valores.base),
+        importe_total: parseFloat(valores.total),
+        estado: "pendiente_revision",
+        pdf_url: file_url,
+        suministros_incluidos: suministrosIds
+      });
     },
+    onSuccess: () => {
+      // Invalidar queries para forzar recarga desde el backend
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      
+      toast.success("Factura generada correctamente");
+      onClose();
+    },
+    onError: (error) => {
+      console.error("Error al generar factura:", error);
+      toast.error("Error al generar la factura");
+    }
   });
 
   const handleDescargar = async () => {
@@ -110,51 +155,8 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         comision: s.comision
       }));
 
-      // Marcar los suministros como facturados PRIMERO
-      const clientesList = await base44.entities.Cliente.list();
-      const updatePromises = [];
-      
-      for (const suministroInfo of suministrosIds) {
-        const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
-        if (cliente) {
-          const suministrosActualizados = cliente.suministros.map(s => {
-            if (s.id === suministroInfo.suministro_id) {
-              return { ...s, facturado: true };
-            }
-            return s;
-          });
-          updatePromises.push(
-            base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados })
-          );
-        }
-      }
-
-      // Esperar a que TODAS las actualizaciones se completen
-      await Promise.all(updatePromises);
-
-      // Ahora crear la factura
-      await createFacturaMutation.mutateAsync({
-        numero_factura: numeroFactura,
-        fecha_creacion: fechaHoy,
-        mes_comision: mesSeleccionado,
-        comercial_email: user.email,
-        comercial_nombre: user.full_name,
-        importe_comision: parseFloat(valores.base),
-        importe_total: parseFloat(valores.total),
-        estado: "pendiente_revision",
-        pdf_url: file_url,
-        suministros_incluidos: suministrosIds
-      });
-
-      // Invalidar y refrescar queries
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      queryClient.invalidateQueries({ queryKey: ['facturas'] });
-      
-      // Forzar refetch inmediato
-      await queryClient.refetchQueries({ queryKey: ['clientes'], type: 'active' });
-      
-      toast.success("Factura generada correctamente");
-      onClose();
+      // Ejecutar mutation que actualiza suministros y crea factura
+      await generarFacturaMutation.mutateAsync({ file_url, suministrosIds });
 
     } catch (error) {
       console.error("Error al generar factura:", error);
