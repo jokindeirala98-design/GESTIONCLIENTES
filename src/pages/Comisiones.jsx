@@ -44,10 +44,32 @@ export default function Comisiones() {
   });
 
   const deleteFacturaMutation = useMutation({
-    mutationFn: (id) => base44.entities.Factura.delete(id),
+    mutationFn: async (factura) => {
+      // Restaurar los suministros (desmarcar como facturados)
+      if (factura.suministros_incluidos) {
+        for (const suministroInfo of factura.suministros_incluidos) {
+          const clientesList = await base44.entities.Cliente.list();
+          const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
+          if (cliente) {
+            const suministrosActualizados = cliente.suministros.map(s => {
+              if (s.id === suministroInfo.suministro_id) {
+                const { facturado, ...resto } = s;
+                return resto;
+              }
+              return s;
+            });
+            await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
+          }
+        }
+      }
+      
+      // Eliminar la factura
+      await base44.entities.Factura.delete(factura.id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['facturas']);
-      toast.success("Factura eliminada");
+      queryClient.invalidateQueries(['clientes']);
+      toast.success("Factura eliminada y comisiones restauradas");
     },
   });
 
@@ -76,7 +98,7 @@ export default function Comisiones() {
   );
 
   const suministrosDelMes = suministrosCerrados.filter(
-    s => s.mes_comision_suministro === mesSeleccionado
+    s => s.mes_comision_suministro === mesSeleccionado && !s.facturado
   );
 
   const totalMes = suministrosDelMes.reduce((sum, s) => sum + (s.comision || 0), 0);
@@ -327,8 +349,8 @@ export default function Comisiones() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                if (window.confirm("¿Eliminar esta factura?")) {
-                                  deleteFacturaMutation.mutate(factura.id);
+                                if (window.confirm("¿Eliminar esta factura? Las comisiones se restaurarán.")) {
+                                  deleteFacturaMutation.mutate(factura);
                                 }
                               }}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -353,6 +375,7 @@ export default function Comisiones() {
         mesSeleccionado={mesSeleccionado}
         totalMes={totalMes}
         user={user}
+        suministrosDelMes={suministrosDelMes}
       />
     </div>
   );

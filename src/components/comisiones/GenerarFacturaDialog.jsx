@@ -15,7 +15,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Download } from "lucide-react";
 
-export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, totalMes, user }) {
+export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, totalMes, user, suministrosDelMes }) {
   const queryClient = useQueryClient();
   const facturaRef = useRef(null);
   
@@ -103,7 +103,13 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // Guardar en base de datos
+      // Guardar en base de datos con los suministros incluidos
+      const suministrosIds = suministrosDelMes.map(s => ({
+        cliente_id: s.clienteId,
+        suministro_id: s.id,
+        comision: s.comision
+      }));
+
       await createFacturaMutation.mutateAsync({
         numero_factura: numeroFactura,
         fecha_creacion: fechaHoy,
@@ -113,8 +119,26 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         importe_comision: parseFloat(valores.base),
         importe_total: parseFloat(valores.total),
         estado: "pendiente_revision",
-        pdf_url: file_url
+        pdf_url: file_url,
+        suministros_incluidos: suministrosIds
       });
+
+      // Marcar los suministros como facturados (resetear su mes de comisión)
+      const clientes = await base44.entities.Cliente.list();
+      for (const suministroInfo of suministrosIds) {
+        const cliente = clientes.find(c => c.id === suministroInfo.cliente_id);
+        if (cliente) {
+          const suministrosActualizados = cliente.suministros.map(s => {
+            if (s.id === suministroInfo.suministro_id) {
+              return { ...s, facturado: true };
+            }
+            return s;
+          });
+          await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
+        }
+      }
+      
+      queryClient.invalidateQueries(['clientes']);
 
     } catch (error) {
       console.error("Error al generar factura:", error);
