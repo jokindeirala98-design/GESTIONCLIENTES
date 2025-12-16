@@ -145,7 +145,7 @@ export default function Comisiones() {
             </p>
             <div className="flex items-center justify-center gap-2 text-white/90 text-sm mt-3">
               <TrendingUp className="w-4 h-4" />
-              <span>{suministrosDelMes.length} suministro(s) cerrado(s)</span>
+              <span>{suministrosNoFacturados.length} suministro(s) cerrado(s)</span>
             </div>
             {(user.email === "jokin@voltisenergia.com" || user.email === "jose@voltisenergia.com") && totalMes > 0 && (
               <Button
@@ -194,7 +194,8 @@ export default function Comisiones() {
             </div>
           ) : (
             <div className="space-y-3">
-              {suministrosDelMes.map(suministro => (
+              {/* Suministros no facturados */}
+              {suministrosNoFacturados.map(suministro => (
                 <div 
                   key={`${suministro.clienteId}-${suministro.id}`}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -219,6 +220,41 @@ export default function Comisiones() {
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-green-600">
+                      €{suministro.comision.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Suministros facturados - transparentes */}
+              {suministrosFacturados.map(suministro => (
+                <div 
+                  key={`${suministro.clienteId}-${suministro.id}`}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg opacity-40 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#004D9D] to-[#00AEEF] flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#004D9D]">
+                        {suministro.clienteNombre}
+                      </p>
+                      <p className="text-xs text-[#666666]">
+                        {suministro.nombre}
+                      </p>
+                      <p className="text-xs text-green-600 font-semibold">
+                        ✓ Ya facturado
+                      </p>
+                      {suministro.fecha_cierre_suministro && (
+                        <p className="text-xs text-[#666666]">
+                          Cerrado: {format(new Date(suministro.fecha_cierre_suministro), "d 'de' MMMM", { locale: es })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-gray-400">
                       €{suministro.comision.toFixed(2)}
                     </p>
                   </div>
@@ -375,7 +411,7 @@ export default function Comisiones() {
         mesSeleccionado={mesSeleccionado}
         totalMes={totalMes}
         user={user}
-        suministrosDelMes={suministrosDelMes}
+        suministrosDelMes={suministrosNoFacturados}
       />
     </div>
   );
