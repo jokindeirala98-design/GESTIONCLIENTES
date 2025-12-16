@@ -129,23 +129,6 @@ export default function Incidencias() {
     },
   });
 
-  const marcarMensajesLeidosMutation = useMutation({
-    mutationFn: async (incidenciaId) => {
-      const incidencia = incidencias.find(i => i.id === incidenciaId);
-      const mensajesActualizados = (incidencia.mensajes || []).map(m => ({
-        ...m,
-        leido: m.autor_email === user.email ? m.leido : true
-      }));
-
-      await base44.entities.Incidencia.update(incidenciaId, {
-        mensajes: mensajesActualizados
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['incidencias']);
-    },
-  });
-
   const revisarIncidenciaMutation = useMutation({
     mutationFn: async (id) => {
       await base44.entities.Incidencia.update(id, { estado: "revisada" });
@@ -180,13 +163,7 @@ export default function Incidencias() {
   const incidenciasActivas = misIncidencias.filter(i => i.estado === "activa");
   const incidenciasResueltas = misIncidencias.filter(i => i.estado === "resuelta");
 
-  // Contar mensajes sin leer
-  const contarMensajesSinLeer = (incidencia) => {
-    if (!incidencia.mensajes) return 0;
-    return incidencia.mensajes.filter(m => 
-      m.autor_email !== user.email && !m.leido
-    ).length;
-  };
+
 
   // Ordenar activas por prioridad
   const ordenPrioridad = { alta: 0, media: 1, baja: 2 };
@@ -299,7 +276,6 @@ export default function Incidencias() {
           ) : (
             <div className="space-y-3">
               {incidenciasOrdenadas.map((incidencia) => {
-                const mensajesSinLeer = contarMensajesSinLeer(incidencia);
                 const totalMensajes = incidencia.mensajes?.length || 0;
                 
                 return (
@@ -322,17 +298,6 @@ export default function Incidencias() {
                             <Badge className={prioridadTextColors[incidencia.prioridad]}>
                               {incidencia.prioridad.toUpperCase()}
                             </Badge>
-                            {totalMensajes > 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                <MessageSquare className="w-3 h-3 mr-1" />
-                                {totalMensajes}
-                              </Badge>
-                            )}
-                            {mensajesSinLeer > 0 && (
-                              <Badge className="bg-red-500 text-white text-xs">
-                                {mensajesSinLeer} nuevos
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-gray-600 text-sm whitespace-pre-wrap">{incidencia.descripcion}</p>
                           <p className="text-xs text-gray-400 mt-2">
@@ -342,12 +307,7 @@ export default function Incidencias() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                setIncidenciaAbierta(incidencia);
-                                if (mensajesSinLeer > 0) {
-                                  marcarMensajesLeidosMutation.mutate(incidencia.id);
-                                }
-                              }}
+                              onClick={() => setIncidenciaAbierta(incidencia)}
                             >
                               <MessageSquare className="w-4 h-4 mr-1" />
                               {totalMensajes === 0 ? "Responder" : "Ver conversación"}

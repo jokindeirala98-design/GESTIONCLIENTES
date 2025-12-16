@@ -37,8 +37,6 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [incidenciasPendientes, setIncidenciasPendientes] = useState(0);
-
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -50,43 +48,6 @@ export default function Layout({ children }) {
     };
     loadUser();
   }, []);
-
-  useEffect(() => {
-    const loadIncidencias = async () => {
-      if (!user) return;
-      try {
-        const incidencias = await base44.entities.Incidencia.list();
-        if (user.role === "admin") {
-          // Admin: contar activas + mensajes sin leer
-          const activas = incidencias.filter(i => i.estado === "activa").length;
-          const mensajesSinLeer = incidencias.reduce((count, inc) => {
-            if (inc.estado === "activa" && inc.mensajes) {
-              return count + inc.mensajes.filter(m => m.autor_email !== user.email && !m.leido).length;
-            }
-            return count;
-          }, 0);
-          setIncidenciasPendientes(activas + mensajesSinLeer);
-        } else {
-          // Comercial: contar resueltas + mensajes sin leer
-          const resueltas = incidencias.filter(i => 
-            i.comercial_email === user.email && i.estado === "resuelta"
-          ).length;
-          const mensajesSinLeer = incidencias.reduce((count, inc) => {
-            if (inc.comercial_email === user.email && inc.estado === "activa" && inc.mensajes) {
-              return count + inc.mensajes.filter(m => m.autor_email !== user.email && !m.leido).length;
-            }
-            return count;
-          }, 0);
-          setIncidenciasPendientes(resueltas + mensajesSinLeer);
-        }
-      } catch (error) {
-        console.error("Error cargando incidencias:", error);
-      }
-    };
-    loadIncidencias();
-    const interval = setInterval(loadIncidencias, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
 
   if (!user) {
     return (
@@ -227,13 +188,6 @@ export default function Layout({ children }) {
                     <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
                       <item.icon className="w-5 h-5" />
                       <span className="font-medium text-sm">{item.title}</span>
-                      {item.title === "Incidencias" && incidenciasPendientes > 0 && (
-                        <span className={`ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
-                          user.role === "admin" ? "bg-red-500" : "bg-green-500"
-                        } text-white`}>
-                          {incidenciasPendientes}
-                        </span>
-                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -326,14 +280,7 @@ export default function Layout({ children }) {
                           >
                             <item.icon className="w-5 h-5" />
                             <span className="font-medium text-sm">{item.title}</span>
-                            {item.title === "Incidencias" && incidenciasPendientes > 0 && (
-                              <span className={`ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
-                                user.role === "admin" ? "bg-red-500" : "bg-green-500"
-                              } text-white`}>
-                                {incidenciasPendientes}
-                              </span>
-                            )}
-                          </Link>
+                            </Link>
                         ))}
                       </nav>
                     </div>
