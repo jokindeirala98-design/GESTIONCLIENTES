@@ -146,9 +146,12 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         suministros_incluidos: suministrosIds
       });
 
-      // Refrescar datos forzadamente
-      await queryClient.refetchQueries(['clientes']);
-      await queryClient.refetchQueries(['facturas']);
+      // Invalidar y refrescar queries
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      
+      // Forzar refetch inmediato
+      await queryClient.refetchQueries({ queryKey: ['clientes'], type: 'active' });
       
       toast.success("Factura generada correctamente");
       onClose();
