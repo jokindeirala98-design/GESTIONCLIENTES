@@ -80,39 +80,63 @@ export default function Comisiones() {
     [suministrosCerrados, mesSeleccionado]
   );
 
-  // Separar facturados de no facturados - NORMALIZAR BOOLEAN
+  // SEPARAR FACTURADOS DE NO FACTURADOS - Normalizar facturado a boolean
+  // IMPORTANTE: facturado puede venir como true, "true", 1, etc. de la BD
+  // Lo normalizamos para evitar inconsistencias
   const suministrosNoFacturados = React.useMemo(() => 
-    suministrosDelMes.filter(s => s.facturado !== true),
+    suministrosDelMes.filter(s => {
+      // Normalizar: true, "true", 1 -> true | false, "false", 0, undefined, null -> false
+      const esFacturado = s.facturado === true || s.facturado === "true" || s.facturado === 1;
+      return !esFacturado; // Solo NO facturados
+    }),
     [suministrosDelMes]
   );
   
   const suministrosFacturados = React.useMemo(() => 
-    suministrosDelMes.filter(s => s.facturado === true),
+    suministrosDelMes.filter(s => {
+      // Normalizar: true, "true", 1 -> true
+      const esFacturado = s.facturado === true || s.facturado === "true" || s.facturado === 1;
+      return esFacturado; // Solo facturados
+    }),
     [suministrosDelMes]
   );
 
+  // CALCULAR TOTAL MES - Solo suma suministros NO facturados
+  // Este valor debe ser €0 después de generar una factura
   const totalMes = React.useMemo(() => 
     suministrosNoFacturados.reduce((sum, s) => sum + (s.comision || 0), 0),
     [suministrosNoFacturados]
   );
 
-  // DEBUG: Log para verificar el estado de facturado
+  // ======================================
+  // DEBUG LOGS - Verificar sincronización
+  // ======================================
   useEffect(() => {
-    console.log("🔍 DEBUG COMISIONES - Clientes:", clientes.length);
-    console.log("📊 DEBUG SUMINISTROS DEL MES:", suministrosDelMes.length);
-    console.log("❌ DEBUG NO FACTURADOS:", suministrosNoFacturados.length);
-    console.log("✅ DEBUG FACTURADOS:", suministrosFacturados.length);
-    console.log("💰 DEBUG TOTAL MES:", totalMes.toFixed(2));
+    console.log("═══════════════════════════════════");
+    console.log("📊 DEBUG COMISIONES - RECALCULANDO");
+    console.log("═══════════════════════════════════");
+    console.log("🗂️  Clientes cargados:", clientes.length);
+    console.log("📦 Suministros del mes:", suministrosDelMes.length);
+    console.log("❌ NO facturados:", suministrosNoFacturados.length);
+    console.log("✅ FACTURADOS:", suministrosFacturados.length);
+    console.log("💰 TOTAL MES:", `€${totalMes.toFixed(2)}`);
+    console.log("═══════════════════════════════════");
     
+    // Detalle de cada suministro para debug
     if (suministrosDelMes.length > 0) {
-      console.log("🔍 Detalle suministros del mes:", suministrosDelMes.map(s => ({
-        id: s.id,
-        nombre: s.nombre,
-        cliente: s.clienteNombre,
-        facturado: s.facturado,
-        tipo: typeof s.facturado,
-        comision: s.comision
-      })));
+      console.log("📋 Detalle de suministros:");
+      suministrosDelMes.forEach((s, idx) => {
+        const normalizado = s.facturado === true || s.facturado === "true" || s.facturado === 1;
+        console.log(`  ${idx + 1}. ${s.clienteNombre} - ${s.nombre}`);
+        console.log(`     ├─ facturado: ${s.facturado} (tipo: ${typeof s.facturado})`);
+        console.log(`     ├─ normalizado: ${normalizado ? '✅ FACTURADO' : '❌ NO FACTURADO'}`);
+        console.log(`     └─ comisión: €${s.comision}`);
+      });
+    }
+    
+    // Advertencia si totalMes no se puso a 0 después de facturar
+    if (suministrosFacturados.length > 0 && suministrosNoFacturados.length === 0) {
+      console.log("✅ CORRECTO: Todos los suministros están facturados, totalMes = €0");
     }
   }, [clientes.length, suministrosDelMes, suministrosNoFacturados, suministrosFacturados, totalMes]);
 

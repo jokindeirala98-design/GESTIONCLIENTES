@@ -79,7 +79,7 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       console.log("🚀 INICIANDO GENERACIÓN DE FACTURA");
       console.log("📦 Suministros a facturar:", suministrosIds);
       
-      // 1. Marcar los suministros como facturados PRIMERO
+      // PASO 1: Marcar suministros como facturado: true (BOOLEAN, no string)
       const clientesList = await base44.entities.Cliente.list();
       const updatePromises = [];
       
@@ -90,7 +90,8 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
           
           const suministrosActualizados = cliente.suministros.map(s => {
             if (s.id === suministroInfo.suministro_id) {
-              console.log(`✅ Marcando suministro ${s.nombre || s.id} como facturado: true`);
+              console.log(`✅ Marcando suministro ${s.nombre || s.id} como facturado: true (boolean)`);
+              // CRÍTICO: Asegurar que facturado es boolean true, NO string "true" ni número 1
               return { ...s, facturado: true };
             }
             return s;
@@ -104,10 +105,10 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
       console.log("⏳ Esperando actualización de suministros...");
       await Promise.all(updatePromises);
-      console.log("✅ Suministros actualizados correctamente");
+      console.log("✅ Suministros marcados como facturado: true en la BD");
 
-      // 2. Crear la factura
-      console.log("📄 Creando factura...");
+      // PASO 2: Crear la factura
+      console.log("📄 Creando registro de factura...");
       await base44.entities.Factura.create({
         numero_factura: numeroFactura,
         fecha_creacion: fechaHoy,
@@ -120,31 +121,38 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         pdf_url: file_url,
         suministros_incluidos: suministrosIds
       });
-      console.log("✅ Factura creada correctamente");
+      console.log("✅ Factura creada en la BD");
     },
     onSuccess: async () => {
-      console.log("🔄 Invalidando queries...");
+      console.log("🔄 INVALIDANDO QUERIES - Forzar recarga de datos...");
       
-      // Invalidar queries para forzar recarga
-      await queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      await queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      // PASO 3: Invalidar y esperar recarga de queries para sincronizar el frontend
+      // Esto es CRÍTICO para que Comisiones.jsx vea los datos actualizados
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['facturas'] });
       
-      console.log("⏳ Esperando refetch de clientes...");
+      console.log("⏳ ESPERANDO REFETCH - Los datos se están recargando...");
       await queryClient.refetchQueries({ queryKey: ['clientes'], exact: true });
       await queryClient.refetchQueries({ queryKey: ['facturas'], exact: true });
-      console.log("✅ Queries actualizados");
+      console.log("✅ REFETCH COMPLETO - Datos sincronizados con BD");
       
-      // Verificar datos actualizados
+      // Verificación de sincronización
       const clientesActualizados = queryClient.getQueryData(['clientes']);
-      console.log("🔍 Verificando datos actualizados:", clientesActualizados?.length || 0, "clientes");
+      console.log("🔍 VERIFICACIÓN:", clientesActualizados?.length || 0, "clientes en cache");
       
-      toast.success("Factura generada correctamente");
+      // Verificar que los suministros estén marcados como facturados
+      const suministrosVerificados = clientesActualizados?.flatMap(c => 
+        c.suministros?.filter(s => s.facturado === true) || []
+      ) || [];
+      console.log("✅ Suministros facturados en cache:", suministrosVerificados.length);
       
-      // Delay mínimo para asegurar que React Query propague los cambios
+      toast.success("✅ Factura generada - Comisiones actualizadas");
+      
+      // PASO 4: Esperar 300ms para que React Query propague cambios a componentes
       setTimeout(() => {
-        console.log("🚪 Cerrando diálogo");
+        console.log("🚪 Cerrando diálogo - totalMes debe ser €0 ahora");
         onClose();
-      }, 500);
+      }, 300);
     },
     onError: (error) => {
       console.error("❌ ERROR al generar factura:", error);
