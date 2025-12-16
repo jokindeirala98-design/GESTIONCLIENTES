@@ -119,13 +119,28 @@ export default function Calendario() {
 
   const completarEventMutation = useMutation({
     mutationFn: async ({ clienteId, eventoId, esTarea, tareaId }) => {
+      const timestamp = new Date().toISOString();
+      
       if (esTarea) {
-        // Marcar tarea como completada
+        // Marcar tarea como completada y guardar en el corcho
         await base44.entities.Tarea.update(tareaId, { completada: true });
+        
+        const tarea = tareas.find(t => t.id === tareaId);
+        if (tarea && (user.email === 'iranzu@voltisenergia.com' || user.email === 'nicolas@voltisenergia.com')) {
+          const maxOrden = tareasCorcho.filter(t => t.completada).reduce((max, t) => Math.max(max, t.orden || 0), 0);
+          await base44.entities.TareaCorcho.create({
+            descripcion: `${tarea.descripcion}`,
+            orden: maxOrden + 1,
+            completada: true,
+            fecha_completada: timestamp,
+            creador_email: user.email
+          });
+        }
       } else {
         // Marcar evento de cliente como completado
         const cliente = clientes.find(c => c.id === clienteId);
         const eventosActuales = cliente.eventos || [];
+        const evento = eventosActuales.find(e => e.id === eventoId);
         const nuevosEventos = eventosActuales.map(e => 
           e.id === eventoId ? { ...e, completada: true } : e
         );
@@ -133,11 +148,24 @@ export default function Calendario() {
         await base44.entities.Cliente.update(clienteId, {
           eventos: nuevosEventos
         });
+        
+        // Guardar en el corcho para tracking
+        if (evento && (user.email === 'iranzu@voltisenergia.com' || user.email === 'nicolas@voltisenergia.com')) {
+          const maxOrden = tareasCorcho.filter(t => t.completada).reduce((max, t) => Math.max(max, t.orden || 0), 0);
+          await base44.entities.TareaCorcho.create({
+            descripcion: `${cliente.nombre_negocio}: ${evento.descripcion}`,
+            orden: maxOrden + 1,
+            completada: true,
+            fecha_completada: timestamp,
+            creador_email: user.email
+          });
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
       queryClient.invalidateQueries(['tareas']);
+      queryClient.invalidateQueries(['tareasCorcho']);
       toast.success("Tarea completada");
     },
   });
@@ -240,10 +268,10 @@ export default function Calendario() {
 
   const completarTareaCorchoMutation = useMutation({
     mutationFn: async (id) => {
-      const fecha = new Date().toISOString().split('T')[0];
+      const timestamp = new Date().toISOString();
       await base44.entities.TareaCorcho.update(id, {
         completada: true,
-        fecha_completada: fecha
+        fecha_completada: timestamp
       });
     },
     onSuccess: () => {
@@ -310,10 +338,10 @@ export default function Calendario() {
 
     // Si se mueve entre columnas
     if (sourceCompleted !== destCompleted) {
-      const fecha = new Date().toISOString().split('T')[0];
+      const timestamp = destCompleted ? new Date().toISOString() : null;
       await base44.entities.TareaCorcho.update(movedTarea.id, {
         completada: destCompleted,
-        fecha_completada: destCompleted ? fecha : null
+        fecha_completada: timestamp
       });
     }
 
@@ -329,7 +357,7 @@ export default function Calendario() {
       await base44.entities.TareaCorcho.update(destTareas[i].id, { 
         orden: i,
         completada: destCompleted,
-        fecha_completada: destCompleted && !destTareas[i].fecha_completada ? new Date().toISOString().split('T')[0] : destTareas[i].fecha_completada
+        fecha_completada: destCompleted && !destTareas[i].fecha_completada ? new Date().toISOString() : destTareas[i].fecha_completada
       });
     }
 
@@ -965,7 +993,12 @@ export default function Calendario() {
                       >
                         {tareasCorcho
                           .filter(t => t.completada)
-                          .sort((a, b) => (b.orden || 0) - (a.orden || 0))
+                          .sort((a, b) => {
+                            // Ordenar por fecha_completada descendente (más reciente primero)
+                            if (!a.fecha_completada) return 1;
+                            if (!b.fecha_completada) return -1;
+                            return new Date(b.fecha_completada) - new Date(a.fecha_completada);
+                          })
                           .map((tarea, index) => (
                             <Draggable key={tarea.id} draggableId={tarea.id} index={index}>
                               {(provided, snapshot) => (
@@ -992,7 +1025,13 @@ export default function Calendario() {
                                       )}
                                       {tarea.fecha_completada && (
                                         <Badge className="mt-2 bg-green-600 text-white">
-                                          ✓ {new Date(tarea.fecha_completada).toLocaleDateString('es-ES')}
+                                          ✓ {new Date(tarea.fecha_completada).toLocaleString('es-ES', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
                                         </Badge>
                                       )}
                                     </div>
