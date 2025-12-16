@@ -112,6 +112,8 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
       // Marcar los suministros como facturados ANTES de crear la factura
       const clientesList = await base44.entities.Cliente.list();
+      const updatePromises = [];
+      
       for (const suministroInfo of suministrosIds) {
         const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
         if (cliente) {
@@ -121,9 +123,14 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
             }
             return s;
           });
-          await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
+          updatePromises.push(
+            base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados })
+          );
         }
       }
+
+      // Esperar a que TODAS las actualizaciones se completen
+      await Promise.all(updatePromises);
 
       // Ahora crear la factura
       await createFacturaMutation.mutateAsync({
@@ -139,9 +146,13 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         suministros_incluidos: suministrosIds
       });
 
-      // Invalida queries y cierra el diálogo
-      queryClient.invalidateQueries(['facturas']);
-      queryClient.invalidateQueries(['clientes']);
+      // Invalida queries para refrescar los datos
+      await queryClient.invalidateQueries(['facturas']);
+      await queryClient.invalidateQueries(['clientes']);
+      
+      // Esperar un momento para que React Query refetch los datos
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       toast.success("Factura generada correctamente");
       onClose();
 
