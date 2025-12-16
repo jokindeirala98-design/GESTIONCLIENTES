@@ -75,6 +75,7 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['facturas']);
+      queryClient.invalidateQueries(['clientes']);
       toast.success("Factura generada correctamente");
       onClose();
     },
@@ -110,6 +111,22 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         comision: s.comision
       }));
 
+      // Marcar los suministros como facturados ANTES de crear la factura
+      const clientesList = await base44.entities.Cliente.list();
+      for (const suministroInfo of suministrosIds) {
+        const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
+        if (cliente) {
+          const suministrosActualizados = cliente.suministros.map(s => {
+            if (s.id === suministroInfo.suministro_id) {
+              return { ...s, facturado: true };
+            }
+            return s;
+          });
+          await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
+        }
+      }
+
+      // Ahora crear la factura
       await createFacturaMutation.mutateAsync({
         numero_factura: numeroFactura,
         fecha_creacion: fechaHoy,
@@ -122,23 +139,6 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         pdf_url: file_url,
         suministros_incluidos: suministrosIds
       });
-
-      // Marcar los suministros como facturados (resetear su mes de comisión)
-      const clientes = await base44.entities.Cliente.list();
-      for (const suministroInfo of suministrosIds) {
-        const cliente = clientes.find(c => c.id === suministroInfo.cliente_id);
-        if (cliente) {
-          const suministrosActualizados = cliente.suministros.map(s => {
-            if (s.id === suministroInfo.suministro_id) {
-              return { ...s, facturado: true };
-            }
-            return s;
-          });
-          await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
-        }
-      }
-      
-      queryClient.invalidateQueries(['clientes']);
 
     } catch (error) {
       console.error("Error al generar factura:", error);
