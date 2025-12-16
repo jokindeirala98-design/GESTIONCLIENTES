@@ -37,33 +37,6 @@ export default function Comisiones() {
     enabled: !!user,
   });
 
-  // DEBUG: Log para verificar el estado de facturado
-  useEffect(() => {
-    if (clientes.length > 0) {
-      const misClientesCerrados = clientes.filter(
-        c => c.propietario_email === user?.email && c.aprobado_admin === true
-      );
-      
-      const suministrosCerrados = misClientesCerrados.flatMap(cliente => 
-        (cliente.suministros || [])
-          .filter(s => s.cerrado && s.comision)
-          .map(s => ({
-            clienteNombre: cliente.nombre_negocio,
-            suministroId: s.id,
-            suministroNombre: s.nombre,
-            facturado: s.facturado,
-            tipoFacturado: typeof s.facturado,
-            mes: s.mes_comision_suministro,
-            comision: s.comision
-          }))
-      );
-      
-      console.log("🔍 DEBUG SUMINISTROS CERRADOS:", suministrosCerrados);
-      console.log("📊 DEBUG TOTAL NO FACTURADOS:", suministrosCerrados.filter(s => s.facturado !== true).length);
-      console.log("✅ DEBUG TOTAL FACTURADOS:", suministrosCerrados.filter(s => s.facturado === true).length);
-    }
-  }, [clientes, user]);
-
   const { data: facturas = [] } = useQuery({
     queryKey: ['facturas'],
     queryFn: () => base44.entities.Factura.list('-created_date'),
@@ -90,31 +63,66 @@ export default function Comisiones() {
     );
   }
 
-  // Obtener todos los suministros cerrados del usuario
-  const misClientesCerrados = clientes.filter(
-    c => c.propietario_email === user.email && c.aprobado_admin === true
+  // Calcular suministros usando useMemo para optimizar renders
+  const misClientesCerrados = React.useMemo(() => 
+    clientes.filter(c => c.propietario_email === user?.email && c.aprobado_admin === true),
+    [clientes, user?.email]
   );
 
   // Extraer todos los suministros cerrados con su información
-  const suministrosCerrados = misClientesCerrados.flatMap(cliente => 
-    (cliente.suministros || [])
-      .filter(s => s.cerrado && s.comision)
-      .map(s => ({
-        ...s,
-        clienteNombre: cliente.nombre_negocio,
-        clienteId: cliente.id
-      }))
+  const suministrosCerrados = React.useMemo(() => 
+    misClientesCerrados.flatMap(cliente => 
+      (cliente.suministros || [])
+        .filter(s => s.cerrado && s.comision)
+        .map(s => ({
+          ...s,
+          clienteNombre: cliente.nombre_negocio,
+          clienteId: cliente.id
+        }))
+    ),
+    [misClientesCerrados]
   );
 
-  const suministrosDelMes = suministrosCerrados.filter(
-    s => s.mes_comision_suministro === mesSeleccionado
+  const suministrosDelMes = React.useMemo(() => 
+    suministrosCerrados.filter(s => s.mes_comision_suministro === mesSeleccionado),
+    [suministrosCerrados, mesSeleccionado]
   );
 
-  // Separar facturados de no facturados
-  const suministrosNoFacturados = suministrosDelMes.filter(s => s.facturado !== true);
-  const suministrosFacturados = suministrosDelMes.filter(s => s.facturado === true);
+  // Separar facturados de no facturados - NORMALIZAR BOOLEAN
+  const suministrosNoFacturados = React.useMemo(() => 
+    suministrosDelMes.filter(s => s.facturado !== true),
+    [suministrosDelMes]
+  );
+  
+  const suministrosFacturados = React.useMemo(() => 
+    suministrosDelMes.filter(s => s.facturado === true),
+    [suministrosDelMes]
+  );
 
-  const totalMes = suministrosNoFacturados.reduce((sum, s) => sum + (s.comision || 0), 0);
+  const totalMes = React.useMemo(() => 
+    suministrosNoFacturados.reduce((sum, s) => sum + (s.comision || 0), 0),
+    [suministrosNoFacturados]
+  );
+
+  // DEBUG: Log para verificar el estado de facturado
+  useEffect(() => {
+    console.log("🔍 DEBUG COMISIONES - Clientes:", clientes.length);
+    console.log("📊 DEBUG SUMINISTROS DEL MES:", suministrosDelMes.length);
+    console.log("❌ DEBUG NO FACTURADOS:", suministrosNoFacturados.length);
+    console.log("✅ DEBUG FACTURADOS:", suministrosFacturados.length);
+    console.log("💰 DEBUG TOTAL MES:", totalMes.toFixed(2));
+    
+    if (suministrosDelMes.length > 0) {
+      console.log("🔍 Detalle suministros del mes:", suministrosDelMes.map(s => ({
+        id: s.id,
+        nombre: s.nombre,
+        cliente: s.clienteNombre,
+        facturado: s.facturado,
+        tipo: typeof s.facturado,
+        comision: s.comision
+      })));
+    }
+  }, [clientes.length, suministrosDelMes, suministrosNoFacturados, suministrosFacturados, totalMes]);
 
   const mesesDisponibles = [...new Set(suministrosCerrados.map(s => s.mes_comision_suministro))]
     .filter(Boolean)
