@@ -55,24 +55,20 @@ export default function Comisiones() {
     },
   });
 
-  // Calcular suministros usando useMemo para optimizar renders
-  const misClientesCerrados = React.useMemo(() => 
-    clientes.filter(c => c.propietario_email === user?.email && c.aprobado_admin === true),
-    [clientes, user?.email]
-  );
-
-  // Extraer todos los suministros cerrados con su información
+  // Extraer TODOS los suministros cerrados del comercial (sin filtrar por aprobado_admin a nivel cliente)
   const suministrosCerrados = React.useMemo(() => 
-    misClientesCerrados.flatMap(cliente => 
-      (cliente.suministros || [])
-        .filter(s => s.cerrado && s.comision)
-        .map(s => ({
-          ...s,
-          clienteNombre: cliente.nombre_negocio,
-          clienteId: cliente.id
-        }))
-    ),
-    [misClientesCerrados]
+    clientes
+      .filter(c => c.propietario_email === user?.email)
+      .flatMap(cliente => 
+        (cliente.suministros || [])
+          .filter(s => s.cerrado && s.comision)
+          .map(s => ({
+            ...s,
+            clienteNombre: cliente.nombre_negocio,
+            clienteId: cliente.id
+          }))
+      ),
+    [clientes, user?.email]
   );
 
   const suministrosDelMes = React.useMemo(() => 
