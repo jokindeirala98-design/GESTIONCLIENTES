@@ -45,33 +45,11 @@ export default function Comisiones() {
 
   const deleteFacturaMutation = useMutation({
     mutationFn: async (factura) => {
-      // Restaurar los suministros (eliminar la propiedad 'facturado')
-      if (factura.suministros_incluidos) {
-        const clientesList = await base44.entities.Cliente.list();
-        
-        for (const suministroInfo of factura.suministros_incluidos) {
-          const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
-          if (cliente) {
-            const suministrosActualizados = cliente.suministros.map(s => {
-              if (s.id === suministroInfo.suministro_id) {
-                // Eliminar la propiedad 'facturado' completamente
-                const { facturado, ...resto } = s;
-                return resto;
-              }
-              return s;
-            });
-            await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
-          }
-        }
-      }
-      
-      // Eliminar la factura
+      // Solo eliminar la factura - los suministros se recalcularán automáticamente
       await base44.entities.Factura.delete(factura.id);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries(['facturas']);
-      await queryClient.invalidateQueries(['clientes']);
-      await queryClient.refetchQueries(['clientes']);
       await queryClient.refetchQueries(['facturas']);
       toast.success("Factura eliminada y comisiones restauradas");
     },
@@ -102,25 +80,32 @@ export default function Comisiones() {
     [suministrosCerrados, mesSeleccionado]
   );
 
-  // SEPARAR FACTURADOS DE NO FACTURADOS - Normalizar facturado a boolean
-  // IMPORTANTE: facturado puede venir como true, "true", 1, etc. de la BD
-  // Lo normalizamos para evitar inconsistencias
+  // CALCULAR QUÉ SUMINISTROS ESTÁN FACTURADOS BASÁNDOSE EN LAS FACTURAS EXISTENTES
+  // No usamos la propiedad facturado del suministro, sino que lo calculamos dinámicamente
+  const suministrosEnFacturas = React.useMemo(() => {
+    const set = new Set();
+    facturas.forEach(factura => {
+      if (factura.suministros_incluidos) {
+        factura.suministros_incluidos.forEach(s => {
+          set.add(`${s.cliente_id}-${s.suministro_id}`);
+        });
+      }
+    });
+    return set;
+  }, [facturas]);
+
   const suministrosNoFacturados = React.useMemo(() => 
-    suministrosDelMes.filter(s => {
-      // Normalizar: true, "true", 1 -> true | false, "false", 0, undefined, null -> false
-      const esFacturado = s.facturado === true || s.facturado === "true" || s.facturado === 1;
-      return !esFacturado; // Solo NO facturados
-    }),
-    [suministrosDelMes]
+    suministrosDelMes.filter(s => 
+      !suministrosEnFacturas.has(`${s.clienteId}-${s.id}`)
+    ),
+    [suministrosDelMes, suministrosEnFacturas]
   );
   
   const suministrosFacturados = React.useMemo(() => 
-    suministrosDelMes.filter(s => {
-      // Normalizar: true, "true", 1 -> true
-      const esFacturado = s.facturado === true || s.facturado === "true" || s.facturado === 1;
-      return esFacturado; // Solo facturados
-    }),
-    [suministrosDelMes]
+    suministrosDelMes.filter(s => 
+      suministrosEnFacturas.has(`${s.clienteId}-${s.id}`)
+    ),
+    [suministrosDelMes, suministrosEnFacturas]
   );
 
   // CALCULAR TOTAL MES - Solo suma suministros NO facturados
@@ -137,30 +122,27 @@ export default function Comisiones() {
     console.log("═══════════════════════════════════");
     console.log("📊 DEBUG COMISIONES - RECALCULANDO");
     console.log("═══════════════════════════════════");
-    console.log("🗂️  Clientes cargados:", clientes.length);
+    console.log("🗂️  Facturas cargadas:", facturas.length);
     console.log("📦 Suministros del mes:", suministrosDelMes.length);
     console.log("❌ NO facturados:", suministrosNoFacturados.length);
     console.log("✅ FACTURADOS:", suministrosFacturados.length);
     console.log("💰 TOTAL MES:", `€${totalMes.toFixed(2)}`);
     console.log("═══════════════════════════════════");
     
-    // Detalle de cada suministro para debug
     if (suministrosDelMes.length > 0) {
       console.log("📋 Detalle de suministros:");
       suministrosDelMes.forEach((s, idx) => {
-        const normalizado = s.facturado === true || s.facturado === "true" || s.facturado === 1;
+        const estaEnFactura = suministrosEnFacturas.has(`${s.clienteId}-${s.id}`);
         console.log(`  ${idx + 1}. ${s.clienteNombre} - ${s.nombre}`);
-        console.log(`     ├─ facturado: ${s.facturado} (tipo: ${typeof s.facturado})`);
-        console.log(`     ├─ normalizado: ${normalizado ? '✅ FACTURADO' : '❌ NO FACTURADO'}`);
-        console.log(`     └─ comisión: €${s.comision}`);
+        console.log(`     ├─ Estado: ${estaEnFactura ? '✅ FACTURADO' : '❌ NO FACTURADO'}`);
+        console.log(`     └─ Comisión: €${s.comision}`);
       });
     }
     
-    // Advertencia si totalMes no se puso a 0 después de facturar
     if (suministrosFacturados.length > 0 && suministrosNoFacturados.length === 0) {
-      console.log("✅ CORRECTO: Todos los suministros están facturados, totalMes = €0");
+      console.log("✅ CORRECTO: Todos facturados, totalMes = €0");
     }
-  }, [clientes.length, suministrosDelMes, suministrosNoFacturados, suministrosFacturados, totalMes]);
+  }, [facturas.length, suministrosDelMes, suministrosNoFacturados, suministrosFacturados, totalMes, suministrosEnFacturas]);
 
   const mesesDisponibles = React.useMemo(() => 
     [...new Set(suministrosCerrados.map(s => s.mes_comision_suministro))]

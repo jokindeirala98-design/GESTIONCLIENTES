@@ -76,52 +76,9 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
 
   const generarFacturaMutation = useMutation({
     mutationFn: async ({ file_url, suministrosIds }) => {
-      console.log("🚀 INICIANDO GENERACIÓN DE FACTURA");
-      console.log("📦 Suministros a facturar:", JSON.stringify(suministrosIds, null, 2));
-      
-      // PASO 1: Obtener lista fresca de clientes
-      console.log("📥 Obteniendo lista actualizada de clientes...");
-      const clientesList = await base44.entities.Cliente.list();
-      console.log(`✅ ${clientesList.length} clientes obtenidos de BD`);
-      
-      // PASO 2: Actualizar cada suministro secuencialmente (no paralelo para evitar race conditions)
-      for (const suministroInfo of suministrosIds) {
-        const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
-        
-        if (!cliente) {
-          console.error(`❌ Cliente no encontrado: ${suministroInfo.cliente_id}`);
-          continue;
-        }
-        
-        console.log(`\n📝 Procesando: ${cliente.nombre_negocio}`);
-        console.log(`   Suministro ID: ${suministroInfo.suministro_id}`);
-        
-        const suministroOriginal = cliente.suministros.find(s => s.id === suministroInfo.suministro_id);
-        if (!suministroOriginal) {
-          console.error(`❌ Suministro no encontrado en cliente: ${suministroInfo.suministro_id}`);
-          continue;
-        }
-        
-        console.log(`   Estado actual facturado:`, suministroOriginal.facturado);
-        
-        const suministrosActualizados = cliente.suministros.map(s => {
-          if (s.id === suministroInfo.suministro_id) {
-            console.log(`   ✅ Marcando como facturado: true (boolean)`);
-            return { ...s, facturado: true };
-          }
-          return s;
-        });
-        
-        console.log(`   ⏳ Guardando en BD...`);
-        await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
-        console.log(`   ✅ Cliente actualizado en BD`);
-      }
-
-      console.log("\n✅ TODOS LOS SUMINISTROS MARCADOS COMO FACTURADOS");
-
-      // PASO 3: Crear la factura
-      console.log("\n📄 Creando registro de factura...");
-      const nuevaFactura = await base44.entities.Factura.create({
+      // Solo crear la factura - no tocar la entidad Cliente
+      // Los suministros facturados se calcularán dinámicamente en el frontend
+      await base44.entities.Factura.create({
         numero_factura: numeroFactura,
         fecha_creacion: fechaHoy,
         mes_comision: mesSeleccionado,
@@ -133,61 +90,15 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
         pdf_url: file_url,
         suministros_incluidos: suministrosIds
       });
-      console.log("✅ Factura creada:", nuevaFactura.id);
-      
-      return { success: true };
     },
     onSuccess: async () => {
-      console.log("\n🔄 SINCRONIZANDO FRONTEND CON BD...");
-      
-      // Invalidar todas las queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      queryClient.invalidateQueries({ queryKey: ['facturas'] });
-      
-      // Esperar a que las queries se refresquen completamente
-      console.log("⏳ Esperando refetch completo...");
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['clientes'], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['facturas'], type: 'active' })
-      ]);
-      
-      console.log("✅ REFETCH COMPLETADO");
-      
-      // Verificación exhaustiva
-      const clientesActualizados = queryClient.getQueryData(['clientes']);
-      console.log("\n🔍 VERIFICACIÓN FINAL:");
-      console.log(`   Total clientes en cache: ${clientesActualizados?.length || 0}`);
-      
-      const todosLosSuministros = clientesActualizados?.flatMap(c => 
-        (c.suministros || []).map(s => ({
-          cliente: c.nombre_negocio,
-          suministro: s.nombre || s.id,
-          facturado: s.facturado,
-          tipoFacturado: typeof s.facturado
-        }))
-      ) || [];
-      
-      const facturados = todosLosSuministros.filter(s => s.facturado === true);
-      console.log(`   Suministros facturados en cache: ${facturados.length}`);
-      
-      if (facturados.length > 0) {
-        console.log("\n   Detalle de facturados:");
-        facturados.forEach(s => {
-          console.log(`      - ${s.cliente} / ${s.suministro}: facturado=${s.facturado} (${s.tipoFacturado})`);
-        });
-      }
-      
+      await queryClient.invalidateQueries(['facturas']);
+      await queryClient.refetchQueries(['facturas']);
       toast.success("✅ Factura generada correctamente");
-      
-      // Pequeño delay antes de cerrar para asegurar que React procese los cambios
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      console.log("🚪 Cerrando diálogo\n");
       onClose();
     },
     onError: (error) => {
-      console.error("\n❌ ERROR CRÍTICO:", error);
-      console.error("Stack:", error.stack);
+      console.error("Error al generar factura:", error);
       toast.error("Error al generar la factura");
     }
   });
