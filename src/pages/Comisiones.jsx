@@ -45,13 +45,35 @@ export default function Comisiones() {
 
   const deleteFacturaMutation = useMutation({
     mutationFn: async (factura) => {
-      // Solo eliminar la factura, NO restaurar suministros (eso solo lo hace el admin)
+      // Restaurar los suministros (eliminar la propiedad 'facturado')
+      if (factura.suministros_incluidos) {
+        const clientesList = await base44.entities.Cliente.list();
+        
+        for (const suministroInfo of factura.suministros_incluidos) {
+          const cliente = clientesList.find(c => c.id === suministroInfo.cliente_id);
+          if (cliente) {
+            const suministrosActualizados = cliente.suministros.map(s => {
+              if (s.id === suministroInfo.suministro_id) {
+                // Eliminar la propiedad 'facturado' completamente
+                const { facturado, ...resto } = s;
+                return resto;
+              }
+              return s;
+            });
+            await base44.entities.Cliente.update(cliente.id, { suministros: suministrosActualizados });
+          }
+        }
+      }
+      
+      // Eliminar la factura
       await base44.entities.Factura.delete(factura.id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['facturas']);
-      queryClient.invalidateQueries(['clientes']);
-      toast.success("Factura eliminada");
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(['facturas']);
+      await queryClient.invalidateQueries(['clientes']);
+      await queryClient.refetchQueries(['clientes']);
+      await queryClient.refetchQueries(['facturas']);
+      toast.success("Factura eliminada y comisiones restauradas");
     },
   });
 
