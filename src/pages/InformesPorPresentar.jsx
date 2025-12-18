@@ -32,6 +32,7 @@ export default function InformesPorPresentar() {
     const saved = localStorage.getItem('informes-orden-manual');
     return saved ? JSON.parse(saved) : [];
   });
+  const [notasAdmin, setNotasAdmin] = useState({});
 
   useEffect(() => {
     const loadUser = async () => {
@@ -239,7 +240,8 @@ export default function InformesPorPresentar() {
             informe_final: {
               archivos: archivos,
               fecha_subida: new Date().toISOString(),
-              subido_por_email: user.email
+              subido_por_email: user.email,
+              notas_admin: notasAdmin[suministroId]?.trim() || undefined
             },
             comision: parseFloat(comision)
           };
@@ -298,6 +300,11 @@ export default function InformesPorPresentar() {
         return newState;
       });
       setComisionesPorSuministro(prev => {
+        const newState = { ...prev };
+        delete newState[suministroId];
+        return newState;
+      });
+      setNotasAdmin(prev => {
         const newState = { ...prev };
         delete newState[suministroId];
         return newState;
@@ -765,6 +772,21 @@ export default function InformesPorPresentar() {
                                                 </div>
                                               </div>
                                             ))}
+                                          </div>
+
+                                          {/* Campo de notas para el comercial */}
+                                          <div>
+                                            <Label htmlFor={`notas-${suministro.id}`} className="text-sm font-medium text-gray-700">
+                                              📝 Notas para el comercial (opcional)
+                                            </Label>
+                                            <textarea
+                                              id={`notas-${suministro.id}`}
+                                              value={notasAdmin[suministro.id] || ''}
+                                              onChange={(e) => setNotasAdmin(prev => ({ ...prev, [suministro.id]: e.target.value }))}
+                                              placeholder="Ej: Revisar página 3, ajustar comisión..."
+                                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent mt-1"
+                                              rows="2"
+                                            />
                                           </div>
 
                                           {/* Input comisión */}
