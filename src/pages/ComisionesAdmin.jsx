@@ -331,41 +331,59 @@ export default function ComisionesAdmin() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {suministrosDelMes.map(suministro => (
-                    <div 
-                      key={`${suministro.clienteId}-${suministro.id}`}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#004D9D] to-[#00AEEF] flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#004D9D]">
-                            {suministro.clienteNombre}
-                          </p>
-                          <p className="text-xs text-[#666666]">
-                            {suministro.nombre}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {suministro.comercialIniciales}
-                            </Badge>
-                            {suministro.fecha_cierre_suministro && (
-                              <span className="text-xs text-[#666666]">
-                                Cerrado: {format(new Date(suministro.fecha_cierre_suministro), "d 'de' MMMM", { locale: es })}
-                              </span>
-                            )}
+                  {suministrosDelMes.map(suministro => {
+                    // Verificar si este suministro está en alguna factura
+                    const estaFacturado = facturas.some(f => 
+                      f.suministros_incluidos?.some(s => 
+                        s.cliente_id === suministro.clienteId && s.suministro_id === suministro.id
+                      )
+                    );
+
+                    return (
+                      <div 
+                        key={`${suministro.clienteId}-${suministro.id}`}
+                        className={`flex items-center justify-between p-4 rounded-lg hover:bg-gray-100 transition-colors ${
+                          estaFacturado ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#004D9D] to-[#00AEEF] flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-[#004D9D]">
+                                {suministro.clienteNombre}
+                              </p>
+                              {estaFacturado && (
+                                <Badge className="bg-green-600 text-white text-xs">
+                                  ✓ Pagado
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-[#666666]">
+                              {suministro.nombre}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                {suministro.comercialIniciales}
+                              </Badge>
+                              {suministro.fecha_cierre_suministro && (
+                                <span className="text-xs text-[#666666]">
+                                  Cerrado: {format(new Date(suministro.fecha_cierre_suministro), "d 'de' MMMM", { locale: es })}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <p className={`text-xl font-bold ${estaFacturado ? 'text-green-700' : 'text-green-600'}`}>
+                            €{suministro.comision.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-green-600">
-                          €{suministro.comision.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   <div className="mt-6 pt-6 border-t-2 border-gray-300">
                     <div className="flex items-center justify-between">
@@ -481,7 +499,7 @@ export default function ComisionesAdmin() {
                   {mesesDelAño.map(mes => {
                     const suministrosMes = suministrosPorMesAño[mes];
                     const totalMesDet = suministrosMes.reduce((sum, s) => sum + (s.comision || 0), 0);
-                    
+
                     return (
                       <div key={mes} className="border rounded-lg overflow-hidden">
                         <div className="bg-gray-100 p-4 flex items-center justify-between">
@@ -498,24 +516,40 @@ export default function ComisionesAdmin() {
                           </div>
                         </div>
                         <div className="p-4 space-y-2">
-                          {suministrosMes.map(suministro => (
-                            <div 
-                              key={`${suministro.clienteId}-${suministro.id}`}
-                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {suministro.comercialIniciales}
-                                </Badge>
-                                <span className="text-sm font-medium text-[#004D9D]">
-                                  {suministro.clienteNombre} - {suministro.nombre}
+                          {suministrosMes.map(suministro => {
+                            // Verificar si este suministro está en alguna factura
+                            const estaFacturado = facturas.some(f => 
+                              f.suministros_incluidos?.some(s => 
+                                s.cliente_id === suministro.clienteId && s.suministro_id === suministro.id
+                              )
+                            );
+
+                            return (
+                              <div 
+                                key={`${suministro.clienteId}-${suministro.id}`}
+                                className={`flex items-center justify-between p-3 rounded-lg ${
+                                  estaFacturado ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {suministro.comercialIniciales}
+                                  </Badge>
+                                  <span className="text-sm font-medium text-[#004D9D]">
+                                    {suministro.clienteNombre} - {suministro.nombre}
+                                  </span>
+                                  {estaFacturado && (
+                                    <Badge className="bg-green-600 text-white text-xs">
+                                      ✓ Pagado
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className={`text-sm font-bold ${estaFacturado ? 'text-green-700' : 'text-green-600'}`}>
+                                  €{suministro.comision.toFixed(2)}
                                 </span>
                               </div>
-                              <span className="text-sm font-bold text-green-600">
-                                €{suministro.comision.toFixed(2)}
-                              </span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );
