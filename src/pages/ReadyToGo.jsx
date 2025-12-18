@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock } from "lucide-react";
+import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -15,6 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function ReadyToGo() {
   const navigate = useNavigate();
@@ -470,26 +475,63 @@ export default function ReadyToGo() {
                                   
                                   {/* Botones de descarga */}
                                   {informeValido ? (
-                                    <div className="flex flex-col gap-2">
-                                      {archivosValidos.map((archivo, idx) => (
-                                        <a
-                                          key={idx}
-                                          href={archivo.url}
-                                          download
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Button
-                                            size="sm"
-                                            className={`w-full text-xs ${
-                                              isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                              isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                            }`}
-                                          >
-                                            <Download className="w-3 h-3 mr-1" />
-                                            {archivo.nombre}
-                                          </Button>
-                                        </a>
-                                      ))}
+                                    <div className="space-y-2">
+                                      {/* Notas del admin si existen */}
+                                      {suministro.informe_final?.notas_admin && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
+                                          <div className="flex items-start gap-2">
+                                            <StickyNote className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                              <p className="text-xs font-semibold text-blue-800 mb-1">Nota del administrador:</p>
+                                              <p className="text-xs text-blue-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div className="flex flex-col gap-2">
+                                        {archivosValidos.map((archivo, idx) => (
+                                          <div key={idx} className="flex items-center gap-2">
+                                            <a
+                                              href={archivo.url}
+                                              download
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="flex-1"
+                                            >
+                                              <Button
+                                                size="sm"
+                                                className={`w-full text-xs ${
+                                                  isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
+                                                  isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+                                                }`}
+                                              >
+                                                <Download className="w-3 h-3 mr-1" />
+                                                {archivo.nombre}
+                                              </Button>
+                                            </a>
+                                            {suministro.informe_final?.notas_admin && (
+                                              <Popover>
+                                                <PopoverTrigger asChild>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="px-2"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                  >
+                                                    <StickyNote className="w-3 h-3 text-blue-600" />
+                                                  </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-80" onClick={(e) => e.stopPropagation()}>
+                                                  <div className="space-y-2">
+                                                    <h4 className="font-semibold text-sm text-blue-800">Nota del administrador</h4>
+                                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
+                                                  </div>
+                                                </PopoverContent>
+                                              </Popover>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
                                     </div>
                                   ) : (
                                     <Badge variant="outline" className="text-red-600 border-red-300 text-xs">
