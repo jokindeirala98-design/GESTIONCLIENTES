@@ -306,7 +306,7 @@ export default function DetalleCliente() {
     }
   };
 
-  const handleMarcarFirmado = () => {
+  const handleMarcarFirmado = async () => {
     if (window.confirm("¿Marcar este cliente como Firmado con éxito?")) {
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
@@ -323,6 +323,7 @@ export default function DetalleCliente() {
       });
       
       let updateData = { suministros: suministrosActualizados };
+      let aprobandoAhora = false;
 
       if (isAdmin && cliente.estado === "Pendiente de aprobación") {
         updateData = {
@@ -332,6 +333,7 @@ export default function DetalleCliente() {
           mes_comision: cliente.mes_comision || mesComision,
           aprobado_admin: true
         };
+        aprobandoAhora = true;
       } else if (isAdmin && (cliente.estado === "Informe listo" || cliente.estado === "Pendiente de firma")) {
         updateData = {
           ...updateData,
@@ -340,6 +342,7 @@ export default function DetalleCliente() {
           mes_comision: mesComision,
           aprobado_admin: true
         };
+        aprobandoAhora = true;
       } else {
         updateData = {
           ...updateData,
@@ -354,6 +357,19 @@ export default function DetalleCliente() {
         id: clienteId,
         data: updateData
       });
+
+      // Si es admin y está aprobando, notificar a contabilidad
+      if (aprobandoAhora) {
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: "iranzu@voltisenergia.com",
+            subject: `Cierre verificado - ${cliente.nombre_negocio}`,
+            body: `${cliente.nombre_negocio} ha sido cerrado con éxito y está listo para contabilidad.`
+          });
+        } catch (error) {
+          console.error("Error enviando notificación a contabilidad:", error);
+        }
+      }
     }
   };
 
