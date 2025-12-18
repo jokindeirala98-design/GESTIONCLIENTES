@@ -77,24 +77,6 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Verificar si se acaba de añadir teléfono y crear evento automático
-    const telefonoAntes = cliente.telefono;
-    const telefonoAhora = formData.telefono;
-    const seAnadioTelefono = (!telefonoAntes || !telefonoAntes.trim()) && (telefonoAhora && telefonoAhora.trim());
-    
-    let eventosActualizados = cliente.eventos || [];
-    if (seAnadioTelefono) {
-      const fecha7Dias = new Date();
-      fecha7Dias.setDate(fecha7Dias.getDate() + 7);
-      eventosActualizados.push({
-        id: Date.now().toString(),
-        fecha: fecha7Dias.toISOString().split('T')[0],
-        descripcion: "Recordar que envíe facturas",
-        color: "amarillo",
-        tipo_automatico: "recordar_facturas"
-      });
-    }
-
     let zonaId = formData.zona_id;
 
     if (!zonaId && formData.zona_nombre) {
@@ -134,8 +116,7 @@ export default function EditClienteDialog({ open, onClose, cliente }) {
         telefono: formData.telefono,
         email: formData.email,
         zona_id: zonaId,
-        anotaciones: formData.anotaciones,
-        eventos: eventosActualizados
+        anotaciones: formData.anotaciones
       }
     });
   };

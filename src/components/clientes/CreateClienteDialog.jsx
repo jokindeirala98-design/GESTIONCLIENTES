@@ -111,20 +111,6 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
         iniciales = propietario.full_name.substring(0, 3).toUpperCase();
       }
     }
-    
-    // Crear evento automático si hay teléfono
-    const eventos = [];
-    if (formData.telefono && formData.telefono.trim()) {
-      const fecha7Dias = new Date();
-      fecha7Dias.setDate(fecha7Dias.getDate() + 7);
-      eventos.push({
-        id: Date.now().toString(),
-        fecha: fecha7Dias.toISOString().split('T')[0],
-        descripcion: "Recordar que envíe facturas",
-        color: "amarillo",
-        tipo_automatico: "recordar_facturas"
-      });
-    }
 
     const dataToSave = {
       nombre_negocio: formData.nombre_negocio,
@@ -137,7 +123,7 @@ export default function CreateClienteDialog({ open, onClose, user, zonaPreselecc
       propietario_iniciales: iniciales,
       estado: "Primer contacto",
       facturas: [],
-      eventos: eventos
+      eventos: []
     };
 
     createMutation.mutate(dataToSave);
