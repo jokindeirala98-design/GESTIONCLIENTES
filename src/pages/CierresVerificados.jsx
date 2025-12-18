@@ -73,16 +73,16 @@ export default function CierresVerificados() {
     const fechaCierre = cliente.fecha_cierre || new Date().toISOString().split('T')[0];
     const mesComision = fechaCierre.substring(0, 7);
 
-    // Actualizar cada suministro cerrado con su mes de comisión
+    // Marcar TODOS los suministros NO cerrados como cerrados con su mes de comisión
     const suministrosActualizados = (cliente.suministros || []).map(s => {
-      if (s.cerrado) {
-        return {
-          ...s,
-          mes_comision_suministro: mesComision,
-          fecha_cierre_suministro: fechaCierre
-        };
-      }
-      return s;
+      if (s.cerrado) return s; // Ya cerrado, mantener datos originales
+      // Cerrar suministros que aún no lo están
+      return {
+        ...s,
+        cerrado: true,
+        fecha_cierre_suministro: fechaCierre,
+        mes_comision_suministro: mesComision
+      };
     });
 
     updateMutation.mutate({
