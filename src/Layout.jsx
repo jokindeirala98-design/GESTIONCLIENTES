@@ -114,6 +114,11 @@ export default function Layout({ children }) {
       icon: FileText,
     },
     {
+      title: "Centro de Control",
+      url: createPageUrl("CentroControlInformes"),
+      icon: FileText,
+    },
+    {
       title: "Zonas",
       url: createPageUrl("Zonas"),
       icon: MapPin,

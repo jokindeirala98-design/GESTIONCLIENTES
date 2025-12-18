@@ -13,6 +13,7 @@ import Calendario from './pages/Calendario';
 import CorregirIniciales from './pages/CorregirIniciales';
 import ComisionesAdmin from './pages/ComisionesAdmin';
 import Incidencias from './pages/Incidencias';
+import CentroControlInformes from './pages/CentroControlInformes';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "CorregirIniciales": CorregirIniciales,
     "ComisionesAdmin": ComisionesAdmin,
     "Incidencias": Incidencias,
+    "CentroControlInformes": CentroControlInformes,
 }
 
 export const pagesConfig = {
