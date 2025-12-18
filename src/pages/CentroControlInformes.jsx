@@ -41,10 +41,11 @@ export default function CentroControlInformes() {
   const [user, setUser] = useState(null);
   const [filtroComercial, setFiltroComercial] = useState("todos");
   const [filtroTipoFactura, setFiltroTipoFactura] = useState("todos");
-  const [filtroFechaDesde, setFiltroFechaDesde] = useState("");
-  const [filtroFechaHasta, setFiltroFechaHasta] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [busquedaLibre, setBusquedaLibre] = useState("");
+  const [vistaKPI, setVistaKPI] = useState("todos"); // "todos", "hoy", "retraso"
   const [editandoInforme, setEditandoInforme] = useState(null);
-  const [archivosNuevos, setArchivosNuevos] = useState([]);
+  const [archivoNuevo, setArchivoNuevo] = useState(null);
   const [notasAdmin, setNotasAdmin] = useState("");
   const [comisionEditada, setComisionEditada] = useState("");
 
@@ -113,34 +114,103 @@ export default function CentroControlInformes() {
         }))
     );
 
-  // Aplicar filtros
-  const suministrosFiltrados = suministrosConInforme.filter(s => {
-    if (filtroComercial !== "todos" && s.comercialEmail !== filtroComercial) return false;
-    if (filtroTipoFactura !== "todos" && s.tipo_factura !== filtroTipoFactura) return false;
+  // Clientes con retraso: estado "Facturas presentadas" hace más de 2 semanas SIN informe
+  const clientesConRetraso = clientes.filter(c => {
+    if (c.estado !== "Facturas presentadas") return false;
     
-    if (filtroFechaDesde && s.fechaSubida) {
-      const fechaSub = new Date(s.fechaSubida);
-      const fechaDesde = new Date(filtroFechaDesde);
-      if (fechaSub < fechaDesde) return false;
+    // Buscar la fecha más antigua de facturas subidas
+    const fechasFacturas = (c.suministros || [])
+      .flatMap(s => s.facturas || [])
+      .map(f => f.fecha_subida)
+      .filter(Boolean);
+    
+    if (fechasFacturas.length === 0) return false;
+    
+    const fechaMasAntigua = new Date(Math.min(...fechasFacturas.map(f => new Date(f).getTime())));
+    const diasDesdeFactura = Math.floor((new Date() - fechaMasAntigua) / (1000 * 60 * 60 * 24));
+    
+    return diasDesdeFactura > 14;
+  });
+
+  // Función para parsear búsqueda libre
+  const parsearBusqueda = (texto) => {
+    const hoy = new Date();
+    const textoLower = texto.toLowerCase().trim();
+    
+    // Detectar "esta semana"
+    if (textoLower.includes("esta semana")) {
+      const inicioSemana = new Date(hoy);
+      inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1);
+      inicioSemana.setHours(0, 0, 0, 0);
+      return { tipo: "fecha", fechaInicio: inicioSemana, fechaFin: hoy };
     }
     
-    if (filtroFechaHasta && s.fechaSubida) {
-      const fechaSub = new Date(s.fechaSubida);
-      const fechaHasta = new Date(filtroFechaHasta);
-      fechaHasta.setHours(23, 59, 59);
-      if (fechaSub > fechaHasta) return false;
+    // Detectar "este mes"
+    if (textoLower.includes("este mes")) {
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      return { tipo: "fecha", fechaInicio: inicioMes, fechaFin: hoy };
+    }
+    
+    // Detectar formato DD/MM
+    const matchFecha = texto.match(/(\d{1,2})\/(\d{1,2})/);
+    if (matchFecha) {
+      const dia = parseInt(matchFecha[1]);
+      const mes = parseInt(matchFecha[2]) - 1;
+      const fecha = new Date(hoy.getFullYear(), mes, dia);
+      return { tipo: "fecha", fechaExacta: fecha };
+    }
+    
+    // Detectar tipo de factura
+    if (texto === "2.0" || texto === "3.0" || texto === "6.1") {
+      return { tipo: "tipoFactura", valor: texto };
+    }
+    
+    // Por defecto, buscar en nombre de cliente
+    return { tipo: "texto", valor: texto };
+  };
+
+  // Aplicar filtros
+  let suministrosFiltrados = suministrosConInforme.filter(s => {
+    if (filtroComercial !== "todos" && s.comercialEmail !== filtroComercial) return false;
+    if (filtroTipoFactura !== "todos" && s.tipo_factura !== filtroTipoFactura) return false;
+    if (filtroEstado !== "todos" && s.clienteEstado !== filtroEstado) return false;
+    
+    // Búsqueda libre
+    if (busquedaLibre) {
+      const busqueda = parsearBusqueda(busquedaLibre);
+      
+      if (busqueda.tipo === "texto") {
+        if (!s.clienteNombre.toLowerCase().includes(busqueda.valor.toLowerCase())) return false;
+      } else if (busqueda.tipo === "tipoFactura") {
+        if (s.tipo_factura !== busqueda.valor) return false;
+      } else if (busqueda.tipo === "fecha") {
+        if (!s.fechaSubida) return false;
+        const fechaSub = new Date(s.fechaSubida);
+        
+        if (busqueda.fechaExacta) {
+          const mismaFecha = fechaSub.toDateString() === busqueda.fechaExacta.toDateString();
+          if (!mismaFecha) return false;
+        } else {
+          if (fechaSub < busqueda.fechaInicio || fechaSub > busqueda.fechaFin) return false;
+        }
+      }
     }
     
     return true;
   });
 
+  // Filtrar por vista de KPI
+  if (vistaKPI === "hoy") {
+    const hoy = new Date().toDateString();
+    suministrosFiltrados = suministrosFiltrados.filter(s => 
+      s.fechaSubida && new Date(s.fechaSubida).toDateString() === hoy
+    );
+  }
+
   // KPIs
-  const totalComisiones = suministrosFiltrados.reduce((sum, s) => sum + (s.comision || 0), 0);
-  const informesConRetraso = suministrosFiltrados.filter(s => {
-    if (!s.fechaSubida) return false;
-    const diasDesdeSubida = Math.floor((new Date() - new Date(s.fechaSubida)) / (1000 * 60 * 60 * 24));
-    return diasDesdeSubida > 30;
-  }).length;
+  const informesHoy = suministrosConInforme.filter(s => 
+    s.fechaSubida && new Date(s.fechaSubida).toDateString() === new Date().toDateString()
+  ).length;
 
   const handleEliminarInforme = async (suministro) => {
     if (!window.confirm(`¿Eliminar el informe de "${suministro.clienteNombre} - ${suministro.nombre}"?\n\nEl cliente volverá a "Facturas presentadas".`)) {
@@ -194,7 +264,7 @@ export default function CentroControlInformes() {
     setEditandoInforme(suministro);
     setNotasAdmin(suministro.informe_final?.notas_admin || "");
     setComisionEditada(suministro.comision?.toString() || "");
-    setArchivosNuevos([]);
+    setArchivoNuevo(null);
   };
 
   const handleGuardarEdicion = async () => {
@@ -205,18 +275,13 @@ export default function CentroControlInformes() {
 
     let archivosActualizados = editandoInforme.informe_final?.archivos || [];
 
-    // Subir nuevos archivos si hay
-    if (archivosNuevos.length > 0) {
-      const archivosSubidos = await Promise.all(
-        archivosNuevos.map(async (file) => {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          return {
-            nombre: file.name,
-            url: file_url
-          };
-        })
-      );
-      archivosActualizados = [...archivosActualizados, ...archivosSubidos];
+    // Si hay un archivo nuevo para sustituir, reemplazar todos los archivos
+    if (archivoNuevo) {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: archivoNuevo });
+      archivosActualizados = [{
+        nombre: archivoNuevo.name,
+        url: file_url
+      }];
     }
 
     const nuevosSuministros = cliente.suministros.map(s => {
@@ -246,7 +311,7 @@ export default function CentroControlInformes() {
     });
 
     setEditandoInforme(null);
-    setArchivosNuevos([]);
+    setArchivoNuevo(null);
   };
 
   const estadoColors = {
@@ -275,40 +340,52 @@ export default function CentroControlInformes() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="border-2 border-green-200 bg-green-50">
+        <Card 
+          className={`border-2 transition-all cursor-pointer ${vistaKPI === 'todos' ? 'border-blue-500 bg-blue-100' : 'border-blue-200 bg-blue-50 hover:bg-blue-100'}`}
+          onClick={() => setVistaKPI('todos')}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-700 mb-1">Comisiones en Gestión</p>
-                <p className="text-3xl font-bold text-green-600">€{totalComisiones.toFixed(2)}</p>
+                <p className="text-sm text-blue-700 mb-1">Informes Totales</p>
+                <p className="text-3xl font-bold text-blue-600">{suministrosConInforme.length}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-blue-200 bg-blue-50">
+        <Card 
+          className={`border-2 transition-all cursor-pointer ${vistaKPI === 'hoy' ? 'border-green-500 bg-green-100' : 'border-green-200 bg-green-50 hover:bg-green-100'}`}
+          onClick={() => setVistaKPI('hoy')}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-700 mb-1">Informes Totales</p>
-                <p className="text-3xl font-bold text-blue-600">{suministrosFiltrados.length}</p>
+                <p className="text-sm text-green-700 mb-1">Informes de Hoy</p>
+                <p className="text-3xl font-bold text-green-600">{informesHoy}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-red-200 bg-red-50">
+        <Card 
+          className={`border-2 transition-all cursor-pointer ${vistaKPI === 'retraso' ? 'border-red-500 bg-red-100' : 'border-red-200 bg-red-50 hover:bg-red-100'}`}
+          onClick={() => {
+            setVistaKPI('retraso');
+            navigate(createPageUrl("InformesPorPresentar"));
+          }}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-700 mb-1">Con Retraso (&gt;30 días)</p>
-                <p className="text-3xl font-bold text-red-600">{informesConRetraso}</p>
+                <p className="text-sm text-red-700 mb-1">Con Retraso (&gt;2 semanas)</p>
+                <p className="text-3xl font-bold text-red-600">{clientesConRetraso.length}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-white" />
@@ -318,78 +395,19 @@ export default function CentroControlInformes() {
         </Card>
       </div>
 
-      {/* Filtros */}
+      {/* Buscador */}
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-[#004D9D]">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Comercial</label>
-              <Select value={filtroComercial} onValueChange={setFiltroComercial}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos los comerciales" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  {comerciales.map(c => (
-                    <SelectItem key={c.email} value={c.email}>
-                      {c.full_name} ({c.iniciales})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Factura</label>
-              <Select value={filtroTipoFactura} onValueChange={setFiltroTipoFactura}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos los tipos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="6.1">6.1 (Alta prioridad)</SelectItem>
-                  <SelectItem value="3.0">3.0 (Media prioridad)</SelectItem>
-                  <SelectItem value="2.0">2.0 (Baja prioridad)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Desde</label>
-              <Input
-                type="date"
-                value={filtroFechaDesde}
-                onChange={(e) => setFiltroFechaDesde(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Hasta</label>
-              <Input
-                type="date"
-                value={filtroFechaHasta}
-                onChange={(e) => setFiltroFechaHasta(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {(filtroComercial !== "todos" || filtroTipoFactura !== "todos" || filtroFechaDesde || filtroFechaHasta) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFiltroComercial("todos");
-                setFiltroTipoFactura("todos");
-                setFiltroFechaDesde("");
-                setFiltroFechaHasta("");
-              }}
-              className="mt-4"
-            >
-              Limpiar filtros
-            </Button>
+        <CardContent className="p-6">
+          <Input
+            placeholder="Buscar por cliente, fecha (10/12, esta semana, este mes) o tipo de factura (2.0, 3.0, 6.1)..."
+            value={busquedaLibre}
+            onChange={(e) => setBusquedaLibre(e.target.value)}
+            className="text-base"
+          />
+          {busquedaLibre && (
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Ejemplos: "Panadería", "10/12", "23/11", "esta semana", "este mes", "2.0", "3.0", "6.1"
+            </p>
           )}
         </CardContent>
       </Card>
@@ -407,10 +425,52 @@ export default function CentroControlInformes() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cliente / Suministro</TableHead>
-                    <TableHead>Comercial</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Tipo</TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-2">
+                        Cliente / Suministro
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <Select value={filtroComercial} onValueChange={setFiltroComercial}>
+                        <SelectTrigger className="h-8 border-0 focus:ring-0">
+                          <SelectValue placeholder="Comercial" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          {comerciales.map(c => (
+                            <SelectItem key={c.email} value={c.email}>
+                              {c.iniciales}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableHead>
+                    <TableHead>
+                      <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+                        <SelectTrigger className="h-8 border-0 focus:ring-0">
+                          <SelectValue placeholder="Estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="Informe listo">Informe listo</SelectItem>
+                          <SelectItem value="Pendiente de firma">Pendiente de firma</SelectItem>
+                          <SelectItem value="Pendiente de aprobación">Pendiente de aprobación</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableHead>
+                    <TableHead>
+                      <Select value={filtroTipoFactura} onValueChange={setFiltroTipoFactura}>
+                        <SelectTrigger className="h-8 border-0 focus:ring-0">
+                          <SelectValue placeholder="Tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="6.1">6.1</SelectItem>
+                          <SelectItem value="3.0">3.0</SelectItem>
+                          <SelectItem value="2.0">2.0</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableHead>
                     <TableHead>Comisión</TableHead>
                     <TableHead>Fecha Subida</TableHead>
                     <TableHead>Días</TableHead>
@@ -549,36 +609,44 @@ export default function CentroControlInformes() {
 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Añadir más archivos PDF
+                Informe actual
               </label>
-              <Input
-                type="file"
-                accept="application/pdf"
-                multiple
-                onChange={(e) => setArchivosNuevos(Array.from(e.target.files || []))}
-              />
-              {archivosNuevos.length > 0 && (
-                <p className="text-sm text-green-600 mt-2">
-                  ✓ {archivosNuevos.length} archivo(s) seleccionado(s)
-                </p>
-              )}
-            </div>
-
-            {editandoInforme?.informe_final?.archivos && editandoInforme.informe_final.archivos.length > 0 && (
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Archivos actuales:
-                </label>
-                <div className="space-y-1">
+              {editandoInforme?.informe_final?.archivos && editandoInforme.informe_final.archivos.length > 0 ? (
+                <div className="space-y-3">
                   {editandoInforme.informe_final.archivos.map((archivo, idx) => (
-                    <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      {archivo.nombre}
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium">{archivo.nombre}</span>
+                      </div>
+                      <a href={archivo.url} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" variant="outline">
+                          Ver PDF
+                        </Button>
+                      </a>
                     </div>
                   ))}
+                  
+                  <div className="mt-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Sustituir informe
+                    </label>
+                    <Input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => setArchivoNuevo(e.target.files?.[0] || null)}
+                    />
+                    {archivoNuevo && (
+                      <p className="text-sm text-orange-600 mt-2">
+                        ⚠️ Al guardar, el informe actual será reemplazado por: {archivoNuevo.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-gray-500">No hay informe adjuntado</p>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
