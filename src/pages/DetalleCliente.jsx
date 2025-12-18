@@ -698,38 +698,34 @@ export default function DetalleCliente() {
                           </p>
                         </div>
                         {archivosValidos.length > 0 ? (
-                          <div className="flex gap-2">
-                            {archivosValidos.map((archivo, idx) => (
-                              <a
-                                key={idx}
-                                href={archivo.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download
-                              >
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  📄 {archivo.nombre || `Informe ${idx + 1}`}
-                                </Button>
-                              </a>
-                            ))}
-                          </div>
-                        ) : (
+                        <div className="flex gap-2">
+                        {archivosValidos.map((archivo, idx) => (
                           <a
-                            href={suministro.informe_final.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download
+                            key={idx}
+                            href={archivo.url}
+                            download={archivo.nombre || `Informe_${idx + 1}.pdf`}
                           >
                             <Button
                               size="sm"
                               className="bg-green-600 hover:bg-green-700"
                             >
-                              📄 {suministro.informe_final.nombre || 'Descargar Informe'}
+                              📄 {archivo.nombre || `Informe ${idx + 1}`}
                             </Button>
                           </a>
+                        ))}
+                        </div>
+                        ) : (
+                        <a
+                        href={suministro.informe_final.url}
+                        download={suministro.informe_final.nombre || 'Informe.pdf'}
+                        >
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          📄 {suministro.informe_final.nombre || 'Descargar Informe'}
+                        </Button>
+                        </a>
                         )}
                       </div>
                     </CardContent>

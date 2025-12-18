@@ -494,7 +494,7 @@ export default function ReadyToGo() {
                                           <div key={idx} className="flex items-center gap-2">
                                             <a
                                               href={archivo.url}
-                                              download
+                                              download={archivo.nombre}
                                               onClick={(e) => e.stopPropagation()}
                                               className="flex-1"
                                             >

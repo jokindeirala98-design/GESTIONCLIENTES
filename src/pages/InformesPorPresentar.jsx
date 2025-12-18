@@ -338,6 +338,66 @@ export default function InformesPorPresentar() {
     }));
   };
 
+  const handleEliminarInforme = async (cliente, suministroId) => {
+    if (!window.confirm("¿Eliminar el informe de este suministro? Podrás volver a subirlo.")) {
+      return;
+    }
+
+    setGuardando(prev => ({ ...prev, [suministroId]: true }));
+
+    try {
+      const nuevosSuministros = cliente.suministros.map(s => {
+        if (s.id === suministroId) {
+          // Eliminar informe_final
+          const { informe_final, ...suministroLimpio } = s;
+          return suministroLimpio;
+        }
+        return s;
+      });
+
+      // Recalcular estado según suministros restantes
+      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
+      
+      const todosConInforme = suministrosActivos.every(s => {
+        if (!s.informe_final) return false;
+        const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+          a && a.url && a.url.trim() !== '' && a.url !== 'null'
+        );
+        const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+        return tieneArchivosValidos || tieneUrlValida;
+      });
+
+      const todosConFacturas = suministrosActivos.every(s => 
+        s.facturas && s.facturas.length > 0
+      );
+
+      const nuevoEstado = todosConInforme ? "Informe listo" : 
+                          todosConFacturas ? "Facturas presentadas" : 
+                          cliente.estado;
+
+      const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
+
+      await updateClienteMutation.mutateAsync({
+        id: cliente.id,
+        data: {
+          suministros: nuevosSuministros,
+          estado: nuevoEstado,
+          comision: comisionTotal
+        }
+      });
+
+      await queryClient.invalidateQueries(['clientes']);
+      await queryClient.invalidateQueries(['cliente', cliente.id]);
+      
+      toast.success("Informe eliminado correctamente");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al eliminar el informe");
+    } finally {
+      setGuardando(prev => ({ ...prev, [suministroId]: false }));
+    }
+  };
+
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
@@ -693,7 +753,25 @@ export default function InformesPorPresentar() {
 
                                   {suministro.informe_final ? (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                      <p className="text-sm text-green-700 font-semibold mb-2">✓ Informe(s) subido(s)</p>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-sm text-green-700 font-semibold">✓ Informe(s) subido(s)</p>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => handleEliminarInforme(cliente, suministro.id)}
+                                          disabled={guardando[suministro.id]}
+                                          className="text-red-600 hover:bg-red-50 hover:text-red-700 text-xs h-7"
+                                        >
+                                          <X className="w-3 h-3 mr-1" />
+                                          Eliminar
+                                        </Button>
+                                      </div>
+                                      {suministro.informe_final.notas_admin && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
+                                          <p className="text-xs font-semibold text-blue-800">📝 Nota:</p>
+                                          <p className="text-xs text-blue-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
+                                        </div>
+                                      )}
                                       <div className="space-y-2">
                                         {suministro.informe_final.archivos ? (
                                           suministro.informe_final.archivos.map((archivo, idx) => (
@@ -701,9 +779,7 @@ export default function InformesPorPresentar() {
                                               <span className="text-sm text-green-600 truncate">{archivo.nombre}</span>
                                               <a
                                                 href={archivo.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                download
+                                                download={archivo.nombre}
                                                 className="text-sm text-green-600 hover:underline flex items-center gap-1"
                                               >
                                                 <Download className="w-4 h-4" />
@@ -716,9 +792,7 @@ export default function InformesPorPresentar() {
                                             <span className="text-sm text-green-600">{suministro.informe_final.nombre}</span>
                                             <a
                                               href={suministro.informe_final.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              download
+                                              download={suministro.informe_final.nombre}
                                               className="text-sm text-green-600 hover:underline flex items-center gap-1"
                                             >
                                               <Download className="w-4 h-4" />
