@@ -357,6 +357,51 @@ export default function DetalleCliente() {
     }
   };
 
+  const handleEliminarInforme = (suministroId) => {
+    if (!window.confirm("¿Eliminar el informe de este suministro? El cliente volverá a 'Facturas presentadas'.")) {
+      return;
+    }
+
+    const nuevosSuministros = cliente.suministros.map(s => {
+      if (s.id === suministroId) {
+        const { informe_final, ...suministroLimpio } = s;
+        return suministroLimpio;
+      }
+      return s;
+    });
+
+    // Recalcular estado
+    const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
+    
+    const todosConInforme = suministrosActivos.every(s => {
+      if (!s.informe_final) return false;
+      const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+        a && a.url && a.url.trim() !== '' && a.url !== 'null'
+      );
+      const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+      return tieneArchivosValidos || tieneUrlValida;
+    });
+
+    const todosConFacturas = suministrosActivos.every(s => 
+      s.facturas && s.facturas.length > 0
+    );
+
+    const nuevoEstado = todosConInforme ? "Informe listo" : 
+                        todosConFacturas ? "Facturas presentadas" : 
+                        cliente.estado;
+
+    const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
+
+    updateMutation.mutate({
+      id: clienteId,
+      data: {
+        suministros: nuevosSuministros,
+        estado: nuevoEstado,
+        comision: comisionTotal
+      }
+    });
+  };
+
   const handleChangePropietario = (nuevoEmail) => {
     const nuevoPropietario = comerciales.find(u => u.email === nuevoEmail);
     if (!nuevoPropietario) return;
@@ -684,9 +729,9 @@ export default function DetalleCliente() {
                   a && a.url && a.url.trim() !== '' && a.url !== 'null'
                 ) || [];
                 const tieneUrlValida = suministro.informe_final?.url && suministro.informe_final.url.trim() !== '' && suministro.informe_final.url !== 'null';
-                
+
                 if (archivosValidos.length === 0 && !tieneUrlValida) return null;
-                
+
                 return (
                   <Card key={suministro.id} className="bg-white">
                     <CardContent className="p-4">
@@ -696,37 +741,56 @@ export default function DetalleCliente() {
                           <p className="text-sm text-gray-600">
                             {suministro.comision && `Comisión: ${suministro.comision}€`}
                           </p>
+                          {suministro.informe_final?.notas_admin && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mt-2">
+                              <p className="text-xs font-semibold text-blue-800">📝 Nota del admin:</p>
+                              <p className="text-xs text-blue-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
+                            </div>
+                          )}
                         </div>
-                        {archivosValidos.length > 0 ? (
-                        <div className="flex gap-2">
-                        {archivosValidos.map((archivo, idx) => (
-                          <a
-                            key={idx}
-                            href={archivo.url}
-                            download={archivo.nombre || `Informe_${idx + 1}.pdf`}
-                          >
+                        <div className="flex flex-col gap-2">
+                          {archivosValidos.length > 0 ? (
+                            <div className="flex gap-2">
+                              {archivosValidos.map((archivo, idx) => (
+                                <a
+                                  key={idx}
+                                  href={archivo.url}
+                                  download={archivo.nombre || `Informe_${idx + 1}.pdf`}
+                                >
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    📄 {archivo.nombre || `Informe ${idx + 1}`}
+                                  </Button>
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <a
+                              href={suministro.informe_final.url}
+                              download={suministro.informe_final.nombre || 'Informe.pdf'}
+                            >
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                📄 {suministro.informe_final.nombre || 'Descargar Informe'}
+                              </Button>
+                            </a>
+                          )}
+                          {isAdmin && (
                             <Button
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700"
+                              variant="outline"
+                              onClick={() => handleEliminarInforme(suministro.id)}
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
                             >
-                              📄 {archivo.nombre || `Informe ${idx + 1}`}
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Eliminar
                             </Button>
-                          </a>
-                        ))}
+                          )}
                         </div>
-                        ) : (
-                        <a
-                        href={suministro.informe_final.url}
-                        download={suministro.informe_final.nombre || 'Informe.pdf'}
-                        >
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          📄 {suministro.informe_final.nombre || 'Descargar Informe'}
-                        </Button>
-                        </a>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
