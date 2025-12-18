@@ -108,6 +108,13 @@ export default function CierresVerificados() {
           body: `¡Enhorabuena! El cierre de ${cliente.nombre_negocio} ha sido aprobado.\n\nComisión: €${cliente.comision?.toFixed(2) || '0.00'}\n\nLa comisión ya está contabilizada en tu panel.`
         });
       }
+
+      // Notificar a contabilidad
+      await base44.integrations.Core.SendEmail({
+        to: "iranzu@voltisenergia.com",
+        subject: `Cierre verificado - ${cliente.nombre_negocio}`,
+        body: `${cliente.nombre_negocio} ha sido cerrado con éxito y está listo para contabilidad.`
+      });
     } catch (error) {
       console.error("Error enviando notificación:", error);
     }
