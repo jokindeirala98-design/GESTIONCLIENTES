@@ -224,6 +224,9 @@ export default function InformesPorPresentar() {
     setGuardando(prev => ({ ...prev, [suministroId]: true }));
 
     try {
+      const fechaCierre = new Date().toISOString().split('T')[0];
+      const mesComision = fechaCierre.substring(0, 7);
+      
       const nuevosSuministros = cliente.suministros.map(s => {
         if (s.id === suministroId) {
           // Construir el array archivos con los archivos subidos
@@ -232,7 +235,7 @@ export default function InformesPorPresentar() {
             url: f.fileUrl
           }));
 
-          // CRÍTICO: Solo crear informe_final con archivos válidos
+          // CRÍTICO: Solo crear informe_final con archivos válidos Y asignar mes de comisión
           return {
             ...s,
             informe_final: {
@@ -240,7 +243,10 @@ export default function InformesPorPresentar() {
               fecha_subida: new Date().toISOString(),
               subido_por_email: user.email
             },
-            comision: parseFloat(comision)
+            comision: parseFloat(comision),
+            cerrado: true,
+            fecha_cierre_suministro: fechaCierre,
+            mes_comision_suministro: mesComision
           };
         }
         
