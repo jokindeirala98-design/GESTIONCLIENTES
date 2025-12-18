@@ -116,14 +116,22 @@ export default function GenerarFacturaDialog({ open, onClose, mesSeleccionado, t
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
-      // Descargar PDF
+      // Descargar PDF (compatible con móvil)
       const fileName = `Factura_${numeroFactura}_${user.full_name.replace(/\s+/g, '_')}.pdf`;
-      pdf.save(fileName);
-
-      // Convertir a blob y subir
       const pdfBlob = pdf.output('blob');
-      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       
+      // Crear URL y descargar
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+
+      // Convertir a File y subir
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
       // Guardar en base de datos con los suministros incluidos
