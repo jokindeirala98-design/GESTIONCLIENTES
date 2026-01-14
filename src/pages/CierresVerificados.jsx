@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, X, Building2, MapPin, User, Phone, DollarSign, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { recalcularRappelComercial, aplicarActualizacionesRappel } from "../utils/rappelComisiones";
+import { recalcularRappelComercial, aplicarActualizacionesRappel } from "../components/utils/rappelComisiones";
 
 export default function CierresVerificados() {
   const navigate = useNavigate();

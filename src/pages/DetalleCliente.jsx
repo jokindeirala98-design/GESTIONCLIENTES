@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { recalcularRappelComercial, aplicarActualizacionesRappel } from "../utils/rappelComisiones";
+import { recalcularRappelComercial, aplicarActualizacionesRappel } from "../components/utils/rappelComisiones";
 
 const estadoColors = {
   "Primer contacto": "bg-gray-500",

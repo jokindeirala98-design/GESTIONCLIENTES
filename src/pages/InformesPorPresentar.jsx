@@ -16,7 +16,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { esGas, esLuz20, recalcularRappelComercial } from "../utils/rappelComisiones";
+import { esGas, esLuz20, recalcularRappelComercial } from "../components/utils/rappelComisiones";
 
 export default function InformesPorPresentar() {
   const navigate = useNavigate();
