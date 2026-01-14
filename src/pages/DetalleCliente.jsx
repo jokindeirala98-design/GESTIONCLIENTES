@@ -357,8 +357,14 @@ export default function DetalleCliente() {
       // RAPPEL: Recalcular comisiones de gas/luz 2.0 para este comercial en este mes
       try {
         const todosClientes = await base44.entities.Cliente.list();
+        
+        // CRÍTICO: Incluir el cliente actual con sus suministros actualizados en la lista
+        const clientesConActualizacion = todosClientes.map(c => 
+          c.id === clienteId ? { ...cliente, suministros: updateData.suministros } : c
+        );
+        
         const { actualizacionesPorCliente } = recalcularRappelComercial(
-          todosClientes,
+          clientesConActualizacion,
           cliente.propietario_email,
           mesComision
         );
@@ -371,6 +377,9 @@ export default function DetalleCliente() {
           );
           updateData.suministros = clienteConRappel.suministros;
           updateData.comision = clienteConRappel.comision;
+        } else {
+          // Si no hay actualizaciones de rappel, calcular comisión total manualmente
+          updateData.comision = updateData.suministros.reduce((sum, s) => sum + (s.comision || 0), 0);
         }
 
         // Actualizar OTROS clientes del mismo comercial que necesiten recalcular rappel
@@ -388,6 +397,8 @@ export default function DetalleCliente() {
         }
       } catch (error) {
         console.error("Error al recalcular rappel:", error);
+        // En caso de error, calcular comisión total manualmente
+        updateData.comision = updateData.suministros.reduce((sum, s) => sum + (s.comision || 0), 0);
       }
 
       updateMutation.mutate({

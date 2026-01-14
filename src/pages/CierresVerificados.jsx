@@ -88,8 +88,13 @@ export default function CierresVerificados() {
 
     // RAPPEL: Recalcular comisiones de gas/luz 2.0
     try {
+      // CRÍTICO: Incluir el cliente actual con sus suministros actualizados en la lista
+      const clientesConActualizacion = clientes.map(c => 
+        c.id === cliente.id ? { ...cliente, suministros: suministrosActualizados } : c
+      );
+      
       const { actualizacionesPorCliente } = recalcularRappelComercial(
-        clientes,
+        clientesConActualizacion,
         cliente.propietario_email,
         mesComision
       );
