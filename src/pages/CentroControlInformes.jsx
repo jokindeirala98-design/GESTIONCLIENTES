@@ -34,6 +34,7 @@ import { FileText, Trash2, Edit, AlertTriangle, TrendingUp, DollarSign, Clock, E
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { esGas, esLuz20 } from "../components/utils/rappelComisiones";
 
 export default function CentroControlInformes() {
   const navigate = useNavigate();
@@ -586,13 +587,32 @@ export default function CentroControlInformes() {
               <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Comisión (€)
               </label>
-              <Input
-                type="number"
-                step="0.01"
-                value={comisionEditada}
-                onChange={(e) => setComisionEditada(e.target.value)}
-                placeholder="0.00"
-              />
+              {(esGas(editandoInforme?.nombre) || esLuz20(editandoInforme?.nombre, editandoInforme?.tipo_factura)) ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    ℹ️ Comisión automática por rappel - Se calcula al firmar el cliente
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Puedes editarla manualmente si es necesario
+                  </p>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={comisionEditada}
+                    onChange={(e) => setComisionEditada(e.target.value)}
+                    placeholder="0.00"
+                    className="mt-2"
+                  />
+                </div>
+              ) : (
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={comisionEditada}
+                  onChange={(e) => setComisionEditada(e.target.value)}
+                  placeholder="0.00"
+                />
+              )}
             </div>
 
             <div>
