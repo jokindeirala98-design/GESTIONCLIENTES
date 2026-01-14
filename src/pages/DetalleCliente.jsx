@@ -26,6 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { recalcularRappelComercial, aplicarActualizacionesRappel } from "../utils/rappelComisiones";
 
 const estadoColors = {
   "Primer contacto": "bg-gray-500",
@@ -351,6 +352,42 @@ export default function DetalleCliente() {
           mes_comision: mesComision,
           aprobado_admin: false
         };
+      }
+
+      // RAPPEL: Recalcular comisiones de gas/luz 2.0 para este comercial en este mes
+      try {
+        const todosClientes = await base44.entities.Cliente.list();
+        const { actualizacionesPorCliente } = recalcularRappelComercial(
+          todosClientes,
+          cliente.propietario_email,
+          mesComision
+        );
+
+        // Aplicar actualizaciones de rappel si las hay para este cliente
+        if (actualizacionesPorCliente[clienteId]) {
+          const clienteConRappel = aplicarActualizacionesRappel(
+            { ...cliente, suministros: updateData.suministros },
+            actualizacionesPorCliente[clienteId]
+          );
+          updateData.suministros = clienteConRappel.suministros;
+          updateData.comision = clienteConRappel.comision;
+        }
+
+        // Actualizar OTROS clientes del mismo comercial que necesiten recalcular rappel
+        for (const [otroClienteId, actualizacionesSuministros] of Object.entries(actualizacionesPorCliente)) {
+          if (otroClienteId !== clienteId) {
+            const otroCliente = todosClientes.find(c => c.id === otroClienteId);
+            if (otroCliente) {
+              const clienteActualizado = aplicarActualizacionesRappel(otroCliente, actualizacionesSuministros);
+              await base44.entities.Cliente.update(otroClienteId, {
+                suministros: clienteActualizado.suministros,
+                comision: clienteActualizado.comision
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error al recalcular rappel:", error);
       }
 
       updateMutation.mutate({

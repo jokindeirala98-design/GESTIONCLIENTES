@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, X, Building2, MapPin, User, Phone, DollarSign, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { recalcularRappelComercial, aplicarActualizacionesRappel } from "../utils/rappelComisiones";
 
 export default function CierresVerificados() {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export default function CierresVerificados() {
     const mesComision = fechaCierre.substring(0, 7);
 
     // Marcar TODOS los suministros NO cerrados como cerrados con su mes de comisión
-    const suministrosActualizados = (cliente.suministros || []).map(s => {
+    let suministrosActualizados = (cliente.suministros || []).map(s => {
       if (s.cerrado) return s; // Ya cerrado, mantener datos originales
       // Cerrar suministros que aún no lo están
       return {
@@ -85,6 +86,42 @@ export default function CierresVerificados() {
       };
     });
 
+    // RAPPEL: Recalcular comisiones de gas/luz 2.0
+    try {
+      const { actualizacionesPorCliente } = recalcularRappelComercial(
+        clientes,
+        cliente.propietario_email,
+        mesComision
+      );
+
+      // Aplicar actualizaciones de rappel si las hay para este cliente
+      if (actualizacionesPorCliente[cliente.id]) {
+        const clienteConRappel = aplicarActualizacionesRappel(
+          { ...cliente, suministros: suministrosActualizados },
+          actualizacionesPorCliente[cliente.id]
+        );
+        suministrosActualizados = clienteConRappel.suministros;
+      }
+
+      // Actualizar OTROS clientes del mismo comercial que necesiten recalcular rappel
+      for (const [otroClienteId, actualizacionesSuministros] of Object.entries(actualizacionesPorCliente)) {
+        if (otroClienteId !== cliente.id) {
+          const otroCliente = clientes.find(c => c.id === otroClienteId);
+          if (otroCliente) {
+            const clienteActualizado = aplicarActualizacionesRappel(otroCliente, actualizacionesSuministros);
+            await base44.entities.Cliente.update(otroClienteId, {
+              suministros: clienteActualizado.suministros,
+              comision: clienteActualizado.comision
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error al recalcular rappel:", error);
+    }
+
+    const comisionTotal = suministrosActualizados.reduce((sum, s) => sum + (s.comision || 0), 0);
+
     updateMutation.mutate({
       id: cliente.id,
       data: {
@@ -92,7 +129,8 @@ export default function CierresVerificados() {
         fecha_cierre: fechaCierre,
         mes_comision: mesComision,
         aprobado_admin: true,
-        suministros: suministrosActualizados
+        suministros: suministrosActualizados,
+        comision: comisionTotal
       }
     });
 

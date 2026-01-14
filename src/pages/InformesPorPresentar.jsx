@@ -16,6 +16,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { esGas, esLuz20, recalcularRappelComercial } from "../utils/rappelComisiones";
 
 export default function InformesPorPresentar() {
   const navigate = useNavigate();
@@ -210,14 +211,18 @@ export default function InformesPorPresentar() {
 
   const handleGuardarCambios = async (cliente, suministroId) => {
     const informeSubido = informesSubidos[suministroId];
-    const comision = comisionesPorSuministro[suministroId];
+    const suministro = cliente.suministros.find(s => s.id === suministroId);
     
     if (!informeSubido || !informeSubido.files || informeSubido.files.length === 0) {
       toast.error("Selecciona al menos un archivo");
       return;
     }
     
-    if (!comision || isNaN(parseFloat(comision))) {
+    // Para gas y luz 2.0, NO solicitar comisión (se calcula automáticamente)
+    const esGasOLuz20 = esGas(suministro?.nombre) || esLuz20(suministro?.nombre, suministro?.tipo_factura);
+    const comision = comisionesPorSuministro[suministroId];
+    
+    if (!esGasOLuz20 && (!comision || isNaN(parseFloat(comision)))) {
       toast.error("Introduce una comisión válida");
       return;
     }
@@ -243,7 +248,8 @@ export default function InformesPorPresentar() {
               subido_por_email: user.email,
               notas_admin: notasAdmin[suministroId]?.trim() || undefined
             },
-            comision: parseFloat(comision)
+            // Para gas/luz 2.0, comisión se calculará al cerrar. Para otros, usar la ingresada
+            comision: esGasOLuz20 ? 0 : parseFloat(comision)
           };
         }
         
@@ -863,22 +869,32 @@ export default function InformesPorPresentar() {
                                             />
                                           </div>
 
-                                          {/* Input comisión */}
-                                          <div>
-                                            <Label htmlFor={`comision-${suministro.id}`} className="text-sm font-medium text-gray-700">
-                                              Comisión (€) *
-                                            </Label>
-                                            <Input
-                                              id={`comision-${suministro.id}`}
-                                              type="number"
-                                              step="0.01"
-                                              min="0"
-                                              placeholder="Ej: 150.00"
-                                              value={comisionesPorSuministro[suministro.id] || ""}
-                                              onChange={(e) => handleComisionChange(suministro.id, e.target.value)}
-                                              className="mt-1"
-                                            />
-                                          </div>
+                                          {/* Input comisión - solo para NO gas/luz 2.0 */}
+                                          {!esGas(suministro.nombre) && !esLuz20(suministro.nombre, suministro.tipo_factura) && (
+                                           <div>
+                                             <Label htmlFor={`comision-${suministro.id}`} className="text-sm font-medium text-gray-700">
+                                               Comisión (€) *
+                                             </Label>
+                                             <Input
+                                               id={`comision-${suministro.id}`}
+                                               type="number"
+                                               step="0.01"
+                                               min="0"
+                                               placeholder="Ej: 150.00"
+                                               value={comisionesPorSuministro[suministro.id] || ""}
+                                               onChange={(e) => handleComisionChange(suministro.id, e.target.value)}
+                                               className="mt-1"
+                                             />
+                                           </div>
+                                          )}
+
+                                          {(esGas(suministro.nombre) || esLuz20(suministro.nombre, suministro.tipo_factura)) && (
+                                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                             <p className="text-sm text-blue-700">
+                                               ℹ️ Comisión automática por rappel {esGas(suministro.nombre) ? '(Gas)' : '(Luz 2.0)'} - Se calculará al firmar el cliente
+                                             </p>
+                                           </div>
+                                          )}
 
                                           {/* Botón guardar */}
                                           <Button
