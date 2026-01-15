@@ -414,13 +414,29 @@ export default function InformesPorPresentar() {
     }, "2.0");
   };
 
-  // Solo mostrar clientes que realmente necesitan informes (estado "Facturas presentadas")
-  // Excluir los que ya tienen todos los informes ("Informe listo" y posteriores)
-  let clientesFacturasPresent = clientes.filter(
-    c => c.estado === "Facturas presentadas" && 
-         c.suministros && 
-         c.suministros.length > 0
-  );
+  // Mostrar clientes en "Facturas presentadas" O clientes que tengan al menos un suministro sin informe
+  let clientesFacturasPresent = clientes.filter(c => {
+    if (!c.suministros || c.suministros.length === 0) return false;
+
+    // Solo considerar suministros NO cerrados
+    const suministrosActivos = c.suministros.filter(s => !s.cerrado);
+    if (suministrosActivos.length === 0) return false;
+
+    // Si está en "Facturas presentadas", mostrar
+    if (c.estado === "Facturas presentadas") return true;
+
+    // Si está en estados más avanzados, mostrar SOLO si tiene suministros sin informe
+    const tieneAlgunSuministroSinInforme = suministrosActivos.some(s => {
+      if (!s.informe_final) return true; // No tiene informe
+      const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+        a && a.url && a.url.trim() !== '' && a.url !== 'null'
+      );
+      const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+      return !tieneArchivosValidos && !tieneUrlValida; // No tiene ninguna URL válida
+    });
+
+    return tieneAlgunSuministroSinInforme;
+  });
 
   // Aplicar filtro de prioridad
   if (filtroPrioridad !== "all") {
