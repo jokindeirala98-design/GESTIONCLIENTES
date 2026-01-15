@@ -5,17 +5,17 @@
 /**
  * Determina si un suministro es de tipo Gas
  */
-export const esGas = (nombreSuministro) => {
-  if (!nombreSuministro) return false;
-  return nombreSuministro.toLowerCase().includes('gas');
+export const esGas = (suministro) => {
+  if (!suministro) return false;
+  return suministro.tipo_rappel === 'gas';
 };
 
 /**
  * Determina si un suministro es de tipo Luz 2.0
  */
-export const esLuz20 = (nombreSuministro, tipoFactura) => {
-  if (!nombreSuministro || tipoFactura !== '2.0') return false;
-  return nombreSuministro.toLowerCase().includes('luz');
+export const esLuz20 = (suministro) => {
+  if (!suministro) return false;
+  return suministro.tipo_rappel === 'luz_20';
 };
 
 /**
@@ -61,13 +61,13 @@ export const recalcularRappelComercial = (todosClientes, comercialEmail, mesComi
       // Solo considerar suministros cerrados en el mes específico
       if (suministro.mes_comision_suministro !== mesComision) return;
       
-      if (esGas(suministro.nombre)) {
+      if (esGas(suministro)) {
         suministrosGas.push({
           clienteId: cliente.id,
           suministroId: suministro.id,
           nombre: suministro.nombre
         });
-      } else if (esLuz20(suministro.nombre, suministro.tipo_factura)) {
+      } else if (esLuz20(suministro)) {
         suministrosLuz20.push({
           clienteId: cliente.id,
           suministroId: suministro.id,

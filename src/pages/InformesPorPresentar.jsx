@@ -24,6 +24,7 @@ export default function InformesPorPresentar() {
   const [user, setUser] = useState(null);
   const [clienteExpandido, setClienteExpandido] = useState(null);
   const [comisionesPorSuministro, setComisionesPorSuministro] = useState({});
+  const [tipoRappelPorSuministro, setTipoRappelPorSuministro] = useState({}); // "manual", "gas", "luz_20"
   const [informesSubidos, setInformesSubidos] = useState({}); // {suministroId: {files: [{file, fileUrl, fileName}]}}
   const [sincronizando, setSincronizando] = useState(false);
   const [guardando, setGuardando] = useState({});
@@ -206,6 +207,11 @@ export default function InformesPorPresentar() {
       delete newState[suministroId];
       return newState;
     });
+    setTipoRappelPorSuministro(prev => {
+      const newState = { ...prev };
+      delete newState[suministroId];
+      return newState;
+    });
     toast.info("Informes cancelados");
   };
 
@@ -218,11 +224,11 @@ export default function InformesPorPresentar() {
       return;
     }
     
-    // Para gas y luz 2.0, NO solicitar comisión (se calcula automáticamente)
-    const esGasOLuz20 = esGas(suministro?.nombre) || esLuz20(suministro?.nombre, suministro?.tipo_factura);
+    const tipoRappel = tipoRappelPorSuministro[suministroId] || "manual";
     const comision = comisionesPorSuministro[suministroId];
     
-    if (!esGasOLuz20 && (!comision || isNaN(parseFloat(comision)))) {
+    // Validar comisión solo si es manual
+    if (tipoRappel === "manual" && (!comision || isNaN(parseFloat(comision)))) {
       toast.error("Introduce una comisión válida");
       return;
     }
@@ -248,8 +254,9 @@ export default function InformesPorPresentar() {
               subido_por_email: user.email,
               notas_admin: notasAdmin[suministroId]?.trim() || undefined
             },
-            // Para gas/luz 2.0, comisión se calculará al cerrar. Para otros, usar la ingresada
-            comision: esGasOLuz20 ? 0 : parseFloat(comision)
+            // Comisión y tipo_rappel según selección del admin
+            comision: tipoRappel === "manual" ? parseFloat(comision) : 0,
+            tipo_rappel: tipoRappel === "manual" ? null : tipoRappel
           };
         }
         
@@ -306,6 +313,11 @@ export default function InformesPorPresentar() {
         return newState;
       });
       setComisionesPorSuministro(prev => {
+        const newState = { ...prev };
+        delete newState[suministroId];
+        return newState;
+      });
+      setTipoRappelPorSuministro(prev => {
         const newState = { ...prev };
         delete newState[suministroId];
         return newState;
@@ -885,8 +897,50 @@ export default function InformesPorPresentar() {
                                             />
                                           </div>
 
-                                          {/* Input comisión - solo para NO gas/luz 2.0 */}
-                                          {!esGas(suministro.nombre) && !esLuz20(suministro.nombre, suministro.tipo_factura) && (
+                                          {/* Selector de tipo de comisión */}
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                              Tipo de comisión *
+                                            </Label>
+                                            <div className="space-y-2">
+                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                  type="radio"
+                                                  name={`tipo-rappel-${suministro.id}`}
+                                                  value="manual"
+                                                  checked={(tipoRappelPorSuministro[suministro.id] || "manual") === "manual"}
+                                                  onChange={(e) => setTipoRappelPorSuministro(prev => ({ ...prev, [suministro.id]: e.target.value }))}
+                                                  className="w-4 h-4 text-purple-600"
+                                                />
+                                                <span className="text-sm text-gray-700">Manual</span>
+                                              </label>
+                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                  type="radio"
+                                                  name={`tipo-rappel-${suministro.id}`}
+                                                  value="gas"
+                                                  checked={tipoRappelPorSuministro[suministro.id] === "gas"}
+                                                  onChange={(e) => setTipoRappelPorSuministro(prev => ({ ...prev, [suministro.id]: e.target.value }))}
+                                                  className="w-4 h-4 text-purple-600"
+                                                />
+                                                <span className="text-sm text-gray-700">Rappel Gas</span>
+                                              </label>
+                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                  type="radio"
+                                                  name={`tipo-rappel-${suministro.id}`}
+                                                  value="luz_20"
+                                                  checked={tipoRappelPorSuministro[suministro.id] === "luz_20"}
+                                                  onChange={(e) => setTipoRappelPorSuministro(prev => ({ ...prev, [suministro.id]: e.target.value }))}
+                                                  className="w-4 h-4 text-purple-600"
+                                                />
+                                                <span className="text-sm text-gray-700">Rappel Luz 2.0</span>
+                                              </label>
+                                            </div>
+                                          </div>
+
+                                          {/* Input comisión - solo si es manual */}
+                                          {(tipoRappelPorSuministro[suministro.id] || "manual") === "manual" && (
                                            <div>
                                              <Label htmlFor={`comision-${suministro.id}`} className="text-sm font-medium text-gray-700">
                                                Comisión (€) *
@@ -904,10 +958,11 @@ export default function InformesPorPresentar() {
                                            </div>
                                           )}
 
-                                          {(esGas(suministro.nombre) || esLuz20(suministro.nombre, suministro.tipo_factura)) && (
+                                          {/* Mensaje informativo para rappel */}
+                                          {tipoRappelPorSuministro[suministro.id] && tipoRappelPorSuministro[suministro.id] !== "manual" && (
                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                              <p className="text-sm text-blue-700">
-                                               ℹ️ Comisión automática por rappel {esGas(suministro.nombre) ? '(Gas)' : '(Luz 2.0)'} - Se calculará al firmar el cliente
+                                               ℹ️ Comisión automática por rappel {tipoRappelPorSuministro[suministro.id] === 'gas' ? '(Gas)' : '(Luz 2.0)'} - Se calculará al firmar el cliente
                                              </p>
                                            </div>
                                           )}
