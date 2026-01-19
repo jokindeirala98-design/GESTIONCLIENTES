@@ -356,6 +356,24 @@ export default function InformesPorPresentar() {
     }));
   };
 
+  const handleDescargarArchivo = async (url, nombre) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = nombre || 'archivo';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Error al descargar:', error);
+      window.open(url, '_blank');
+    }
+  };
+
   const handleEliminarInforme = async (cliente, suministroId) => {
     if (!window.confirm("¿Eliminar el informe de este suministro? Podrás volver a subirlo.")) {
       return;
@@ -771,14 +789,13 @@ export default function InformesPorPresentar() {
                                           <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded border">
                                             <FileText className="w-4 h-4 text-blue-600" />
                                             <span className="flex-1 truncate">{factura.nombre}</span>
-                                            <a
-                                              href={factura.url}
-                                              download={factura.nombre}
+                                            <button
+                                              onClick={() => handleDescargarArchivo(factura.url, factura.nombre)}
                                               className="text-blue-600 hover:underline flex items-center gap-1"
                                             >
                                               <Download className="w-4 h-4" />
                                               Descargar
-                                            </a>
+                                            </button>
                                           </div>
                                         ))}
                                       </div>
