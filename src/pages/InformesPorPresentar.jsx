@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/collapsible";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { esGas, esLuz20, recalcularRappelComercial, aplicarActualizacionesRappel } from "../components/utils/rappelComisiones";
+import YaEsClienteDialog from "../components/informes/YaEsClienteDialog";
 
 export default function InformesPorPresentar() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function InformesPorPresentar() {
     return saved ? JSON.parse(saved) : [];
   });
   const [notasAdmin, setNotasAdmin] = useState({});
+  const [yaEsClienteDialog, setYaEsClienteDialog] = useState({ open: false, cliente: null, suministroId: null });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -391,12 +393,17 @@ export default function InformesPorPresentar() {
     }
   };
 
-  const handleYaEsCliente = async (cliente, suministroId) => {
-    const comision = window.prompt("Introduce la comisión para este suministro (€):");
-    if (!comision || isNaN(parseFloat(comision))) {
-      toast.error("Comisión inválida");
-      return;
-    }
+  const openYaEsClienteDialog = (cliente, suministroId) => {
+    setYaEsClienteDialog({ open: true, cliente, suministroId });
+  };
+
+  const closeYaEsClienteDialog = () => {
+    setYaEsClienteDialog({ open: false, cliente: null, suministroId: null });
+  };
+
+  const handleYaEsClienteConfirm = async ({ tipoComision, comision, tipoRappel }) => {
+    const { cliente, suministroId } = yaEsClienteDialog;
+    closeYaEsClienteDialog();
 
     const fechaCierre = new Date().toISOString().split('T')[0];
     const mesComision = fechaCierre.substring(0, 7);
@@ -410,7 +417,8 @@ export default function InformesPorPresentar() {
             cerrado: true,
             fecha_cierre_suministro: fechaCierre,
             mes_comision_suministro: mesComision,
-            comision: parseFloat(comision)
+            comision: tipoComision === "manual" ? comision : 0,
+            tipo_rappel: tipoRappel
           };
         }
         return s;
@@ -979,12 +987,12 @@ export default function InformesPorPresentar() {
                                         <p className="text-sm text-green-700 font-semibold">✓ Informe(s) subido(s)</p>
                                         <div className="flex gap-2">
                                           <Button
-                                            size="sm"
-                                            onClick={() => handleYaEsCliente(cliente, suministro.id)}
-                                            disabled={guardando[suministro.id]}
-                                            className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+                                           size="sm"
+                                           onClick={() => openYaEsClienteDialog(cliente, suministro.id)}
+                                           disabled={guardando[suministro.id]}
+                                           className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
                                           >
-                                            ✓ Ya es cliente
+                                           ✓ Ya es cliente
                                           </Button>
                                           <Button
                                             size="sm"
@@ -1045,7 +1053,7 @@ export default function InformesPorPresentar() {
                                         <p className="text-sm font-semibold text-purple-900">📤 Subir informe para este suministro</p>
                                         <Button
                                           size="sm"
-                                          onClick={() => handleYaEsCliente(cliente, suministro.id)}
+                                          onClick={() => openYaEsClienteDialog(cliente, suministro.id)}
                                           disabled={guardando[suministro.id]}
                                           className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
                                         >
@@ -1272,6 +1280,17 @@ export default function InformesPorPresentar() {
     </Droppable>
   </DragDropContext>
       )}
+
+      <YaEsClienteDialog
+        open={yaEsClienteDialog.open}
+        onClose={closeYaEsClienteDialog}
+        onConfirm={handleYaEsClienteConfirm}
+        suministroNombre={
+          yaEsClienteDialog.suministroId && yaEsClienteDialog.cliente
+            ? yaEsClienteDialog.cliente.suministros?.find(s => s.id === yaEsClienteDialog.suministroId)?.nombre
+            : ""
+        }
+      />
     </div>
   );
 }
