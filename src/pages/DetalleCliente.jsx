@@ -762,6 +762,22 @@ export default function DetalleCliente() {
                 )}
               </>
             )}
+
+            {isAdmin && cliente.estado === "Rechazado" && (
+              <Button
+                onClick={() => {
+                  if (window.confirm("¿Cambiar a Facturas presentadas para volver a procesar?")) {
+                    updateMutation.mutate({
+                      id: clienteId,
+                      data: { estado: "Facturas presentadas" }
+                    });
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                🔄 Volver a Facturas Presentadas
+              </Button>
+            )}
             
             {cliente.estado === "Firmado con éxito" && cliente.aprobado_admin === true && (
               <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4">
