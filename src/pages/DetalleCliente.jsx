@@ -185,11 +185,20 @@ export default function DetalleCliente() {
       }
 
       // 3. Si se aprueba un cierre (admin marca como aprobado), crear eventos de feedback
-      if (data.aprobado_admin === true && cliente.aprobado_admin !== true && data.fecha_cierre) {
-        const fechaCierre = new Date(data.fecha_cierre);
+      // O si el estado cambia a "Firmado con éxito", crear eventos de feedback
+      const estaAprobandoCierre = data.aprobado_admin === true && cliente.aprobado_admin !== true;
+      const cambiaAFirmado = data.estado === "Firmado con éxito" && cliente.estado !== "Firmado con éxito";
+      
+      if ((estaAprobandoCierre || cambiaAFirmado) && (data.fecha_cierre || cliente.fecha_cierre)) {
+        const fechaCierre = new Date(data.fecha_cierre || cliente.fecha_cierre);
         
         // Eliminar evento "recordar_cierre" si existe
         eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_cierre");
+        
+        // Eliminar eventos de feedback previos para evitar duplicados
+        eventosActualizados = eventosActualizados.filter(e => 
+          !['feedback_2meses', 'feedback_6meses', 'feedback_1año'].includes(e.tipo_automatico)
+        );
 
         // Crear eventos de feedback
         const fecha2Meses = new Date(fechaCierre);

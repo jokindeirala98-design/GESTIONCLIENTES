@@ -16,7 +16,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { esGas, esLuz20, recalcularRappelComercial } from "../components/utils/rappelComisiones";
+import { esGas, esLuz20, recalcularRappelComercial, aplicarActualizacionesRappel } from "../components/utils/rappelComisiones";
 
 export default function InformesPorPresentar() {
   const navigate = useNavigate();
@@ -140,10 +140,10 @@ export default function InformesPorPresentar() {
     if (!files || files.length === 0) return;
     
     const informesActuales = informesSubidos[suministroId]?.files || [];
-    const remaining = 2 - informesActuales.length;
+    const remaining = 5 - informesActuales.length;
     
     if (remaining <= 0) {
-      toast.error("Máximo 2 archivos por suministro");
+      toast.error("Máximo 5 archivos por suministro");
       return;
     }
     
@@ -374,6 +374,164 @@ export default function InformesPorPresentar() {
     }
   };
 
+  const handleIgnorarCliente = async (clienteId) => {
+    if (!window.confirm("¿Ignorar este cliente? Desaparecerá de la lista pero mantendrá su estado actual.")) {
+      return;
+    }
+
+    try {
+      await updateClienteMutation.mutateAsync({
+        id: clienteId,
+        data: { estado: "Ignorado con mucho éxito" }
+      });
+      toast.success("Cliente ignorado");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al ignorar cliente");
+    }
+  };
+
+  const handleYaEsCliente = async (cliente, suministroId) => {
+    const comision = window.prompt("Introduce la comisión para este suministro (€):");
+    if (!comision || isNaN(parseFloat(comision))) {
+      toast.error("Comisión inválida");
+      return;
+    }
+
+    const fechaCierre = new Date().toISOString().split('T')[0];
+    const mesComision = fechaCierre.substring(0, 7);
+
+    try {
+      // Marcar suministro como cerrado
+      const nuevosSuministros = cliente.suministros.map(s => {
+        if (s.id === suministroId) {
+          return {
+            ...s,
+            cerrado: true,
+            fecha_cierre_suministro: fechaCierre,
+            mes_comision_suministro: mesComision,
+            comision: parseFloat(comision)
+          };
+        }
+        return s;
+      });
+
+      // Verificar si TODOS los suministros están cerrados
+      const todosCerrados = nuevosSuministros.every(s => s.cerrado);
+      const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
+
+      let updateData = {
+        suministros: nuevosSuministros,
+        comision: comisionTotal
+      };
+
+      // Si todos cerrados → Firmado con éxito
+      if (todosCerrados) {
+        // Crear eventos de feedback
+        const eventosActualizados = [...(cliente.eventos || [])];
+        
+        const fecha2Meses = new Date(fechaCierre);
+        fecha2Meses.setMonth(fecha2Meses.getMonth() + 2);
+        eventosActualizados.push({
+          id: `${Date.now()}_2m`,
+          fecha: fecha2Meses.toISOString().split('T')[0],
+          descripcion: "Preguntar por feedback",
+          color: "amarillo",
+          tipo_automatico: "feedback_2meses"
+        });
+
+        const fecha6Meses = new Date(fechaCierre);
+        fecha6Meses.setMonth(fecha6Meses.getMonth() + 6);
+        eventosActualizados.push({
+          id: `${Date.now()}_6m`,
+          fecha: fecha6Meses.toISOString().split('T')[0],
+          descripcion: "Preguntar por feedback",
+          color: "amarillo",
+          tipo_automatico: "feedback_6meses"
+        });
+
+        const fecha1Año = new Date(fechaCierre);
+        fecha1Año.setFullYear(fecha1Año.getFullYear() + 1);
+        eventosActualizados.push({
+          id: `${Date.now()}_1y`,
+          fecha: fecha1Año.toISOString().split('T')[0],
+          descripcion: "Preguntar por feedback",
+          color: "amarillo",
+          tipo_automatico: "feedback_1año"
+        });
+
+        updateData = {
+          ...updateData,
+          estado: "Firmado con éxito",
+          fecha_cierre: fechaCierre,
+          mes_comision: mesComision,
+          aprobado_admin: true,
+          eventos: eventosActualizados
+        };
+      }
+
+      // Recalcular rappel si es necesario
+      const todosClientes = await base44.entities.Cliente.list();
+      const clientesConActualizacion = todosClientes.map(c => 
+        c.id === cliente.id ? { ...cliente, suministros: updateData.suministros } : c
+      );
+      
+      const { actualizacionesPorCliente } = recalcularRappelComercial(
+        clientesConActualizacion,
+        cliente.propietario_email,
+        mesComision
+      );
+
+      // Aplicar actualizaciones de rappel
+      if (actualizacionesPorCliente[cliente.id]) {
+        const clienteConRappel = aplicarActualizacionesRappel(
+          { ...cliente, suministros: updateData.suministros },
+          actualizacionesPorCliente[cliente.id]
+        );
+        updateData.suministros = clienteConRappel.suministros;
+        updateData.comision = clienteConRappel.comision;
+      }
+
+      await updateClienteMutation.mutateAsync({
+        id: cliente.id,
+        data: updateData
+      });
+
+      // Actualizar otros clientes afectados por rappel
+      for (const [otroClienteId, actualizacionesSuministros] of Object.entries(actualizacionesPorCliente)) {
+        if (otroClienteId !== cliente.id) {
+          const otroCliente = todosClientes.find(c => c.id === otroClienteId);
+          if (otroCliente) {
+            const clienteActualizado = aplicarActualizacionesRappel(otroCliente, actualizacionesSuministros);
+            await base44.entities.Cliente.update(otroClienteId, {
+              suministros: clienteActualizado.suministros,
+              comision: clienteActualizado.comision
+            });
+          }
+        }
+      }
+
+      // Notificar a contabilidad si todos cerrados
+      if (todosCerrados) {
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: "iranzu@voltisenergia.com",
+            subject: `Cierre verificado - ${cliente.nombre_negocio}`,
+            body: `${cliente.nombre_negocio} ha sido cerrado con éxito y está listo para contabilidad.`
+          });
+        } catch (error) {
+          console.error("Error enviando notificación:", error);
+        }
+      }
+
+      await queryClient.invalidateQueries(['clientes']);
+      toast.success(todosCerrados ? "Cliente cerrado con éxito" : "Suministro cerrado");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al procesar el cierre");
+    }
+  };
+
   const handleEliminarInforme = async (cliente, suministroId) => {
     if (!window.confirm("¿Eliminar el informe de este suministro? Podrás volver a subirlo.")) {
       return;
@@ -445,8 +603,10 @@ export default function InformesPorPresentar() {
   };
 
   // Mostrar clientes en "Facturas presentadas" O clientes que tengan al menos un suministro sin informe
+  // EXCLUIR clientes con estado "Ignorado con mucho éxito"
   let clientesFacturasPresent = clientes.filter(c => {
     if (!c.suministros || c.suministros.length === 0) return false;
+    if (c.estado === "Ignorado con mucho éxito") return false;
 
     // Solo considerar suministros NO cerrados
     const suministrosActivos = c.suministros.filter(s => !s.cerrado);
@@ -757,6 +917,17 @@ export default function InformesPorPresentar() {
                               📅 {primeraFechaFactura}
                             </span>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleIgnorarCliente(cliente.id);
+                            }}
+                            className="text-gray-600 hover:bg-gray-100"
+                          >
+                            Ignorar
+                          </Button>
                           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                         </div>
                       </div>
@@ -806,16 +977,26 @@ export default function InformesPorPresentar() {
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                       <div className="flex items-center justify-between mb-2">
                                         <p className="text-sm text-green-700 font-semibold">✓ Informe(s) subido(s)</p>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => handleEliminarInforme(cliente, suministro.id)}
-                                          disabled={guardando[suministro.id]}
-                                          className="text-red-600 hover:bg-red-50 hover:text-red-700 text-xs h-7"
-                                        >
-                                          <X className="w-3 h-3 mr-1" />
-                                          Eliminar
-                                        </Button>
+                                        <div className="flex gap-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() => handleYaEsCliente(cliente, suministro.id)}
+                                            disabled={guardando[suministro.id]}
+                                            className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+                                          >
+                                            ✓ Ya es cliente
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleEliminarInforme(cliente, suministro.id)}
+                                            disabled={guardando[suministro.id]}
+                                            className="text-red-600 hover:bg-red-50 hover:text-red-700 text-xs h-7"
+                                          >
+                                            <X className="w-3 h-3 mr-1" />
+                                            Eliminar
+                                          </Button>
+                                        </div>
                                       </div>
                                       {suministro.informe_final.notas_admin && (
                                         <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
@@ -1032,7 +1213,7 @@ export default function InformesPorPresentar() {
                                           >
                                             <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2" />
                                             <p className="text-sm text-gray-600 mb-2">
-                                              Arrastra PDFs aquí o haz clic para seleccionar (máx. 2)
+                                              Arrastra PDFs aquí o haz clic para seleccionar (máx. 5)
                                             </p>
                                             <input
                                               type="file"
