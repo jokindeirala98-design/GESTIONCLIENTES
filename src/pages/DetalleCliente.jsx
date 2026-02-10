@@ -763,7 +763,7 @@ export default function DetalleCliente() {
               </>
             )}
 
-            {isAdmin && cliente.estado === "Rechazado" && (
+            {(isAdmin || isOwner) && cliente.estado === "Rechazado" && (
               <Button
                 onClick={() => {
                   if (window.confirm("¿Cambiar a Facturas presentadas para volver a procesar?")) {
