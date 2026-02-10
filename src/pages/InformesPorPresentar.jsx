@@ -1041,7 +1041,17 @@ export default function InformesPorPresentar() {
                                     </div>
                                   ) : (
                                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                      <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe para este suministro</p>
+                                      <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sm font-semibold text-purple-900">📤 Subir informe para este suministro</p>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleYaEsCliente(cliente, suministro.id)}
+                                          disabled={guardando[suministro.id]}
+                                          className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+                                        >
+                                          ✓ Ya es cliente
+                                        </Button>
+                                      </div>
                                       
                                       {informeSubido && informeSubido.files && informeSubido.files.length > 0 ? (
                                         <div className="space-y-3">
