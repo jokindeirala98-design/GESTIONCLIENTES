@@ -132,6 +132,9 @@ export default function Layout({ children }) {
       title: "Cierres Verificados",
       url: createPageUrl("CierresVerificados"),
       icon: CheckCircle2,
+      badge: clientes.filter(c => c.estado === "Pendiente de aprobación").length > 0 
+        ? clientes.filter(c => c.estado === "Pendiente de aprobación").length 
+        : null
     },
     {
       title: "Comisiones",
@@ -190,9 +193,14 @@ export default function Layout({ children }) {
                     }`}
                     onClick={() => setMobileOpen(false)}
                   >
-                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
+                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5 w-full">
                       <item.icon className="w-5 h-5" />
-                      <span className="font-medium text-sm">{item.title}</span>
+                      <span className="font-medium text-sm flex-1">{item.title}</span>
+                      {item.badge && (
+                        <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -284,8 +292,13 @@ export default function Layout({ children }) {
                             }`}
                           >
                             <item.icon className="w-5 h-5" />
-                            <span className="font-medium text-sm">{item.title}</span>
-                            </Link>
+                            <span className="font-medium text-sm flex-1">{item.title}</span>
+                            {item.badge && (
+                              <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
                         ))}
                       </nav>
                     </div>

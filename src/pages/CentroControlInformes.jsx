@@ -30,11 +30,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, Trash2, Edit, AlertTriangle, TrendingUp, DollarSign, Clock, ExternalLink } from "lucide-react";
+import { FileText, Trash2, Edit, AlertTriangle, TrendingUp, DollarSign, Clock, ExternalLink, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { esGas, esLuz20 } from "../components/utils/rappelComisiones";
+import { esGas, esLuz20, recalcularRappelComercial, aplicarActualizacionesRappel } from "../components/utils/rappelComisiones";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function CentroControlInformes() {
   const navigate = useNavigate();
@@ -49,6 +54,8 @@ export default function CentroControlInformes() {
   const [archivoNuevo, setArchivoNuevo] = useState(null);
   const [notasAdmin, setNotasAdmin] = useState("");
   const [comisionEditada, setComisionEditada] = useState("");
+  const [cambioEstadoCliente, setCambioEstadoCliente] = useState(null);
+  const [comisionCierre, setComisionCierre] = useState("");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -315,6 +322,112 @@ export default function CentroControlInformes() {
     setArchivoNuevo(null);
   };
 
+  const handleCambiarEstado = (suministro, nuevoEstado) => {
+    setCambioEstadoCliente({ suministro, nuevoEstado });
+    setComisionCierre("");
+  };
+
+  const handleConfirmarCambioEstado = async () => {
+    if (!cambioEstadoCliente) return;
+
+    const { suministro, nuevoEstado } = cambioEstadoCliente;
+    const cliente = clientes.find(c => c.id === suministro.clienteId);
+    if (!cliente) return;
+
+    let updateData = { estado: nuevoEstado };
+
+    // Si cambia a "Firmado con éxito", procesar cierre
+    if (nuevoEstado === "Firmado con éxito") {
+      const comision = parseFloat(comisionCierre);
+      if (!comision || comision <= 0) {
+        toast.error("Introduce una comisión válida");
+        return;
+      }
+
+      const fechaCierre = new Date().toISOString().split('T')[0];
+      const mesComision = fechaCierre.substring(0, 7);
+
+      // Marcar todos los suministros NO cerrados como cerrados
+      const suministrosActualizados = (cliente.suministros || []).map(s => {
+        if (s.cerrado) return s;
+        return {
+          ...s,
+          cerrado: true,
+          fecha_cierre_suministro: fechaCierre,
+          mes_comision_suministro: mesComision,
+          comision: s.id === suministro.id ? comision : (s.comision || 0)
+        };
+      });
+
+      // Recalcular rappel
+      try {
+        const todosClientes = await base44.entities.Cliente.list();
+        const clientesConActualizacion = todosClientes.map(c => 
+          c.id === cliente.id ? { ...cliente, suministros: suministrosActualizados } : c
+        );
+        
+        const { actualizacionesPorCliente } = recalcularRappelComercial(
+          clientesConActualizacion,
+          cliente.propietario_email,
+          mesComision
+        );
+
+        if (actualizacionesPorCliente[cliente.id]) {
+          const clienteConRappel = aplicarActualizacionesRappel(
+            { ...cliente, suministros: suministrosActualizados },
+            actualizacionesPorCliente[cliente.id]
+          );
+          updateData.suministros = clienteConRappel.suministros;
+          updateData.comision = clienteConRappel.comision;
+        } else {
+          updateData.suministros = suministrosActualizados;
+          updateData.comision = suministrosActualizados.reduce((sum, s) => sum + (s.comision || 0), 0);
+        }
+
+        // Actualizar otros clientes si necesitan recalcular rappel
+        for (const [otroClienteId, actualizacionesSuministros] of Object.entries(actualizacionesPorCliente)) {
+          if (otroClienteId !== cliente.id) {
+            const otroCliente = todosClientes.find(c => c.id === otroClienteId);
+            if (otroCliente) {
+              const clienteActualizado = aplicarActualizacionesRappel(otroCliente, actualizacionesSuministros);
+              await base44.entities.Cliente.update(otroClienteId, {
+                suministros: clienteActualizado.suministros,
+                comision: clienteActualizado.comision
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error al recalcular rappel:", error);
+        updateData.suministros = suministrosActualizados;
+        updateData.comision = suministrosActualizados.reduce((sum, s) => sum + (s.comision || 0), 0);
+      }
+
+      updateData.fecha_cierre = fechaCierre;
+      updateData.mes_comision = mesComision;
+      updateData.aprobado_admin = true;
+
+      // Notificar a contabilidad
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: "iranzu@voltisenergia.com",
+          subject: `Cierre verificado - ${cliente.nombre_negocio}`,
+          body: `${cliente.nombre_negocio} ha sido cerrado con éxito desde el Centro de Control y está listo para contabilidad.`
+        });
+      } catch (error) {
+        console.error("Error enviando notificación:", error);
+      }
+    }
+
+    await updateMutation.mutateAsync({
+      id: cliente.id,
+      data: updateData
+    });
+
+    setCambioEstadoCliente(null);
+    toast.success(`Estado cambiado a ${nuevoEstado}`);
+  };
+
   const estadoColors = {
     "Informe listo": "bg-green-500",
     "Pendiente de firma": "bg-purple-500",
@@ -501,9 +614,45 @@ export default function CentroControlInformes() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${estadoColors[suministro.clienteEstado]} text-white`}>
-                            {suministro.clienteEstado}
-                          </Badge>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className={`${estadoColors[suministro.clienteEstado] || 'bg-gray-500'} text-white px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center gap-1 hover:opacity-80 transition-opacity`}>
+                                {suministro.clienteEstado}
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-2">
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-gray-600 mb-2 px-2">Cambiar estado</p>
+                                {[
+                                  "Primer contacto",
+                                  "Esperando facturas",
+                                  "Facturas presentadas",
+                                  "Informe listo",
+                                  "Pendiente de firma",
+                                  "Pendiente de aprobación",
+                                  "Firmado con éxito",
+                                  "Rechazado",
+                                  "Ignorado con mucho éxito"
+                                ].map(estado => (
+                                  <button
+                                    key={estado}
+                                    onClick={() => {
+                                      if (window.confirm(`¿Cambiar el estado de "${suministro.clienteNombre}" a "${estado}"?`)) {
+                                        handleCambiarEstado(suministro, estado);
+                                      }
+                                    }}
+                                    className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 transition-colors ${
+                                      suministro.clienteEstado === estado ? 'bg-blue-50 font-semibold text-blue-700' : ''
+                                    }`}
+                                    disabled={suministro.clienteEstado === estado}
+                                  >
+                                    {estado}
+                                  </button>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </TableCell>
                         <TableCell>
                           <Badge className={tipoFacturaColors[suministro.tipo_factura]}>
@@ -566,6 +715,48 @@ export default function CentroControlInformes() {
           )}
         </CardContent>
       </Card>
+
+      {/* Diálogo para confirmar cierre con comisión */}
+      <Dialog open={!!cambioEstadoCliente} onOpenChange={() => setCambioEstadoCliente(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D]">
+              Cambiar a {cambioEstadoCliente?.nuevoEstado}
+            </DialogTitle>
+          </DialogHeader>
+
+          {cambioEstadoCliente?.nuevoEstado === "Firmado con éxito" ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Al marcar como "Firmado con éxito", todos los suministros abiertos se cerrarán y la comisión se contabilizará.
+              </p>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Comisión Total (€)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={comisionCierre}
+                  onChange={(e) => setComisionCierre(e.target.value)}
+                  placeholder="Ej: 150.00"
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">
+              ¿Confirmar cambio de estado para "{cambioEstadoCliente?.suministro?.clienteNombre}"?
+            </p>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCambioEstadoCliente(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmarCambioEstado} className="bg-[#004D9D]">
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de Edición */}
       <Dialog open={!!editandoInforme} onOpenChange={() => setEditandoInforme(null)}>
