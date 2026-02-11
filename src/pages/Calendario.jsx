@@ -289,8 +289,9 @@ export default function Calendario() {
     },
   });
 
-  // Auto-eliminar tareas completadas después de 2 semanas
-  useEffect(() => {
+  // DESHABILITADO: Auto-eliminar tareas completadas después de 2 semanas
+  // Las tareas completadas solo se eliminan manualmente
+  /* useEffect(() => {
     const limpiarTareasAntiguas = async () => {
       const hoy = new Date();
       const dosSemanasAtras = new Date(hoy);
@@ -314,7 +315,7 @@ export default function Calendario() {
     if (tareasCorcho.length > 0) {
       limpiarTareasAntiguas();
     }
-  }, [tareasCorcho.length]);
+  }, [tareasCorcho.length]); */
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
