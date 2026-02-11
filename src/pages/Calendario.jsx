@@ -204,12 +204,7 @@ export default function Calendario() {
 
   const createTareaCorchoMutation = useMutation({
     mutationFn: async (tarea) => {
-      // Determinar propietario: si es Nico debe elegir, sino auto-asignar
-      let propietarioEmail = tarea.propietario_email;
-      if (!isNico) {
-        propietarioEmail = user.email;
-      }
-
+      const propietarioEmail = tarea.propietario_email;
       const maxOrden = tareasCorcho.filter(t => !t.completada && t.propietario_email === propietarioEmail).reduce((max, t) => Math.max(max, t.orden || 0), 0);
       await base44.entities.TareaCorcho.create({
         ...tarea,
@@ -1133,24 +1128,6 @@ export default function Calendario() {
           <div className="space-y-4">
             {!modoMultiple ? (
               <>
-                {isNico && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Asignar a *</label>
-                    <Select
-                      value={newTareaCorcho.propietario_email}
-                      onValueChange={(value) => setNewTareaCorcho({ ...newTareaCorcho, propietario_email: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona propietario" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
-                        <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
-                        <SelectItem value="jose@voltisenergia.com">José</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
                 <div>
                   <label className="text-sm font-medium mb-1 block">Descripción *</label>
                   <Textarea
@@ -1210,24 +1187,6 @@ export default function Calendario() {
               </>
             ) : (
               <>
-                {isNico && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Asignar a *</label>
-                    <Select
-                      value={newTareaCorcho.propietario_email}
-                      onValueChange={(value) => setNewTareaCorcho({ ...newTareaCorcho, propietario_email: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona propietario" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
-                        <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
-                        <SelectItem value="jose@voltisenergia.com">José</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Descripciones de tareas *</label>
                   <div className="space-y-2">
@@ -1334,23 +1293,14 @@ export default function Calendario() {
                     toast.error("Añade una descripción");
                     return;
                   }
-                  if (isNico && !newTareaCorcho.propietario_email) {
-                    toast.error("Selecciona un propietario");
-                    return;
-                  }
-                  createTareaCorchoMutation.mutate(newTareaCorcho);
+                  createTareaCorchoMutation.mutate({ ...newTareaCorcho, propietario_email: propietarioSeleccionado });
                 } else {
-                  if (isNico && !newTareaCorcho.propietario_email) {
-                    toast.error("Selecciona un propietario");
-                    return;
-                  }
                   const tareasValidas = tareasMultiples.filter(t => t.descripcion.trim() !== "");
                   if (tareasValidas.length === 0) {
                     toast.error("Añade al menos una descripción");
                     return;
                   }
-                  const propietarioEmail = isNico ? newTareaCorcho.propietario_email : user.email;
-                  createTareasMultiplesMutation.mutate({ tareas: tareasValidas, propietarioEmail });
+                  createTareasMultiplesMutation.mutate({ tareas: tareasValidas, propietarioEmail: propietarioSeleccionado });
                 }
               }}
               className="bg-[#004D9D]"
