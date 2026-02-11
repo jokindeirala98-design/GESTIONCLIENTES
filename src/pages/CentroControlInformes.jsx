@@ -625,29 +625,29 @@ export default function CentroControlInformes() {
                               <div className="space-y-1">
                                 <p className="text-xs font-semibold text-gray-600 mb-2 px-2">Cambiar estado</p>
                                 {[
-                                  "Primer contacto",
-                                  "Esperando facturas",
-                                  "Facturas presentadas",
-                                  "Informe listo",
-                                  "Pendiente de firma",
-                                  "Pendiente de aprobación",
-                                  "Firmado con éxito",
-                                  "Rechazado",
-                                  "Ignorado con mucho éxito"
-                                ].map(estado => (
+                                  { value: "Primer contacto", label: "Primer contacto" },
+                                  { value: "Esperando facturas", label: "Esperando facturas" },
+                                  { value: "Facturas presentadas", label: "Facturas presentadas (Informes por presentar)" },
+                                  { value: "Informe listo", label: "Informe listo" },
+                                  { value: "Pendiente de firma", label: "Pendiente de firma" },
+                                  { value: "Pendiente de aprobación", label: "Pendiente de aprobación" },
+                                  { value: "Firmado con éxito", label: "Firmado con éxito" },
+                                  { value: "Rechazado", label: "Rechazado" },
+                                  { value: "Ignorado con mucho éxito", label: "Ignorado con mucho éxito" }
+                                ].map(({ value, label }) => (
                                   <button
-                                    key={estado}
+                                    key={value}
                                     onClick={() => {
-                                      if (window.confirm(`¿Cambiar el estado de "${suministro.clienteNombre}" a "${estado}"?`)) {
-                                        handleCambiarEstado(suministro, estado);
+                                      if (window.confirm(`¿Cambiar el estado de "${suministro.clienteNombre}" a "${value}"?`)) {
+                                        handleCambiarEstado(suministro, value);
                                       }
                                     }}
                                     className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 transition-colors ${
-                                      suministro.clienteEstado === estado ? 'bg-blue-50 font-semibold text-blue-700' : ''
+                                      suministro.clienteEstado === value ? 'bg-blue-50 font-semibold text-blue-700' : ''
                                     }`}
-                                    disabled={suministro.clienteEstado === estado}
+                                    disabled={suministro.clienteEstado === value}
                                   >
-                                    {estado}
+                                    {label}
                                   </button>
                                 ))}
                               </div>
