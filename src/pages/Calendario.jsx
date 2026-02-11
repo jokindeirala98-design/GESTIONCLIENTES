@@ -301,18 +301,17 @@ export default function Calendario() {
     },
   });
 
-  // DESHABILITADO: Auto-eliminar tareas completadas después de 2 semanas
-  // Las tareas completadas solo se eliminan manualmente
-  /* useEffect(() => {
+  // Auto-eliminar tareas completadas después de 3 semanas
+  useEffect(() => {
     const limpiarTareasAntiguas = async () => {
       const hoy = new Date();
-      const dosSemanasAtras = new Date(hoy);
-      dosSemanasAtras.setDate(dosSemanasAtras.getDate() - 14);
+      const tresSemanasAtras = new Date(hoy);
+      tresSemanasAtras.setDate(tresSemanasAtras.getDate() - 21);
 
       const tareasAEliminar = tareasCorcho.filter(t => {
         if (!t.completada || !t.fecha_completada) return false;
         const fechaCompletada = new Date(t.fecha_completada);
-        return fechaCompletada < dosSemanasAtras;
+        return fechaCompletada < tresSemanasAtras;
       });
 
       for (const tarea of tareasAEliminar) {
@@ -327,7 +326,7 @@ export default function Calendario() {
     if (tareasCorcho.length > 0) {
       limpiarTareasAntiguas();
     }
-  }, [tareasCorcho.length]); */
+  }, [tareasCorcho.length]);
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
@@ -1055,14 +1054,16 @@ export default function Calendario() {
                                           </div>
                                         )}
                                       </div>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => deleteTareaCorchoMutation.mutate(tarea.id)}
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
+                                      {isNico && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => deleteTareaCorchoMutation.mutate(tarea.id)}
+                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      )}
                                     </div>
                                     {tarea.fecha_completada && (
                                       <div className="text-right mt-2">
