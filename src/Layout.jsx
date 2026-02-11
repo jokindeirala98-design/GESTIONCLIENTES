@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Home, 
   MapPin, 
@@ -37,6 +38,7 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -48,6 +50,12 @@ export default function Layout({ children }) {
     };
     loadUser();
   }, []);
+
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => base44.entities.Cliente.list(),
+    enabled: !!user && user.role === 'admin',
+  });
 
   if (!user) {
     return (
