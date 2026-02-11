@@ -67,6 +67,13 @@ export default function Calendario() {
     loadUser();
   }, []);
 
+  // Inicializar propietario seleccionado por defecto
+  useEffect(() => {
+    if (user && !propietarioSeleccionado) {
+      setPropietarioSeleccionado(user.email);
+    }
+  }, [user, propietarioSeleccionado]);
+
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
@@ -383,18 +390,11 @@ export default function Calendario() {
     );
   }
 
-  const isAdmin = user.role === "admin";
-  const isNico = user.email === "nicolasvoltis@gmail.com" || user.email === "nicolas@voltisenergia.com";
-  const isIranzu = user.email === "iranzu@voltisenergia.com";
-  const isJose = user.email === "jose@voltisenergia.com";
+  const isAdmin = user?.role === "admin";
+  const isNico = user?.email === "nicolasvoltis@gmail.com" || user?.email === "nicolas@voltisenergia.com";
+  const isIranzu = user?.email === "iranzu@voltisenergia.com";
+  const isJose = user?.email === "jose@voltisenergia.com";
   const tieneAccesoCorcho = isNico || isIranzu || isJose;
-
-  // Inicializar propietario seleccionado por defecto
-  useEffect(() => {
-    if (user && !propietarioSeleccionado) {
-      setPropietarioSeleccionado(user.email);
-    }
-  }, [user]);
 
   // Clientes del usuario (o todos si es admin)
   const misClientes = isAdmin 
