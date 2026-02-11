@@ -48,8 +48,10 @@ export default function Calendario() {
     notas: "",
     fecha: "",
     audio_url: null,
-    prioridad: "verde"
+    prioridad: "verde",
+    propietario_email: ""
   });
+  const [propietarioSeleccionado, setPropietarioSeleccionado] = useState(null); // Para el selector del corcho
   const [tareasMultiples, setTareasMultiples] = useState([
     { descripcion: "", prioridad: "verde" },
     { descripcion: "", prioridad: "verde" },
@@ -195,20 +197,27 @@ export default function Calendario() {
 
   const createTareaCorchoMutation = useMutation({
     mutationFn: async (tarea) => {
-      const maxOrden = tareasCorcho.filter(t => !t.completada).reduce((max, t) => Math.max(max, t.orden || 0), 0);
+      // Determinar propietario: si es Nico debe elegir, sino auto-asignar
+      let propietarioEmail = tarea.propietario_email;
+      if (!isNico) {
+        propietarioEmail = user.email;
+      }
+
+      const maxOrden = tareasCorcho.filter(t => !t.completada && t.propietario_email === propietarioEmail).reduce((max, t) => Math.max(max, t.orden || 0), 0);
       await base44.entities.TareaCorcho.create({
         ...tarea,
         orden: maxOrden + 1,
         completada: false,
         tiene_alerta: false,
         prioridad: tarea.prioridad || "verde",
-        creador_email: user.email
+        creador_email: user.email,
+        propietario_email: propietarioEmail
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tareasCorcho']);
       setShowCorchoDialog(false);
-      setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde" });
+      setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde", propietario_email: "" });
       setTareasMultiples([
         { descripcion: "", prioridad: "verde" },
         { descripcion: "", prioridad: "verde" },
@@ -220,8 +229,8 @@ export default function Calendario() {
   });
 
   const createTareasMultiplesMutation = useMutation({
-    mutationFn: async (tareas) => {
-      const maxOrden = tareasCorcho.filter(t => !t.completada).reduce((max, t) => Math.max(max, t.orden || 0), 0);
+    mutationFn: async ({ tareas, propietarioEmail }) => {
+      const maxOrden = tareasCorcho.filter(t => !t.completada && t.propietario_email === propietarioEmail).reduce((max, t) => Math.max(max, t.orden || 0), 0);
       for (let i = 0; i < tareas.length; i++) {
         await base44.entities.TareaCorcho.create({
           descripcion: tareas[i].descripcion,
@@ -229,7 +238,8 @@ export default function Calendario() {
           orden: maxOrden + i + 1,
           completada: false,
           tiene_alerta: false,
-          creador_email: user.email
+          creador_email: user.email,
+          propietario_email: propietarioEmail
         });
       }
     },
@@ -374,6 +384,17 @@ export default function Calendario() {
   }
 
   const isAdmin = user.role === "admin";
+  const isNico = user.email === "nicolasvoltis@gmail.com" || user.email === "nicolas@voltisenergia.com";
+  const isIranzu = user.email === "iranzu@voltisenergia.com";
+  const isJose = user.email === "jose@voltisenergia.com";
+  const tieneAccesoCorcho = isNico || isIranzu || isJose;
+
+  // Inicializar propietario seleccionado por defecto
+  useEffect(() => {
+    if (user && !propietarioSeleccionado) {
+      setPropietarioSeleccionado(user.email);
+    }
+  }, [user]);
 
   // Clientes del usuario (o todos si es admin)
   const misClientes = isAdmin 
@@ -430,9 +451,9 @@ export default function Calendario() {
       completada: tarea.completada
     }));
 
-  // Agregar tareas del corcho con fecha al calendario (solo para admins)
-  const tareasConFecha = isAdmin ? tareasCorcho
-    .filter(t => t.fecha)
+  // Agregar tareas del corcho con fecha al calendario (filtrado por propietario)
+  const tareasConFecha = tieneAccesoCorcho ? tareasCorcho
+    .filter(t => t.fecha && t.propietario_email === user.email)
     .map(t => ({
       id: `corcho-${t.id}`,
       tarea_corcho_id: t.id,
@@ -793,14 +814,28 @@ export default function Calendario() {
         </Card>
       </div>
 
-      {/* Corcho de Tareas - Solo para Administradores */}
-      {isAdmin && (
+      {/* Corcho de Tareas - Para Nico, Iranzu y José */}
+      {tieneAccesoCorcho && (
         <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-[#004D9D] flex items-center gap-3">
-              <StickyNote className="w-7 h-7" />
-              Corcho de Tareas
-            </h2>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-bold text-[#004D9D] flex items-center gap-3">
+                <StickyNote className="w-7 h-7" />
+                Corcho de Tareas
+              </h2>
+              {isNico && (
+                <Select value={propietarioSeleccionado} onValueChange={setPropietarioSeleccionado}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
+                    <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
+                    <SelectItem value="jose@voltisenergia.com">José</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
             <Button
               onClick={() => setShowCorchoDialog(true)}
               className="bg-[#004D9D]"
@@ -816,7 +851,7 @@ export default function Calendario() {
               <Card className="border-none shadow-md">
                 <CardHeader className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
                   <CardTitle className="text-white">
-                    Por Realizar ({tareasCorcho.filter(t => !t.completada).length})
+                    Por Realizar ({tareasCorcho.filter(t => !t.completada && t.propietario_email === propietarioSeleccionado).length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -828,7 +863,7 @@ export default function Calendario() {
                         className={`min-h-[300px] space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg' : ''}`}
                       >
                         {tareasCorcho
-                          .filter(t => !t.completada)
+                          .filter(t => !t.completada && t.propietario_email === propietarioSeleccionado)
                           .sort((a, b) => {
                             // Ordenar por prioridad primero (rojo > amarillo > verde)
                             const prioridadOrden = { rojo: 0, amarillo: 1, verde: 2 };
@@ -965,7 +1000,7 @@ export default function Calendario() {
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tareasCorcho.filter(t => !t.completada).length === 0 && (
+                        {tareasCorcho.filter(t => !t.completada && t.propietario_email === propietarioSeleccionado).length === 0 && (
                           <div className="text-center py-12 text-gray-400">
                             <StickyNote className="w-12 h-12 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No hay tareas pendientes</p>
@@ -981,7 +1016,7 @@ export default function Calendario() {
               <Card className="border-none shadow-md">
                 <CardHeader className="bg-gradient-to-r from-green-600 to-green-700">
                   <CardTitle className="text-white">
-                    Realizadas ({tareasCorcho.filter(t => t.completada).length})
+                    Realizadas ({tareasCorcho.filter(t => t.completada && t.propietario_email === propietarioSeleccionado).length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -993,7 +1028,7 @@ export default function Calendario() {
                         className={`min-h-[300px] space-y-3 ${snapshot.isDraggingOver ? 'bg-green-50 rounded-lg' : ''}`}
                       >
                         {tareasCorcho
-                          .filter(t => t.completada)
+                          .filter(t => t.completada && t.propietario_email === propietarioSeleccionado)
                           .sort((a, b) => {
                             // Ordenar por fecha_completada descendente (más reciente primero)
                             if (!a.fecha_completada) return 1;
@@ -1052,7 +1087,7 @@ export default function Calendario() {
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tareasCorcho.filter(t => t.completada).length === 0 && (
+                        {tareasCorcho.filter(t => t.completada && t.propietario_email === propietarioSeleccionado).length === 0 && (
                           <div className="text-center py-12 text-gray-400">
                             <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No hay tareas completadas</p>
@@ -1080,7 +1115,7 @@ export default function Calendario() {
                 onClick={() => {
                   setModoMultiple(!modoMultiple);
                   if (!modoMultiple) {
-                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde" });
+                    setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde", propietario_email: "" });
                   } else {
                     setTareasMultiples([
                       { descripcion: "", prioridad: "verde" },
@@ -1098,6 +1133,24 @@ export default function Calendario() {
           <div className="space-y-4">
             {!modoMultiple ? (
               <>
+                {isNico && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Asignar a *</label>
+                    <Select
+                      value={newTareaCorcho.propietario_email}
+                      onValueChange={(value) => setNewTareaCorcho({ ...newTareaCorcho, propietario_email: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona propietario" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
+                        <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
+                        <SelectItem value="jose@voltisenergia.com">José</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium mb-1 block">Descripción *</label>
                   <Textarea
@@ -1157,6 +1210,24 @@ export default function Calendario() {
               </>
             ) : (
               <>
+                {isNico && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Asignar a *</label>
+                    <Select
+                      value={newTareaCorcho.propietario_email}
+                      onValueChange={(value) => setNewTareaCorcho({ ...newTareaCorcho, propietario_email: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona propietario" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
+                        <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
+                        <SelectItem value="jose@voltisenergia.com">José</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Descripciones de tareas *</label>
                   <div className="space-y-2">
@@ -1245,7 +1316,7 @@ export default function Calendario() {
               variant="outline"
               onClick={() => {
                 setShowCorchoDialog(false);
-                setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde" });
+                setNewTareaCorcho({ descripcion: "", notas: "", fecha: "", audio_url: null, prioridad: "verde", propietario_email: "" });
                 setTareasMultiples([
                   { descripcion: "", prioridad: "verde" },
                   { descripcion: "", prioridad: "verde" },
@@ -1263,14 +1334,23 @@ export default function Calendario() {
                     toast.error("Añade una descripción");
                     return;
                   }
+                  if (isNico && !newTareaCorcho.propietario_email) {
+                    toast.error("Selecciona un propietario");
+                    return;
+                  }
                   createTareaCorchoMutation.mutate(newTareaCorcho);
                 } else {
+                  if (isNico && !newTareaCorcho.propietario_email) {
+                    toast.error("Selecciona un propietario");
+                    return;
+                  }
                   const tareasValidas = tareasMultiples.filter(t => t.descripcion.trim() !== "");
                   if (tareasValidas.length === 0) {
                     toast.error("Añade al menos una descripción");
                     return;
                   }
-                  createTareasMultiplesMutation.mutate(tareasValidas);
+                  const propietarioEmail = isNico ? newTareaCorcho.propietario_email : user.email;
+                  createTareasMultiplesMutation.mutate({ tareas: tareasValidas, propietarioEmail });
                 }
               }}
               className="bg-[#004D9D]"
