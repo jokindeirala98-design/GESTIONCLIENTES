@@ -59,6 +59,8 @@ export default function Calendario() {
   ]);
   const inputRefs = useRef([]);
   const [showHistorial, setShowHistorial] = useState(false);
+  const [historialSearchTerm, setHistorialSearchTerm] = useState("");
+  const [historialFilterUsuario, setHistorialFilterUsuario] = useState("todos");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -573,33 +575,15 @@ export default function Calendario() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-              <CalendarIcon className="w-8 h-8" />
-              Calendario de Eventos
-            </h1>
-            <p className="text-[#666666]">
-              {isAdmin 
-                ? "Calendario compartido de administradores" 
-                : "Tu calendario personal"}
-            </p>
-          </div>
-          {isNico && (
-            <Select onValueChange={(value) => {
-              if (value === "historial") {
-                setShowHistorial(true);
-              }
-            }}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Ver..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="historial">📜 Historial de tareas</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
+          <CalendarIcon className="w-8 h-8" />
+          Calendario de Eventos
+        </h1>
+        <p className="text-[#666666]">
+          {isAdmin 
+            ? "Calendario compartido de administradores" 
+            : "Tu calendario personal"}
+        </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -1028,8 +1012,18 @@ export default function Calendario() {
               {/* Columna: Tareas Realizadas */}
               <Card className="border-none shadow-md">
                 <CardHeader className="bg-gradient-to-r from-green-600 to-green-700">
-                  <CardTitle className="text-white">
+                  <CardTitle 
+                    className={`text-white ${isNico ? 'cursor-pointer hover:underline' : ''}`}
+                    onClick={() => {
+                      if (isNico) {
+                        setShowHistorial(true);
+                        setHistorialSearchTerm("");
+                        setHistorialFilterUsuario("todos");
+                      }
+                    }}
+                  >
                     Realizadas ({tareasCorcho.filter(t => t.completada && t.propietario_email === propietarioSeleccionado).length})
+                    {isNico && <span className="text-xs ml-2 opacity-75">📜 click para ver historial</span>}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -1337,12 +1331,53 @@ export default function Calendario() {
           <DialogHeader>
             <DialogTitle className="text-[#004D9D] flex items-center gap-2">
               <CheckCircle2 className="w-6 h-6" />
-              Historial de Tareas Completadas
+              Historial Completo de Tareas
             </DialogTitle>
           </DialogHeader>
+          
+          <div className="flex gap-3 mb-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Buscar tarea..."
+                value={historialSearchTerm}
+                onChange={(e) => setHistorialSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={historialFilterUsuario} onValueChange={setHistorialFilterUsuario}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar usuario" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los usuarios</SelectItem>
+                <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
+                <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
+                <SelectItem value="jose@voltisenergia.com">José</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="overflow-y-auto max-h-[60vh] space-y-3">
             {tareasCorcho
-              .filter(t => t.completada)
+              .filter(t => {
+                if (!t.completada) return false;
+                
+                // Filtrar por usuario
+                if (historialFilterUsuario !== "todos" && t.propietario_email !== historialFilterUsuario) {
+                  return false;
+                }
+                
+                // Filtrar por búsqueda
+                if (historialSearchTerm.trim() !== "") {
+                  const searchLower = historialSearchTerm.toLowerCase();
+                  const descripcionMatch = t.descripcion?.toLowerCase().includes(searchLower);
+                  const notasMatch = t.notas?.toLowerCase().includes(searchLower);
+                  return descripcionMatch || notasMatch;
+                }
+                
+                return true;
+              })
               .sort((a, b) => {
                 if (!a.fecha_completada) return 1;
                 if (!b.fecha_completada) return -1;
@@ -1355,7 +1390,14 @@ export default function Calendario() {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-700 line-through mb-1">{tarea.descripcion}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-gray-700 line-through">{tarea.descripcion}</p>
+                            {propietario && (
+                              <Badge variant="outline" className="text-xs">
+                                {propietario.iniciales || propietario.full_name}
+                              </Badge>
+                            )}
+                          </div>
                           {tarea.notas && (
                             <p className="text-sm text-gray-500 mt-2 whitespace-pre-wrap">{tarea.notas}</p>
                           )}
@@ -1367,24 +1409,17 @@ export default function Calendario() {
                               </div>
                             </div>
                           )}
-                          <div className="flex items-center gap-4 mt-3">
-                            {tarea.fecha_completada && (
-                              <span className="text-xs text-gray-500">
-                                ✓ {new Date(tarea.fecha_completada).toLocaleString('es-ES', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            )}
-                            {propietario && (
-                              <Badge variant="outline" className="text-xs">
-                                {propietario.iniciales || propietario.full_name}
-                              </Badge>
-                            )}
-                          </div>
+                          {tarea.fecha_completada && (
+                            <span className="text-xs text-gray-500 mt-2 block">
+                              ✓ {new Date(tarea.fecha_completada).toLocaleString('es-ES', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
                         </div>
                         <Button
                           size="sm"
@@ -1403,10 +1438,19 @@ export default function Calendario() {
                   </Card>
                 );
               })}
-            {tareasCorcho.filter(t => t.completada).length === 0 && (
+            {tareasCorcho
+              .filter(t => {
+                if (!t.completada) return false;
+                if (historialFilterUsuario !== "todos" && t.propietario_email !== historialFilterUsuario) return false;
+                if (historialSearchTerm.trim() !== "") {
+                  const searchLower = historialSearchTerm.toLowerCase();
+                  return t.descripcion?.toLowerCase().includes(searchLower) || t.notas?.toLowerCase().includes(searchLower);
+                }
+                return true;
+              }).length === 0 && (
               <div className="text-center py-12 text-gray-400">
                 <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No hay tareas en el historial</p>
+                <p className="text-sm">No hay tareas que coincidan con la búsqueda</p>
               </div>
             )}
           </div>
