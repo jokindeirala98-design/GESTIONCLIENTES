@@ -97,18 +97,10 @@ export default function CentroControlInformes() {
 
   const comerciales = usuarios.filter(u => u.role === 'user' || u.role === 'admin');
 
-  // Extraer todos los suministros con informe
+  // Extraer todos los suministros de todos los clientes
   const suministrosConInforme = clientes
     .flatMap(cliente => 
       (cliente.suministros || [])
-        .filter(s => {
-          if (!s.informe_final) return false;
-          const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
-            a && a.url && a.url.trim() !== '' && a.url !== 'null'
-          );
-          const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
-          return tieneArchivosValidos || tieneUrlValida;
-        })
         .map(s => ({
           ...s,
           clienteId: cliente.id,
@@ -118,6 +110,14 @@ export default function CentroControlInformes() {
           comercialIniciales: cliente.propietario_iniciales,
           comercialNombre: usuarios.find(u => u.email === cliente.propietario_email)?.full_name || cliente.propietario_iniciales,
           fechaSubida: s.informe_final?.fecha_subida || null,
+          tieneInforme: (() => {
+            if (!s.informe_final) return false;
+            const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
+              a && a.url && a.url.trim() !== '' && a.url !== 'null'
+            );
+            const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
+            return tieneArchivosValidos || tieneUrlValida;
+          })()
         }))
     );
 
@@ -216,8 +216,10 @@ export default function CentroControlInformes() {
 
   // KPIs
   const informesHoy = suministrosConInforme.filter(s => 
-    s.fechaSubida && new Date(s.fechaSubida).toDateString() === new Date().toDateString()
+    s.tieneInforme && s.fechaSubida && new Date(s.fechaSubida).toDateString() === new Date().toDateString()
   ).length;
+  
+  const totalConInforme = suministrosConInforme.filter(s => s.tieneInforme).length;
 
   const handleEliminarInforme = async (suministro) => {
     if (!window.confirm(`¿Eliminar el informe de "${suministro.clienteNombre} - ${suministro.nombre}"?\n\nEl cliente volverá a "Facturas presentadas".`)) {
@@ -466,8 +468,9 @@ export default function CentroControlInformes() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-700 mb-1">Informes Totales</p>
+                <p className="text-sm text-blue-700 mb-1">Suministros Totales</p>
                 <p className="text-3xl font-bold text-blue-600">{suministrosConInforme.length}</p>
+                <p className="text-xs text-blue-600 mt-1">Con informe: {totalConInforme}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-white" />
@@ -612,11 +615,14 @@ export default function CentroControlInformes() {
                       <TableRow key={`${suministro.clienteId}-${suministro.id}`}>
                         <TableCell>
                           <div>
-                            <p className="font-semibold text-[#004D9D]">{suministro.clienteNombre}</p>
-                            <p className="text-sm text-gray-600">{suministro.nombre}</p>
-                            {suministro.informe_final?.notas_admin && (
-                              <p className="text-xs text-blue-600 mt-1">📝 Tiene notas</p>
-                            )}
+                           <p className="font-semibold text-[#004D9D]">{suministro.clienteNombre}</p>
+                           <p className="text-sm text-gray-600">{suministro.nombre}</p>
+                           {!suministro.tieneInforme && (
+                             <p className="text-xs text-orange-600 mt-1">⚠️ Sin informe</p>
+                           )}
+                           {suministro.informe_final?.notas_admin && (
+                             <p className="text-xs text-blue-600 mt-1">📝 Tiene notas</p>
+                           )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -700,21 +706,25 @@ export default function CentroControlInformes() {
                             >
                               <ExternalLink className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleAbrirEdicion(suministro)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEliminarInforme(suministro)}
-                              className="text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {suministro.tieneInforme && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleAbrirEdicion(suministro)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEliminarInforme(suministro)}
+                                  className="text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
