@@ -99,7 +99,6 @@ export default function CentroControlInformes() {
 
   // Extraer todos los suministros con informe
   const suministrosConInforme = clientes
-    .filter(c => ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito"].includes(c.estado))
     .flatMap(cliente => 
       (cliente.suministros || [])
         .filter(s => {
@@ -429,10 +428,15 @@ export default function CentroControlInformes() {
   };
 
   const estadoColors = {
+    "Primer contacto": "bg-gray-500",
+    "Esperando facturas": "bg-orange-500",
+    "Facturas presentadas": "bg-blue-500",
     "Informe listo": "bg-green-500",
     "Pendiente de firma": "bg-purple-500",
     "Pendiente de aprobación": "bg-yellow-600",
     "Firmado con éxito": "bg-green-700",
+    "Rechazado": "bg-red-500",
+    "Ignorado con mucho éxito": "bg-gray-600",
   };
 
   const tipoFacturaColors = {
@@ -567,10 +571,15 @@ export default function CentroControlInformes() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="Primer contacto">Primer contacto</SelectItem>
+                          <SelectItem value="Esperando facturas">Esperando facturas</SelectItem>
+                          <SelectItem value="Facturas presentadas">Facturas presentadas</SelectItem>
                           <SelectItem value="Informe listo">Informe listo</SelectItem>
                           <SelectItem value="Pendiente de firma">Pendiente de firma</SelectItem>
                           <SelectItem value="Pendiente de aprobación">Pendiente de aprobación</SelectItem>
                           <SelectItem value="Firmado con éxito">Firmado con éxito</SelectItem>
+                          <SelectItem value="Rechazado">Rechazado</SelectItem>
+                          <SelectItem value="Ignorado con mucho éxito">Ignorado con mucho éxito</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableHead>
