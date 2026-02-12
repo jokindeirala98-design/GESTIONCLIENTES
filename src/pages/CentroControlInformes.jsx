@@ -99,7 +99,7 @@ export default function CentroControlInformes() {
 
   // Extraer todos los suministros con informe
   const suministrosConInforme = clientes
-    .filter(c => ["Informe listo", "Pendiente de firma", "Pendiente de aprobación"].includes(c.estado))
+    .filter(c => ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito"].includes(c.estado))
     .flatMap(cliente => 
       (cliente.suministros || [])
         .filter(s => {
@@ -432,6 +432,7 @@ export default function CentroControlInformes() {
     "Informe listo": "bg-green-500",
     "Pendiente de firma": "bg-purple-500",
     "Pendiente de aprobación": "bg-yellow-600",
+    "Firmado con éxito": "bg-green-700",
   };
 
   const tipoFacturaColors = {
@@ -569,6 +570,7 @@ export default function CentroControlInformes() {
                           <SelectItem value="Informe listo">Informe listo</SelectItem>
                           <SelectItem value="Pendiente de firma">Pendiente de firma</SelectItem>
                           <SelectItem value="Pendiente de aprobación">Pendiente de aprobación</SelectItem>
+                          <SelectItem value="Firmado con éxito">Firmado con éxito</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableHead>
