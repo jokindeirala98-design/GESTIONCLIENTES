@@ -58,6 +58,7 @@ export default function Calendario() {
     { descripcion: "", prioridad: "verde" }
   ]);
   const inputRefs = useRef([]);
+  const [showHistorial, setShowHistorial] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -572,15 +573,33 @@ export default function Calendario() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-          <CalendarIcon className="w-8 h-8" />
-          Calendario de Eventos
-        </h1>
-        <p className="text-[#666666]">
-          {isAdmin 
-            ? "Calendario compartido de administradores" 
-            : "Tu calendario personal"}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
+              <CalendarIcon className="w-8 h-8" />
+              Calendario de Eventos
+            </h1>
+            <p className="text-[#666666]">
+              {isAdmin 
+                ? "Calendario compartido de administradores" 
+                : "Tu calendario personal"}
+            </p>
+          </div>
+          {isNico && (
+            <Select onValueChange={(value) => {
+              if (value === "historial") {
+                setShowHistorial(true);
+              }
+            }}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Ver..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="historial">📜 Historial de tareas</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -1308,6 +1327,91 @@ export default function Calendario() {
               >
               Crear {modoMultiple && tareasMultiples.filter(t => t.descripcion.trim()).length > 0 ? `(${tareasMultiples.filter(t => t.descripcion.trim()).length})` : "Tarea"}
               </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para historial de tareas */}
+      <Dialog open={showHistorial} onOpenChange={setShowHistorial}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D] flex items-center gap-2">
+              <CheckCircle2 className="w-6 h-6" />
+              Historial de Tareas Completadas
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh] space-y-3">
+            {tareasCorcho
+              .filter(t => t.completada)
+              .sort((a, b) => {
+                if (!a.fecha_completada) return 1;
+                if (!b.fecha_completada) return -1;
+                return new Date(b.fecha_completada) - new Date(a.fecha_completada);
+              })
+              .map((tarea) => {
+                const propietario = usuarios.find(u => u.email === tarea.propietario_email);
+                return (
+                  <Card key={tarea.id} className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-700 line-through mb-1">{tarea.descripcion}</p>
+                          {tarea.notas && (
+                            <p className="text-sm text-gray-500 mt-2 whitespace-pre-wrap">{tarea.notas}</p>
+                          )}
+                          {tarea.audio_url && (
+                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg opacity-70">
+                              <div className="flex items-center gap-2">
+                                <Volume2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                <audio controls src={tarea.audio_url} className="flex-1 max-w-full" style={{ height: '32px' }} />
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-4 mt-3">
+                            {tarea.fecha_completada && (
+                              <span className="text-xs text-gray-500">
+                                ✓ {new Date(tarea.fecha_completada).toLocaleString('es-ES', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            )}
+                            {propietario && (
+                              <Badge variant="outline" className="text-xs">
+                                {propietario.iniciales || propietario.full_name}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (window.confirm("¿Eliminar esta tarea del historial?")) {
+                              deleteTareaCorchoMutation.mutate(tarea.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            {tareasCorcho.filter(t => t.completada).length === 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No hay tareas en el historial</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowHistorial(false)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
