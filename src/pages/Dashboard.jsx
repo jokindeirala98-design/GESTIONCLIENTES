@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Users, CheckCircle2, FileText, TrendingUp, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Users, CheckCircle2, FileText, TrendingUp, Clock, MessageCircle } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -217,6 +218,22 @@ export default function Dashboard() {
                   </Link>
                 </>
               )}
+
+              <a 
+                href={base44.agents.getWhatsAppConnectURL('procesar_facturas_whatsapp')} 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="p-4 rounded-lg border-2 border-green-200 bg-green-50 hover:border-green-500 transition-all cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="font-medium text-green-700">💬 Procesar Facturas por WhatsApp</p>
+                      <p className="text-xs text-green-600">Envía facturas de Naturgy al 618511959</p>
+                    </div>
+                  </div>
+                </div>
+              </a>
             </div>
           </CardContent>
         </Card>
