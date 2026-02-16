@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Settings, User, Mail, Download, Save } from "lucide-react";
+import { Settings, User, Mail, Download, Save, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Configuracion() {
@@ -216,9 +215,38 @@ export default function Configuracion() {
           </CardContent>
         </Card>
 
+        <Card className="border-none shadow-md">
+          <CardHeader className="border-b bg-gradient-to-r from-green-500 to-green-600">
+            <CardTitle className="text-white flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Bot de WhatsApp
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <p className="text-[#666666]">
+                Conecta tu WhatsApp para procesar facturas de Naturgy automáticamente.
+              </p>
+              <a 
+                href={base44.agents.getWhatsAppConnectURL('procesar_facturas_whatsapp')} 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="bg-green-600 hover:bg-green-700 w-full md:w-auto">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  💬 Conectar WhatsApp
+                </Button>
+              </a>
+              <p className="text-xs text-gray-500">
+                Envía fotos de facturas de Naturgy y el bot extraerá los datos automáticamente
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {isAdmin && (
           <Card className="border-none shadow-md">
-            <CardHeader className="border-b bg-gradient-to-r from-green-500 to-green-600">
+            <CardHeader className="border-b bg-gradient-to-r from-purple-500 to-purple-600">
               <CardTitle className="text-white flex items-center gap-2">
                 <Download className="w-5 h-5" />
                 Exportar Datos
@@ -232,7 +260,7 @@ export default function Configuracion() {
                 <Button
                   onClick={exportarExcel}
                   disabled={isExporting}
-                  className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+                  className="bg-purple-600 hover:bg-purple-700 w-full md:w-auto"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   {isExporting ? "Exportando..." : "📤 Exportar todo a Excel"}
