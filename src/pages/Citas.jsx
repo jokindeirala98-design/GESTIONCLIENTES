@@ -207,7 +207,7 @@ export default function Citas() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-4 md:p-8 w-full mx-auto">
+      <div className="p-4 md:p-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
@@ -242,18 +242,18 @@ export default function Citas() {
         </Card>
 
         {/* Calendario */}
-        <Card className="mb-6 w-full">
-          <CardContent className="p-6 w-full">
-            <div className="grid grid-cols-7 gap-4 mb-4">
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-7 gap-2 mb-4">
               {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                <div key={day} className="text-center font-semibold text-[#004D9D] py-3 text-lg">
+                <div key={day} className="text-center font-semibold text-[#004D9D] py-2 text-base">
                   {day}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-4">
+            <div className="grid grid-cols-7 gap-2">
               {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-[160px]" />
+                <div key={`empty-${i}`} className="h-[180px]" />
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
@@ -265,34 +265,48 @@ export default function Citas() {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`h-[160px] border-2 rounded-lg p-2 transition-colors ${
-                          snapshot.isDraggingOver ? 'bg-blue-100 border-blue-500 shadow-lg' : 'bg-white border-gray-300'
+                        className={`h-[180px] border-2 rounded-lg p-2 ${
+                          snapshot.isDraggingOver ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'
                         }`}
                       >
                         <div className="font-bold text-base mb-2 text-[#004D9D]">{day}</div>
-                        <div className="space-y-1 overflow-y-auto max-h-[100px]">
-                          {citasDelDia.map((cita) => {
+                        <div className="space-y-1 overflow-y-auto h-[140px]">
+                          {citasDelDia.map((cita, index) => {
                             const cliente = clientes.find(c => c.id === cita.cliente_id);
                             const puedeMarcarVisitado = isPastDateTime(cita.fecha, cita.hora);
+                            const tieneComparativo = cliente?.suministros?.every(s => s.informe_comparativo);
                             
                             return (
-                              <div
-                                key={cita.id}
-                                className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF] text-white text-[10px] px-1.5 py-1 rounded flex items-center justify-between gap-1"
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold truncate">{cita.hora}</div>
-                                  <div className="truncate opacity-90">{cliente?.propietario_iniciales}</div>
-                                </div>
-                                {puedeMarcarVisitado && (
-                                  <button
-                                    onClick={() => handleMarcarVisitado(cita)}
-                                    className="bg-green-500 hover:bg-green-600 rounded p-0.5 flex-shrink-0"
+                              <Draggable key={cita.id} draggableId={cita.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`${tieneComparativo ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'} border-2 rounded-lg p-2 cursor-move ${
+                                      snapshot.isDragging ? 'shadow-lg opacity-80' : ''
+                                    }`}
                                   >
-                                    <Check className="w-2.5 h-2.5" />
-                                  </button>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-xs truncate">{cliente?.nombre_negocio}</div>
+                                        <div className="text-[10px] opacity-75">{cita.hora} • {cliente?.propietario_iniciales}</div>
+                                      </div>
+                                      {puedeMarcarVisitado && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMarcarVisitado(cita);
+                                          }}
+                                          className="bg-green-500 hover:bg-green-600 text-white rounded p-1 flex-shrink-0"
+                                        >
+                                          <Check className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
                                 )}
-                              </div>
+                              </Draggable>
                             );
                           })}
                         </div>
