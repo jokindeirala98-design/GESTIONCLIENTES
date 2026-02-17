@@ -64,6 +64,8 @@ import Incidencias from './pages/Incidencias';
 import InformesPorPresentar from './pages/InformesPorPresentar';
 import ReadyToGo from './pages/ReadyToGo';
 import Zonas from './pages/Zonas';
+import Citas from './pages/Citas';
+import InformesPotencias from './pages/InformesPotencias';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +87,8 @@ export const PAGES = {
     "InformesPorPresentar": InformesPorPresentar,
     "ReadyToGo": ReadyToGo,
     "Zonas": Zonas,
+    "Citas": Citas,
+    "InformesPotencias": InformesPotencias,
 }
 
 export const pagesConfig = {
