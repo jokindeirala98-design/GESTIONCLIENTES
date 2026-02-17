@@ -253,9 +253,9 @@ export default function Citas() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-2" style={{ gridAutoRows: '180px' }}>
+              <div className="grid grid-cols-7 gap-2" style={{ gridAutoRows: 'minmax(220px, 220px)' }}>
                 {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} style={{ height: '180px' }} />
+                  <div key={`empty-${i}`} style={{ height: '220px', minHeight: '220px' }} />
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
@@ -267,13 +267,13 @@ export default function Citas() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          style={{ height: '180px', minHeight: '180px', maxHeight: '180px' }}
-                          className={`border-2 rounded-lg p-2 ${
+                          style={{ height: '220px', minHeight: '220px', maxHeight: '220px', overflow: 'visible' }}
+                          className={`border-2 rounded-lg p-3 ${
                             snapshot.isDraggingOver ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'
                           }`}
                         >
-                          <div className="font-bold text-base mb-2 text-[#004D9D]">{day}</div>
-                          <div className="space-y-1 overflow-y-auto" style={{ height: '140px' }}>
+                          <div className="font-bold text-lg mb-2 text-[#004D9D]">{day}</div>
+                          <div className="space-y-1 overflow-y-auto" style={{ height: '170px', maxHeight: '170px' }}>
                           {citasDelDia.map((cita, index) => {
                             const cliente = clientes.find(c => c.id === cita.cliente_id);
                             const puedeMarcarVisitado = isPastDateTime(cita.fecha, cita.hora);

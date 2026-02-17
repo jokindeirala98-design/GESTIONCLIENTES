@@ -50,6 +50,7 @@
 import Calendario from './pages/Calendario';
 import CentroControlInformes from './pages/CentroControlInformes';
 import CierresVerificados from './pages/CierresVerificados';
+import Citas from './pages/Citas';
 import Clientes from './pages/Clientes';
 import Comisiones from './pages/Comisiones';
 import ComisionesAdmin from './pages/ComisionesAdmin';
@@ -65,7 +66,6 @@ import InformesPorPresentar from './pages/InformesPorPresentar';
 import InformesPotencias from './pages/InformesPotencias';
 import ReadyToGo from './pages/ReadyToGo';
 import Zonas from './pages/Zonas';
-import Citas from './pages/Citas';
 import __Layout from './Layout.jsx';
 
 
@@ -73,6 +73,7 @@ export const PAGES = {
     "Calendario": Calendario,
     "CentroControlInformes": CentroControlInformes,
     "CierresVerificados": CierresVerificados,
+    "Citas": Citas,
     "Clientes": Clientes,
     "Comisiones": Comisiones,
     "ComisionesAdmin": ComisionesAdmin,
@@ -88,7 +89,6 @@ export const PAGES = {
     "InformesPotencias": InformesPotencias,
     "ReadyToGo": ReadyToGo,
     "Zonas": Zonas,
-    "Citas": Citas,
 }
 
 export const pagesConfig = {
