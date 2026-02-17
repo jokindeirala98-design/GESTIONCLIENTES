@@ -89,11 +89,12 @@ export default function Citas() {
     
     if (!destination) return;
 
-    // Si se arrastra a un día del calendario
-    if (destination.droppableId.startsWith('day-')) {
+    // Si se arrastra a un día del calendario (desde columnas de espera)
+    if (destination.droppableId.startsWith('day-') && (source.droppableId === 'potencias' || source.droppableId === 'comparativo')) {
       const [, day] = destination.droppableId.split('-');
-      const fecha = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), parseInt(day));
-      const fechaStr = fecha.toISOString().split('T')[0];
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      const fechaStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       
       setSelectedSlot({
         clienteId: draggableId,
@@ -102,14 +103,14 @@ export default function Citas() {
       });
     }
     
-    // Si se arrastra de vuelta a las columnas
-    if (destination.droppableId === 'potencias' || destination.droppableId === 'comparativo') {
-      const cita = citas.find(c => c.cliente_id === draggableId);
+    // Si se arrastra de vuelta a las columnas (desde el calendario)
+    if ((destination.droppableId === 'potencias' || destination.droppableId === 'comparativo') && source.droppableId.startsWith('day-')) {
+      const cita = citas.find(c => c.id === draggableId);
       if (cita) {
         deleteCitaMutation.mutate(cita.id);
         
         // Eliminar evento asociado
-        const cliente = clientes.find(c => c.id === draggableId);
+        const cliente = clientes.find(c => c.id === cita.cliente_id);
         if (cliente) {
           const eventosActualizados = (cliente.eventos || []).filter(
             e => e.tipo_automatico !== 'cita_presentacion' || e.id !== `cita_${cita.id}`
