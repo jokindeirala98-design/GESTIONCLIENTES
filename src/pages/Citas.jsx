@@ -253,7 +253,8 @@ export default function Citas() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-2" style={{ gridTemplateRows: 'repeat(auto-fill, 220px)', gridAutoRows: '220px' }}>
+              <div style={{ width: '100%', minHeight: 'auto' }}>
+                <div className="grid grid-cols-7 gap-2" style={{ gridTemplateRows: 'repeat(6, 220px)', minHeight: 'auto' }}>
                 {Array.from({ length: startingDayOfWeek }).map((_, i) => (
                   <div key={`empty-${i}`} style={{ height: '220px', minHeight: '220px', maxHeight: '220px' }} />
                 ))}
@@ -329,6 +330,7 @@ export default function Citas() {
                 );
               })}
             </div>
+              </div>
           </CardContent>
         </Card>
         </div>
