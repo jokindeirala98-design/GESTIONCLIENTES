@@ -250,6 +250,12 @@ export default function InformesPorPresentar() {
           // NO marcar como cerrado aquí - solo cuando se firma el cliente
           return {
             ...s,
+            informe_comparativo: {
+              nombre: informeSubido.files[0].fileName,
+              url: informeSubido.files[0].fileUrl,
+              fecha_subida: new Date().toISOString(),
+              subido_por_email: user.email
+            },
             informe_final: {
               archivos: archivos,
               fecha_subida: new Date().toISOString(),
@@ -610,7 +616,7 @@ export default function InformesPorPresentar() {
     }, "2.0");
   };
 
-  // Mostrar clientes en "Facturas presentadas" O clientes que tengan al menos un suministro sin informe
+  // Mostrar clientes en "Pendiente informe comparativo" O clientes que tengan informe de potencias pero sin comparativo
   // EXCLUIR clientes con estado "Ignorado con mucho éxito"
   let clientesFacturasPresent = clientes.filter(c => {
     if (!c.suministros || c.suministros.length === 0) return false;
@@ -620,20 +626,16 @@ export default function InformesPorPresentar() {
     const suministrosActivos = c.suministros.filter(s => !s.cerrado);
     if (suministrosActivos.length === 0) return false;
 
-    // Si está en "Facturas presentadas", mostrar
-    if (c.estado === "Facturas presentadas") return true;
+    // Si está en "Pendiente informe comparativo", mostrar
+    if (c.estado === "Pendiente informe comparativo") return true;
 
-    // Si está en estados más avanzados, mostrar SOLO si tiene suministros sin informe
-    const tieneAlgunSuministroSinInforme = suministrosActivos.some(s => {
-      if (!s.informe_final) return true; // No tiene informe
-      const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
-        a && a.url && a.url.trim() !== '' && a.url !== 'null'
-      );
-      const tieneUrlValida = s.informe_final.url && s.informe_final.url.trim() !== '' && s.informe_final.url !== 'null';
-      return !tieneArchivosValidos && !tieneUrlValida; // No tiene ninguna URL válida
+    // Si está en estados más avanzados, mostrar SOLO si tiene suministros con potencias pero sin comparativo/final
+    const tieneAlgunSuministroSinComparativo = suministrosActivos.some(s => {
+      // Tiene informe de potencias pero no tiene comparativo ni final
+      return s.informe_potencias && !s.informe_comparativo;
     });
 
-    return tieneAlgunSuministroSinInforme;
+    return tieneAlgunSuministroSinComparativo;
   });
 
   // Aplicar filtro de prioridad
@@ -978,6 +980,23 @@ export default function InformesPorPresentar() {
                                           </div>
                                         ))}
                                       </div>
+
+                                      {suministro.informe_potencias && (
+                                        <div className="space-y-2 mt-3">
+                                          <p className="text-sm text-gray-600 font-medium">⚡ Informe de Potencias:</p>
+                                          <div className="flex items-center gap-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-300">
+                                            <FileText className="w-4 h-4 text-yellow-600" />
+                                            <span className="flex-1 truncate">{suministro.informe_potencias.nombre}</span>
+                                            <button
+                                              onClick={() => handleDescargarArchivo(suministro.informe_potencias.url, suministro.informe_potencias.nombre)}
+                                              className="text-yellow-600 hover:underline flex items-center gap-1"
+                                            >
+                                              <Download className="w-4 h-4" />
+                                              Descargar
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
 
@@ -1050,7 +1069,7 @@ export default function InformesPorPresentar() {
                                   ) : (
                                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                       <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sm font-semibold text-purple-900">📤 Subir informe para este suministro</p>
+                                        <p className="text-sm font-semibold text-purple-900">📤 Subir informe comparativo (PDF) para este suministro</p>
                                         <Button
                                           size="sm"
                                           onClick={() => openYaEsClienteDialog(cliente, suministro.id)}

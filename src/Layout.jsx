@@ -88,6 +88,60 @@ export default function Layout({ children }) {
       icon: CalendarIcon,
     },
     {
+      title: "Citas",
+      url: createPageUrl("Citas"),
+      icon: CalendarIcon,
+    },
+    {
+      title: "Ready to Go",
+      url: createPageUrl("ReadyToGo"),
+      icon: CheckCircle2,
+    },
+    {
+      title: "Comisiones",
+      url: createPageUrl("Comisiones"),
+      icon: DollarSign,
+    },
+    {
+      title: "Incidencias",
+      url: createPageUrl("Incidencias"),
+      icon: AlertTriangle,
+    },
+    {
+      title: "Configuración",
+      url: createPageUrl("Configuracion"),
+      icon: Settings,
+    },
+    ];
+
+    // Menú específico para José
+    const menuJose = [
+    {
+      title: "Zonas",
+      url: createPageUrl("Zonas"),
+      icon: MapPin,
+    },
+    {
+      title: "Clientes",
+      url: createPageUrl("Clientes"),
+      icon: UsersIcon,
+    },
+    {
+      title: "Calendario",
+      url: createPageUrl("Calendario"),
+      icon: CalendarIcon,
+    },
+    {
+      title: "Citas",
+      url: createPageUrl("Citas"),
+      icon: CalendarIcon,
+    },
+    {
+      title: "Informes de Potencias",
+      url: createPageUrl("InformesPotencias"),
+      icon: FileText,
+    },
+    {
       title: "Ready to Go",
       url: createPageUrl("ReadyToGo"),
       icon: CheckCircle2,
@@ -114,6 +168,11 @@ export default function Layout({ children }) {
     {
       title: "Calendario",
       url: createPageUrl("Calendario"),
+      icon: CalendarIcon,
+    },
+    {
+      title: "Citas",
+      url: createPageUrl("Citas"),
       icon: CalendarIcon,
     },
     {
@@ -166,7 +225,7 @@ export default function Layout({ children }) {
     },
     ];
 
-  const navigationItems = isAdmin ? menuAdmin : menuComercial;
+  const navigationItems = isAdmin ? menuAdmin : (user.email === 'jose@voltisenergia.com' ? menuJose : menuComercial);
 
   const handleLogout = () => {
     base44.auth.logout();
