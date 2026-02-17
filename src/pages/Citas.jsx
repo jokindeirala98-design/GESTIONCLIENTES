@@ -243,17 +243,17 @@ export default function Citas() {
 
         {/* Calendario */}
         <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-7 gap-3 mb-4">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-7 gap-2 mb-2">
               {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                <div key={day} className="text-center font-semibold text-[#004D9D] py-3 text-lg">
+                <div key={day} className="text-center font-semibold text-[#004D9D] py-2">
                   {day}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-3">
+            <div className="grid grid-cols-7 gap-2">
               {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="min-h-[140px]" />
+                <div key={`empty-${i}`} className="aspect-square" />
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
@@ -265,12 +265,12 @@ export default function Citas() {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`min-h-[140px] border-2 rounded-lg p-2 transition-all ${
-                          snapshot.isDraggingOver ? 'bg-blue-100 border-blue-500 shadow-lg' : 'bg-white border-gray-300'
+                        className={`aspect-square border rounded-lg p-1 ${
+                          snapshot.isDraggingOver ? 'bg-blue-100 border-blue-500' : 'bg-white border-gray-200'
                         }`}
                       >
-                        <div className="font-bold text-base mb-2 text-[#004D9D]">{day}</div>
-                        <div className="space-y-1 overflow-y-auto max-h-[100px]">
+                        <div className="font-semibold text-sm mb-1">{day}</div>
+                        <div className="space-y-1 overflow-y-auto max-h-[120px]">
                           {citasDelDia.map((cita) => {
                             const cliente = clientes.find(c => c.id === cita.cliente_id);
                             const puedeMarcarVisitado = isPastDateTime(cita.fecha, cita.hora);
@@ -278,18 +278,18 @@ export default function Citas() {
                             return (
                               <div
                                 key={cita.id}
-                                className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF] text-white text-[10px] px-1.5 py-1 rounded flex items-center justify-between gap-1"
+                                className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF] text-white text-xs p-1 rounded flex items-center justify-between gap-1"
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold truncate">{cita.hora}</div>
-                                  <div className="truncate opacity-90">{cliente?.propietario_iniciales}</div>
+                                  <div className="truncate text-[10px]">{cliente?.propietario_iniciales}</div>
                                 </div>
                                 {puedeMarcarVisitado && (
                                   <button
                                     onClick={() => handleMarcarVisitado(cita)}
                                     className="bg-green-500 hover:bg-green-600 rounded p-0.5 flex-shrink-0"
                                   >
-                                    <Check className="w-2.5 h-2.5" />
+                                    <Check className="w-3 h-3" />
                                   </button>
                                 )}
                               </div>
@@ -327,16 +327,16 @@ export default function Citas() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`bg-yellow-100 border-2 border-yellow-400 rounded-lg p-2 cursor-move max-w-[120px] ${
-                              snapshot.isDragging ? 'shadow-lg opacity-80' : ''
+                            className={`bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 cursor-move ${
+                              snapshot.isDragging ? 'shadow-lg' : ''
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-1">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-yellow-900 text-xs truncate">{cliente.nombre_negocio}</p>
-                                <p className="text-[10px] text-yellow-700">{cliente.propietario_iniciales}</p>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold text-yellow-900">{cliente.nombre_negocio}</p>
+                                <p className="text-xs text-yellow-700">{cliente.propietario_iniciales}</p>
                               </div>
-                              <Badge className="bg-yellow-600 text-[10px] px-1 py-0">50%</Badge>
+                              <Badge className="bg-yellow-600">50%</Badge>
                             </div>
                           </div>
                         )}
@@ -368,16 +368,16 @@ export default function Citas() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`bg-green-100 border-2 border-green-400 rounded-lg p-2 cursor-move max-w-[120px] ${
-                              snapshot.isDragging ? 'shadow-lg opacity-80' : ''
+                            className={`bg-green-100 border-2 border-green-400 rounded-lg p-3 cursor-move ${
+                              snapshot.isDragging ? 'shadow-lg' : ''
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-1">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-green-900 text-xs truncate">{cliente.nombre_negocio}</p>
-                                <p className="text-[10px] text-green-700">{cliente.propietario_iniciales}</p>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold text-green-900">{cliente.nombre_negocio}</p>
+                                <p className="text-xs text-green-700">{cliente.propietario_iniciales}</p>
                               </div>
-                              <Badge className="bg-green-600 text-[10px] px-1 py-0">100%</Badge>
+                              <Badge className="bg-green-600">100%</Badge>
                             </div>
                           </div>
                         )}
