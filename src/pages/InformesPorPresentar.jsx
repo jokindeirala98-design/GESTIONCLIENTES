@@ -288,6 +288,9 @@ export default function InformesPorPresentar() {
       // Solo considerar suministros NO cerrados
       const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
       
+      // Primero verificar si todos tienen comparativo
+      const todosConComparativo = suministrosActivos.every(s => s.informe_comparativo);
+      
       const todosConInforme = suministrosActivos.every(s => {
         if (!s.informe_final) return false;
         const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
@@ -297,7 +300,9 @@ export default function InformesPorPresentar() {
         return tieneArchivosValidos || tieneUrlValida;
       });
       const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
-      const nuevoEstado = todosConInforme ? "Informe listo" : "Facturas presentadas";
+      const nuevoEstado = todosConInforme ? "Informe listo" : 
+                          todosConComparativo ? "Pendiente informe comparativo" : 
+                          "Pendiente informe potencias";
 
       await updateClienteMutation.mutateAsync({
         id: cliente.id,
