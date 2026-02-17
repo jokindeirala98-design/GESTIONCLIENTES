@@ -243,35 +243,36 @@ export default function Citas() {
         </Card>
 
         {/* Calendario */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-7 gap-2 mb-4">
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                <div key={day} className="text-center font-semibold text-[#004D9D] py-2 text-base">
-                  {day}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-[180px]" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const citasDelDia = getCitasForDay(day);
-                
-                return (
-                  <Droppable key={day} droppableId={`day-${day}`}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`h-[180px] border-2 rounded-lg p-2 ${
-                          snapshot.isDraggingOver ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'
-                        }`}
-                      >
-                        <div className="font-bold text-base mb-2 text-[#004D9D]">{day}</div>
-                        <div className="space-y-1 overflow-y-auto h-[140px]">
+        <div className="mb-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                  <div key={day} className="text-center font-semibold text-[#004D9D] py-2 text-base">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+                  <div key={`empty-${i}`} className="h-[180px] w-full" />
+                ))}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const citasDelDia = getCitasForDay(day);
+                  
+                  return (
+                    <Droppable key={day} droppableId={`day-${day}`}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`h-[180px] w-full border-2 rounded-lg p-2 ${
+                            snapshot.isDraggingOver ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'
+                          }`}
+                        >
+                          <div className="font-bold text-base mb-2 text-[#004D9D]">{day}</div>
+                          <div className="space-y-1 overflow-y-auto h-[140px]">
                           {citasDelDia.map((cita, index) => {
                             const cliente = clientes.find(c => c.id === cita.cliente_id);
                             const puedeMarcarVisitado = isPastDateTime(cita.fecha, cita.hora);
@@ -311,7 +312,7 @@ export default function Citas() {
                             );
                           })}
                         </div>
-                        {provided.placeholder}
+                        <div style={{ display: 'none' }}>{provided.placeholder}</div>
                       </div>
                     )}
                   </Droppable>
@@ -320,6 +321,7 @@ export default function Citas() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* Zonas de espera */}
         <div className="grid md:grid-cols-2 gap-6">
