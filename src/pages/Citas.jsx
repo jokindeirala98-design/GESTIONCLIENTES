@@ -253,27 +253,34 @@ export default function Citas() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-2" style={{ gridAutoRows: 'minmax(220px, 220px)' }}>
+              <div className="grid grid-cols-7 gap-2" style={{ gridTemplateRows: 'repeat(auto-fill, 220px)', gridAutoRows: '220px' }}>
                 {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} style={{ height: '220px', minHeight: '220px' }} />
+                  <div key={`empty-${i}`} style={{ height: '220px', minHeight: '220px', maxHeight: '220px' }} />
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
                   const citasDelDia = getCitasForDay(day);
                   
                   return (
-                    <Droppable key={day} droppableId={`day-${day}`}>
+                    <Droppable key={day} droppableId={`day-${day}`} isDropDisabled={false}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          style={{ height: '220px', minHeight: '220px', maxHeight: '220px', overflow: 'visible' }}
+                          style={{ 
+                            height: '220px', 
+                            minHeight: '220px', 
+                            maxHeight: '220px',
+                            width: '100%',
+                            position: 'relative',
+                            boxSizing: 'border-box'
+                          }}
                           className={`border-2 rounded-lg p-3 ${
                             snapshot.isDraggingOver ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'
                           }`}
                         >
-                          <div className="font-bold text-lg mb-2 text-[#004D9D]">{day}</div>
-                          <div className="space-y-1 overflow-y-auto" style={{ height: '170px', maxHeight: '170px' }}>
+                          <div className="font-bold text-lg mb-2 text-[#004D9D]" style={{ height: '28px' }}>{day}</div>
+                          <div className="space-y-1" style={{ height: '170px', maxHeight: '170px', overflowY: 'auto', overflowX: 'hidden' }}>
                           {citasDelDia.map((cita, index) => {
                             const cliente = clientes.find(c => c.id === cita.cliente_id);
                             const puedeMarcarVisitado = isPastDateTime(cita.fecha, cita.hora);
@@ -312,8 +319,10 @@ export default function Citas() {
                               </Draggable>
                             );
                           })}
+                          <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+                            {provided.placeholder}
+                          </div>
                         </div>
-                        <span style={{ display: 'none', height: 0, width: 0 }}>{provided.placeholder}</span>
                       </div>
                     )}
                   </Droppable>
