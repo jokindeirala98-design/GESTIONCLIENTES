@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Check, Filter, Calendar } from "lucide-react";
 
 export default function Citas() {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [soloMis, setSoloMis] = useState(false);
 
@@ -23,6 +24,23 @@ export default function Citas() {
     queryFn: () => base44.entities.Cliente.list(),
   });
 
+  const updateClienteMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clientes']);
+    },
+  });
+
+  const handleMarcarVisitado = async (clienteId) => {
+    await updateClienteMutation.mutateAsync({
+      id: clienteId,
+      data: {
+        cita_presentacion_visitado: true,
+        fecha_visita_presentacion: new Date().toISOString()
+      }
+    });
+  };
+
   // Clientes con informe de potencias (50%)
   const clientesPotencias = clientes.filter(c => {
     if (soloMis && c.propietario_email !== user?.email) return false;
@@ -32,6 +50,7 @@ export default function Citas() {
 
   // Clientes con informe final completo (100%)
   const clientesCompletos = clientes.filter(c => {
+    if (c.cita_presentacion_visitado) return false;
     if (soloMis && c.propietario_email !== user?.email) return false;
     if (!c.suministros || c.suministros.length === 0) return false;
     return c.suministros.every(s => s.informe_comparativo);
@@ -125,7 +144,17 @@ export default function Citas() {
                         Comercial: {cliente.propietario_iniciales}
                       </p>
                     </div>
-                    <Badge className="bg-green-600 text-white">100%</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-600 text-white">100%</Badge>
+                      <Button
+                        size="sm"
+                        onClick={() => handleMarcarVisitado(cliente.id)}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Visitado
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
