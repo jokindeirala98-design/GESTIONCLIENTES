@@ -62,10 +62,10 @@ import GestionUsuarios from './pages/GestionUsuarios';
 import Home from './pages/Home';
 import Incidencias from './pages/Incidencias';
 import InformesPorPresentar from './pages/InformesPorPresentar';
+import InformesPotencias from './pages/InformesPotencias';
 import ReadyToGo from './pages/ReadyToGo';
 import Zonas from './pages/Zonas';
 import Citas from './pages/Citas';
-import InformesPotencias from './pages/InformesPotencias';
 import __Layout from './Layout.jsx';
 
 
@@ -85,10 +85,10 @@ export const PAGES = {
     "Home": Home,
     "Incidencias": Incidencias,
     "InformesPorPresentar": InformesPorPresentar,
+    "InformesPotencias": InformesPotencias,
     "ReadyToGo": ReadyToGo,
     "Zonas": Zonas,
     "Citas": Citas,
-    "InformesPotencias": InformesPotencias,
 }
 
 export const pagesConfig = {

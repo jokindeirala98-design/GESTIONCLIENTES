@@ -207,7 +207,7 @@ export default function Citas() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
+      <div className="p-4 md:p-8 w-full mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
@@ -242,18 +242,18 @@ export default function Citas() {
         </Card>
 
         {/* Calendario */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-7 gap-3 mb-4">
+        <Card className="mb-6 w-full">
+          <CardContent className="p-6 w-full">
+            <div className="grid grid-cols-7 gap-4 mb-4">
               {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
                 <div key={day} className="text-center font-semibold text-[#004D9D] py-3 text-lg">
                   {day}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-3">
+            <div className="grid grid-cols-7 gap-4">
               {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="min-h-[140px]" />
+                <div key={`empty-${i}`} className="h-[160px]" />
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
@@ -265,7 +265,7 @@ export default function Citas() {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`min-h-[140px] border-2 rounded-lg p-2 transition-all ${
+                        className={`h-[160px] border-2 rounded-lg p-2 transition-colors ${
                           snapshot.isDraggingOver ? 'bg-blue-100 border-blue-500 shadow-lg' : 'bg-white border-gray-300'
                         }`}
                       >
