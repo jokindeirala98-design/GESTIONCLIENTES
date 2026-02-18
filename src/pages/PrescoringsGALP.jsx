@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Search, Save } from "lucide-react";
+import { Plus, Trash2, Search, Copy, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 
 const ALLOWED_EMAILS = [
