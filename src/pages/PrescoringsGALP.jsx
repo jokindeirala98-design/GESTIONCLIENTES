@@ -192,7 +192,7 @@ export default function PrescoringsGALP() {
                   {col.label}
                 </th>
               ))}
-              <th className="px-3 py-3 w-10"></th>
+              <th className="px-3 py-3 w-10" colSpan={2}></th>
             </tr>
           </thead>
           <tbody>
