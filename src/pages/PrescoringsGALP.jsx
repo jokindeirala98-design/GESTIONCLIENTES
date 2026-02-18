@@ -364,5 +364,6 @@ export default function PrescoringsGALP() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
