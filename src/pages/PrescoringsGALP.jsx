@@ -88,6 +88,31 @@ export default function PrescoringsGALP() {
     deleteMutation.mutate(id);
   };
 
+  const toggleRow = (id) => {
+    setSelectedRows(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedRows.size === filteredRows.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(filteredRows.map(r => r.id)));
+    }
+  };
+
+  const copySelected = () => {
+    const selected = filteredRows.filter(r => selectedRows.has(r.id));
+    const text = selected.map(row =>
+      COLUMNS.map(col => row[col.key] || "").join("\t")
+    ).join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success(`${selected.length} fila(s) copiadas al portapapeles`);
+  };
+
   const filteredRows = rows.filter(row => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
