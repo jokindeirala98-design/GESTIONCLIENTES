@@ -364,20 +364,6 @@ export default function PrescoringsGALP() {
                     )}
                   </td>
                 ))}
-                {/* Enviado toggle */}
-                <td className="px-2 py-1 text-center">
-                  <button
-                    onClick={() => handleToggleEnviado(row)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto transition-colors ${
-                      row.enviado
-                        ? "bg-green-500 hover:bg-green-600 text-white"
-                        : "bg-red-100 hover:bg-red-200 text-red-500"
-                    }`}
-                    title={row.enviado ? "Marcar como pendiente" : "Marcar como enviado"}
-                  >
-                    {row.enviado ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                  </button>
-                </td>
                 <td className="px-2 py-1">
                   <button
                     onClick={() => handleDelete(row.id)}
