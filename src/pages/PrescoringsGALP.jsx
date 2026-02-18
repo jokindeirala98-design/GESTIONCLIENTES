@@ -198,14 +198,14 @@ export default function PrescoringsGALP() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={COLUMNS.length + 2} className="text-center py-12 text-[#666666]">
+                <td colSpan={COLUMNS.length + 3} className="text-center py-12 text-[#666666]">
                   Cargando...
                 </td>
               </tr>
             )}
             {!isLoading && filteredRows.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + 2} className="text-center py-12 text-[#666666]">
+                <td colSpan={COLUMNS.length + 3} className="text-center py-12 text-[#666666]">
                   {search ? "No se encontraron resultados." : "No hay clientes. Añade el primero."}
                 </td>
               </tr>
@@ -213,8 +213,16 @@ export default function PrescoringsGALP() {
             {filteredRows.map((row, idx) => (
               <tr
                 key={row.id}
-                className={`border-b border-gray-100 hover:bg-blue-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
+                className={`border-b border-gray-100 transition-colors ${selectedRows.has(row.id) ? "bg-blue-100" : idx % 2 === 0 ? "bg-white hover:bg-blue-50/30" : "bg-gray-50/50 hover:bg-blue-50/30"}`}
               >
+                <td className="px-3 py-1.5">
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.has(row.id)}
+                    onChange={() => toggleRow(row.id)}
+                    className="cursor-pointer w-4 h-4 rounded"
+                  />
+                </td>
                 <td className="px-3 py-1.5 text-[#666666] text-xs font-medium">{idx + 1}</td>
                 {COLUMNS.map(col => (
                   <td key={col.key} className="px-1 py-1">
