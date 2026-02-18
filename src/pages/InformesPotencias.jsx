@@ -319,7 +319,7 @@ export default function InformesPotencias() {
                   <CollapsibleContent>
                     <CardContent className="pt-0">
                       <div className="space-y-4">
-                        {cliente.suministros?.filter(s => !s.cerrado).map((suministro) => {
+                        {cliente.suministros?.filter(s => !s.cerrado && s.facturas && s.facturas.length > 0 && !s.informe_potencias && !s.potencias_ignorado).map((suministro) => {
                           const informeSubido = informesSubidos[suministro.id];
                           const estaGuardando = guardando[suministro.id];
 
