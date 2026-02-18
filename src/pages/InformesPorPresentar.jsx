@@ -952,7 +952,7 @@ export default function InformesPorPresentar() {
                   <CollapsibleContent>
                     <CardContent className="pt-0">
                       <div className="space-y-4">
-                       {cliente.suministros?.filter(s => !s.cerrado).map((suministro) => {
+                       {cliente.suministros?.filter(s => !s.cerrado && (s.informe_potencias || s.potencias_ignorado) && !s.informe_comparativo).map((suministro) => {
                          const informeSubido = informesSubidos[suministro.id];
                          const estaGuardando = guardando[suministro.id];
 
