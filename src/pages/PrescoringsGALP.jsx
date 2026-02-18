@@ -157,6 +157,12 @@ export default function PrescoringsGALP() {
               className="pl-9 w-full"
             />
           </div>
+          {selectedRows.size > 0 && (
+            <Button onClick={copySelected} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
+              <Copy className="w-4 h-4 mr-2" />
+              Copiar {selectedRows.size} fila(s)
+            </Button>
+          )}
           <Button onClick={handleAddRow} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
             <Plus className="w-4 h-4 mr-2" />
             Añadir cliente
