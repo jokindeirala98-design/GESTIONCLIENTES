@@ -353,6 +353,19 @@ export default function InformesPotencias() {
                                     </div>
                                   </div>
 
+                                  <div className="flex justify-end mb-2">
+                                     <Button
+                                       size="sm"
+                                       variant="outline"
+                                       onClick={() => handleIgnorarSuministro(cliente, suministro.id)}
+                                       disabled={estaGuardando}
+                                       className="text-orange-600 border-orange-300 hover:bg-orange-50 text-xs h-7"
+                                     >
+                                       <Ban className="w-3 h-3 mr-1" />
+                                       Ignorar informe de potencias
+                                     </Button>
+                                   </div>
+
                                   {suministro.informe_potencias ? (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                       <div className="flex items-center justify-between mb-2">
