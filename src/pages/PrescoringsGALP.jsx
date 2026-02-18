@@ -21,6 +21,7 @@ const ALLOWED_EMAILS = [
 ];
 
 const COLUMNS = [
+  { key: "created_date", label: "FECHA/HORA", width: "150px" },
   { key: "cups", label: "CUPS", width: "200px" },
   { key: "nombre_razon_social", label: "NOMBRE", width: "200px" },
   { key: "cif", label: "CIF", width: "130px" },
