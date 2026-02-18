@@ -169,6 +169,7 @@ export default function PrescoringsGALP() {
   }
 
   return (
+    <>
     <div className="p-4 md:p-8">
       <div className="mb-6">
         <div className="mb-4">
