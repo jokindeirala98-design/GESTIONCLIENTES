@@ -119,7 +119,16 @@ export default function PrescoringsGALP() {
   };
 
   const handleToggleEnviado = (row) => {
-    updateMutation.mutate({ id: row.id, data: { enviado: !row.enviado } });
+    if (row.denegado) {
+      // denegado -> reset (sin x ni tick)
+      updateMutation.mutate({ id: row.id, data: { enviado: false, denegado: false } });
+    } else if (row.enviado) {
+      // tick verde -> denegado
+      updateMutation.mutate({ id: row.id, data: { enviado: false, denegado: true } });
+    } else {
+      // x -> tick verde
+      updateMutation.mutate({ id: row.id, data: { enviado: true, denegado: false } });
+    }
   };
 
   const toggleRow = (id) => {
