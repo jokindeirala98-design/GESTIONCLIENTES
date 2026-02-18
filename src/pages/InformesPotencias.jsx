@@ -202,19 +202,53 @@ export default function InformesPotencias() {
     }
   };
 
-  // Mostrar clientes en estado "Pendiente informe potencias"
+  const handleIgnorarSuministro = async (cliente, suministroId) => {
+    if (!window.confirm("¿Omitir el informe de potencias para este suministro? Se tratará como si estuviera listo.")) return;
+
+    setGuardando(prev => ({ ...prev, [suministroId]: true }));
+    try {
+      const nuevosSuministros = cliente.suministros.map(s =>
+        s.id === suministroId ? { ...s, potencias_ignorado: true } : s
+      );
+
+      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
+      const todosTratados = suministrosActivos.every(s => s.informe_potencias || s.potencias_ignorado);
+      const nuevoEstado = todosTratados ? "Pendiente informe comparativo" : "Pendiente informe potencias";
+
+      await updateClienteMutation.mutateAsync({
+        id: cliente.id,
+        data: { suministros: nuevosSuministros, estado: nuevoEstado }
+      });
+
+      if (todosTratados) {
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: "nicolas@voltisenergia.com",
+            subject: `✅ Informes de potencias listos para ${cliente.nombre_negocio}`,
+            body: `Hola Nicolás,\n\nTodos los informes de potencias de "${cliente.nombre_negocio}" ya están listos (algunos omitidos).\n\nPuedes verlos en: ${window.location.origin}${createPageUrl("InformesPorPresentar")}\n\nSaludos,\nSistema Voltis`
+          });
+        } catch (e) {}
+      }
+
+      toast.success("Suministro omitido");
+    } catch (error) {
+      toast.error("Error al omitir el suministro");
+    } finally {
+      setGuardando(prev => ({ ...prev, [suministroId]: false }));
+    }
+  };
+
+  // Solo clientes con estado exactamente "Facturas presentadas"
+  // que tengan al menos un suministro activo con facturas y sin informe de potencias ni ignorado
   const clientesPendientes = clientes.filter(c => {
+    if (c.estado !== "Facturas presentadas") return false;
     if (!c.suministros || c.suministros.length === 0) return false;
-    if (c.estado === "Ignorado con mucho éxito") return false;
 
     const suministrosActivos = c.suministros.filter(s => !s.cerrado);
-    if (suministrosActivos.length === 0) return false;
-
-    // Mostrar si está en "Pendiente informe potencias" O tiene suministros sin informe de potencias
-    if (c.estado === "Pendiente informe potencias") return true;
-
-    const tieneAlgunSuministroSinPotencias = suministrosActivos.some(s => !s.informe_potencias);
-    return tieneAlgunSuministroSinPotencias;
+    // Debe tener al menos un suministro con facturas pendiente de informe
+    return suministrosActivos.some(s =>
+      s.facturas && s.facturas.length > 0 && !s.informe_potencias && !s.potencias_ignorado
+    );
   });
 
   if (!user) {
