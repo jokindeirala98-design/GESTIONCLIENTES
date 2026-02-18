@@ -232,11 +232,13 @@ export default function Layout({ children }) {
 
   const PRESCORING_EMAILS = ['jose@voltisenergia.com', 'iranzu@voltisenergia.com', 'nicolasvoltis@gmail.com', 'nicolas@voltisenergia.com'];
 
+  const prescoringItem = { title: "Prescorings GALP", url: createPageUrl("PrescoringsGALP"), icon: FileText };
+
   const navigationItems = isAdmin 
-    ? menuAdmin 
+    ? (PRESCORING_EMAILS.includes(user.email) ? [...menuAdmin, prescoringItem] : menuAdmin)
     : (user.email === 'jose@voltisenergia.com' ? menuJose 
       : (PRESCORING_EMAILS.includes(user.email) 
-        ? [...menuComercial, { title: "Prescorings GALP", url: createPageUrl("PrescoringsGALP"), icon: FileText }]
+        ? [...menuComercial, prescoringItem]
         : menuComercial));
 
   const handleLogout = () => {
