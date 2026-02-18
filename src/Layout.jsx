@@ -230,7 +230,14 @@ export default function Layout({ children }) {
     },
     ];
 
-  const navigationItems = isAdmin ? menuAdmin : (user.email === 'jose@voltisenergia.com' ? menuJose : menuComercial);
+  const PRESCORING_EMAILS = ['jose@voltisenergia.com', 'iranzu@voltisenergia.com', 'nicolasvoltis@gmail.com', 'nicolas@voltisenergia.com'];
+
+  const navigationItems = isAdmin 
+    ? menuAdmin 
+    : (user.email === 'jose@voltisenergia.com' ? menuJose 
+      : (PRESCORING_EMAILS.includes(user.email) 
+        ? [...menuComercial, { title: "Prescorings GALP", url: createPageUrl("PrescoringsGALP"), icon: FileText }]
+        : menuComercial));
 
   const handleLogout = () => {
     base44.auth.logout();
