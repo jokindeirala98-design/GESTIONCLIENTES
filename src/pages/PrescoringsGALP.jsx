@@ -324,13 +324,15 @@ export default function PrescoringsGALP() {
               <tr
                 key={row.id}
                 className={`border-b border-gray-100 transition-colors ${
-                  row.enviado
-                    ? "opacity-50 bg-gray-50"
-                    : selectedRows.has(row.id)
-                      ? "bg-blue-100"
-                      : idx % 2 === 0
-                        ? "bg-white hover:bg-blue-50/30"
-                        : "bg-gray-50/50 hover:bg-blue-50/30"
+                  row.denegado
+                    ? "bg-red-50"
+                    : row.enviado
+                      ? "opacity-50 bg-gray-50"
+                      : selectedRows.has(row.id)
+                        ? "bg-blue-100"
+                        : idx % 2 === 0
+                          ? "bg-white hover:bg-blue-50/30"
+                          : "bg-gray-50/50 hover:bg-blue-50/30"
                 }`}
               >
                 <td className="px-3 py-1.5">
