@@ -210,6 +210,10 @@ export default function PrescoringsGALP() {
               Copiar {selectedRows.size} fila(s)
             </Button>
           )}
+          <Button onClick={exportCsv} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
+          </Button>
           <Button onClick={openAddDialog} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
             <Plus className="w-4 h-4 mr-2" />
             Añadir cliente
