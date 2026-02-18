@@ -31,6 +31,7 @@ export default function PrescoringsGALP() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [search, setSearch] = useState("");
   const [editingCells, setEditingCells] = useState({});
+  const [selectedRows, setSelectedRows] = useState(new Set());
   const queryClient = useQueryClient();
 
   useEffect(() => {
