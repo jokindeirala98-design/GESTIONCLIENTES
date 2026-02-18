@@ -140,7 +140,12 @@ export default function PrescoringsGALP() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
-    const d = new Date(dateStr);
+    // Force UTC interpretation: if string has no Z or +offset, append Z
+    let normalized = dateStr;
+    if (typeof dateStr === "string" && !dateStr.endsWith("Z") && !dateStr.match(/[+-]\d{2}:\d{2}$/)) {
+      normalized = dateStr + "Z";
+    }
+    const d = new Date(normalized);
     const formatter = new Intl.DateTimeFormat("es-ES", {
       timeZone: "Europe/Madrid",
       day: "2-digit",
