@@ -191,7 +191,7 @@ export default function PrescoringsGALP() {
               Copiar {selectedRows.size} fila(s)
             </Button>
           )}
-          <Button onClick={handleAddRow} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
+          <Button onClick={openAddDialog} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
             <Plus className="w-4 h-4 mr-2" />
             Añadir cliente
           </Button>
