@@ -335,7 +335,7 @@ export default function PrescoringsGALP() {
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Tipo *</p>
             <div className="flex gap-3">
-              {["Particular", "Autónomo"].map(tipo => (
+              {["Autónomo", "Empresa", "Ayuntamiento"].map(tipo => (
                 <button
                   key={tipo}
                   onClick={() => setNewPartAuto(tipo)}
