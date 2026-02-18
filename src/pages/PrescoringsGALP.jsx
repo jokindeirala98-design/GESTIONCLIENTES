@@ -179,10 +179,11 @@ export default function PrescoringsGALP() {
     return COLUMNS.some(col => getDisplayValue(row, col.key).toLowerCase().includes(s));
   });
 
-  // Sort: not-enviado first, enviado last
+  // Sort: denegado first, then pendientes, then enviados
   const sortedFilteredRows = [
-    ...filteredRows.filter(r => !r.enviado),
-    ...filteredRows.filter(r => r.enviado),
+    ...filteredRows.filter(r => r.denegado),
+    ...filteredRows.filter(r => !r.enviado && !r.denegado),
+    ...filteredRows.filter(r => r.enviado && !r.denegado),
   ];
 
   const getCellValue = (row, key) => {
