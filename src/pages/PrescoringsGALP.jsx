@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Search, Copy, Download } from "lucide-react";
+import { Plus, Trash2, Search, Copy, Download, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -41,6 +41,7 @@ export default function PrescoringsGALP() {
   const [editingCells, setEditingCells] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [addDialog, setAddDialog] = useState(false);
+  const [exportDialog, setExportDialog] = useState(false);
   const [newProducto, setNewProducto] = useState("");
   const [newTarifa, setNewTarifa] = useState("");
   const [newPartAuto, setNewPartAuto] = useState("");
@@ -94,7 +95,7 @@ export default function PrescoringsGALP() {
       return;
     }
     createMutation.mutate(
-      { producto: newProducto, tarifa: newTarifa, part_auto: newPartAuto },
+      { producto: newProducto, tarifa: newTarifa, part_auto: newPartAuto, enviado: false },
       { onSuccess: () => setAddDialog(false) }
     );
   };
@@ -117,6 +118,10 @@ export default function PrescoringsGALP() {
     deleteMutation.mutate(id);
   };
 
+  const handleToggleEnviado = (row) => {
+    updateMutation.mutate({ id: row.id, data: { enviado: !row.enviado } });
+  };
+
   const toggleRow = (id) => {
     setSelectedRows(prev => {
       const next = new Set(prev);
@@ -133,37 +138,18 @@ export default function PrescoringsGALP() {
     }
   };
 
-  const exportCsv = () => {
-    const header = COLUMNS.map(col => col.label).join(";");
-    const rowsData = filteredRows.map(row =>
-      COLUMNS.map(col => `"${getDisplayValue(row, col.key).replace(/"/g, '""')}"` ).join(";")
-    );
-    const csv = [header, ...rowsData].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "prescorings-galp.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Exportado correctamente");
-  };
-
-  const copySelected = () => {
-    const selected = filteredRows.filter(r => selectedRows.has(r.id));
-    const text = selected.map(row =>
-      COLUMNS.map(col => row[col.key] || "").join("\t")
-    ).join("\n");
-    navigator.clipboard.writeText(text);
-    toast.success(`${selected.length} fila(s) copiadas al portapapeles`);
-  };
-
+  // Madrid timezone offset: UTC+1 winter, UTC+2 summer
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("es-ES") + " " + d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleString("es-ES", {
+      timeZone: "Europe/Madrid",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const getDisplayValue = (row, key) => {
@@ -178,9 +164,50 @@ export default function PrescoringsGALP() {
     return COLUMNS.some(col => getDisplayValue(row, col.key).toLowerCase().includes(s));
   });
 
+  // Sort: not-enviado first, enviado last
+  const sortedFilteredRows = [
+    ...filteredRows.filter(r => !r.enviado),
+    ...filteredRows.filter(r => r.enviado),
+  ];
+
   const getCellValue = (row, key) => {
     const cellKey = `${row.id}_${key}`;
     return editingCells[cellKey] !== undefined ? editingCells[cellKey] : (row[key] || "");
+  };
+
+  const doExport = (solosPendientes) => {
+    const toExport = solosPendientes
+      ? sortedFilteredRows.filter(r => !r.enviado)
+      : sortedFilteredRows;
+
+    const header = [...COLUMNS.map(col => col.label), "ENVIADO"].join(";");
+    const rowsData = toExport.map(row =>
+      [
+        ...COLUMNS.map(col => `"${getDisplayValue(row, col.key).replace(/"/g, '""')}"`),
+        `"${row.enviado ? "Sí" : "No"}"`
+      ].join(";")
+    );
+    const csv = [header, ...rowsData].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `prescorings-galp${solosPendientes ? "-pendientes" : ""}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setExportDialog(false);
+    toast.success("Exportado correctamente");
+  };
+
+  const copySelected = () => {
+    const selected = sortedFilteredRows.filter(r => selectedRows.has(r.id));
+    const text = selected.map(row =>
+      COLUMNS.map(col => getDisplayValue(row, col.key)).join("\t")
+    ).join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success(`${selected.length} fila(s) copiadas al portapapeles`);
   };
 
   if (!user) {
@@ -199,13 +226,15 @@ export default function PrescoringsGALP() {
     );
   }
 
+  const pendientesCount = sortedFilteredRows.filter(r => !r.enviado).length;
+
   return (
     <>
     <div className="p-4 md:p-8">
       <div className="mb-6">
         <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D]">Prescorings GALP</h1>
-          <p className="text-[#666666] mt-1">{rows.length} cliente{rows.length !== 1 ? "s" : ""}</p>
+          <p className="text-[#666666] mt-1">{rows.length} cliente{rows.length !== 1 ? "s" : ""} · {pendientesCount} pendiente{pendientesCount !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative flex-1">
@@ -223,7 +252,7 @@ export default function PrescoringsGALP() {
               Copiar {selectedRows.size} fila(s)
             </Button>
           )}
-          <Button onClick={exportCsv} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
+          <Button onClick={() => setExportDialog(true)} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
             <Download className="w-4 h-4 mr-2" />
             Exportar CSV
           </Button>
@@ -241,7 +270,7 @@ export default function PrescoringsGALP() {
               <th className="px-3 py-3 w-8">
                 <input
                   type="checkbox"
-                  checked={filteredRows.length > 0 && selectedRows.size === filteredRows.length}
+                  checked={sortedFilteredRows.length > 0 && selectedRows.size === sortedFilteredRows.length}
                   onChange={toggleAll}
                   className="cursor-pointer w-4 h-4 rounded"
                 />
@@ -256,28 +285,37 @@ export default function PrescoringsGALP() {
                   {col.label}
                 </th>
               ))}
-              <th className="px-3 py-3 w-10" colSpan={2}></th>
+              <th className="px-3 py-3 text-center font-semibold text-xs w-16">ENVIADO</th>
+              <th className="px-3 py-3 w-10"></th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={COLUMNS.length + 3} className="text-center py-12 text-[#666666]">
+                <td colSpan={COLUMNS.length + 4} className="text-center py-12 text-[#666666]">
                   Cargando...
                 </td>
               </tr>
             )}
-            {!isLoading && filteredRows.length === 0 && (
+            {!isLoading && sortedFilteredRows.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + 3} className="text-center py-12 text-[#666666]">
+                <td colSpan={COLUMNS.length + 4} className="text-center py-12 text-[#666666]">
                   {search ? "No se encontraron resultados." : "No hay clientes. Añade el primero."}
                 </td>
               </tr>
             )}
-            {filteredRows.map((row, idx) => (
+            {sortedFilteredRows.map((row, idx) => (
               <tr
                 key={row.id}
-                className={`border-b border-gray-100 transition-colors ${selectedRows.has(row.id) ? "bg-blue-100" : idx % 2 === 0 ? "bg-white hover:bg-blue-50/30" : "bg-gray-50/50 hover:bg-blue-50/30"}`}
+                className={`border-b border-gray-100 transition-colors ${
+                  row.enviado
+                    ? "opacity-50 bg-gray-50"
+                    : selectedRows.has(row.id)
+                      ? "bg-blue-100"
+                      : idx % 2 === 0
+                        ? "bg-white hover:bg-blue-50/30"
+                        : "bg-gray-50/50 hover:bg-blue-50/30"
+                }`}
               >
                 <td className="px-3 py-1.5">
                   <input
@@ -306,6 +344,20 @@ export default function PrescoringsGALP() {
                     )}
                   </td>
                 ))}
+                {/* Enviado toggle */}
+                <td className="px-2 py-1 text-center">
+                  <button
+                    onClick={() => handleToggleEnviado(row)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto transition-colors ${
+                      row.enviado
+                        ? "bg-green-500 hover:bg-green-600 text-white"
+                        : "bg-red-100 hover:bg-red-200 text-red-500"
+                    }`}
+                    title={row.enviado ? "Marcar como pendiente" : "Marcar como enviado"}
+                  >
+                    {row.enviado ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  </button>
+                </td>
                 <td className="px-2 py-1">
                   <button
                     onClick={() => handleDelete(row.id)}
@@ -321,6 +373,38 @@ export default function PrescoringsGALP() {
       </div>
     </div>
 
+    {/* Export Dialog */}
+    <Dialog open={exportDialog} onOpenChange={setExportDialog}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-[#004D9D]">Exportar CSV</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-[#666666]">
+          Se exportarán los <strong>{sortedFilteredRows.length}</strong> clientes visibles actualmente
+          {search ? ` (filtro: "${search}")` : ""}.
+        </p>
+        <div className="flex flex-col gap-3 pt-2">
+          <Button
+            onClick={() => doExport(true)}
+            className="bg-[#004D9D] hover:bg-[#003a7a] text-white w-full"
+          >
+            Exportar pendientes ({pendientesCount})
+          </Button>
+          <Button
+            onClick={() => doExport(false)}
+            variant="outline"
+            className="border-[#004D9D] text-[#004D9D] w-full"
+          >
+            Exportar todos ({sortedFilteredRows.length})
+          </Button>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setExportDialog(false)}>Cancelar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Add Dialog */}
     <Dialog open={addDialog} onOpenChange={setAddDialog}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -328,7 +412,6 @@ export default function PrescoringsGALP() {
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* PRODUCTO */}
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Producto *</p>
             <div className="flex gap-3">
@@ -348,7 +431,6 @@ export default function PrescoringsGALP() {
             </div>
           </div>
 
-          {/* TARIFA */}
           {newProducto && (
             <div>
               <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -372,7 +454,6 @@ export default function PrescoringsGALP() {
             </div>
           )}
 
-          {/* PARTICULAR / AUTÓNOMO */}
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Tipo *</p>
             <div className="flex gap-3">
