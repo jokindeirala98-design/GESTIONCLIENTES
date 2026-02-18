@@ -22,7 +22,7 @@ const ALLOWED_EMAILS = [
 
 const COLUMNS = [
   { key: "cups", label: "CUPS", width: "200px" },
-  { key: "nombre_razon_social", label: "NOMBRE O RAZÓN SOCIAL", width: "200px" },
+  { key: "nombre_razon_social", label: "NOMBRE", width: "200px" },
   { key: "cif", label: "CIF", width: "130px" },
   { key: "producto", label: "PRODUCTO", width: "130px" },
   { key: "tarifa", label: "TARIFA", width: "100px" },
