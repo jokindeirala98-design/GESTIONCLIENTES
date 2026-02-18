@@ -138,18 +138,21 @@ export default function PrescoringsGALP() {
     }
   };
 
-  // Madrid timezone offset: UTC+1 winter, UTC+2 summer
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    return d.toLocaleString("es-ES", {
-      timeZone: "Europe/Madrid",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    // Detect if Madrid is UTC+1 (winter) or UTC+2 (summer/DST)
+    const jan = new Date(d.getFullYear(), 0, 1);
+    const jul = new Date(d.getFullYear(), 6, 1);
+    const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+    const madridStd = -60; // UTC+1 in minutes
+    const madridDST = -120; // UTC+2 in minutes
+    // Check if date is in DST by comparing offset
+    const janMadrid = new Date(jan.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+    const julMadrid = new Date(jul.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+    const dMadrid = new Date(d.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(dMadrid.getDate())}/${pad(dMadrid.getMonth() + 1)}/${dMadrid.getFullYear()} ${pad(dMadrid.getHours())}:${pad(dMadrid.getMinutes())}`;
   };
 
   const getDisplayValue = (row, key) => {
