@@ -27,7 +27,7 @@ const COLUMNS = [
   { key: "producto", label: "PRODUCTO", width: "130px" },
   { key: "tarifa", label: "TARIFA", width: "100px" },
   { key: "qa", label: "Qa", width: "100px" },
-  { key: "part_auto", label: "PART./AUTÓ.", width: "120px" },
+  { key: "part_auto", label: "ENTIDAD", width: "120px" },
   { key: "telefono", label: "TELÉFONO", width: "130px" },
   { key: "poblacion", label: "POBLACIÓN", width: "140px" },
   { key: "direccion_fiscal", label: "DIRECCIÓN FISCAL", width: "200px" },
