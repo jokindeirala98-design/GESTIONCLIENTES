@@ -160,10 +160,22 @@ export default function PrescoringsGALP() {
     toast.success(`${selected.length} fila(s) copiadas al portapapeles`);
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("es-ES") + " " + d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const getDisplayValue = (row, key) => {
+    if (key === "created_date") return formatDate(row.created_date);
+    const cellKey = `${row.id}_${key}`;
+    return editingCells[cellKey] !== undefined ? editingCells[cellKey] : (row[key] || "");
+  };
+
   const filteredRows = rows.filter(row => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
-    return COLUMNS.some(col => (row[col.key] || "").toLowerCase().includes(s));
+    return COLUMNS.some(col => getDisplayValue(row, col.key).toLowerCase().includes(s));
   });
 
   const getCellValue = (row, key) => {
