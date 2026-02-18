@@ -132,6 +132,24 @@ export default function PrescoringsGALP() {
     }
   };
 
+  const exportCsv = () => {
+    const header = COLUMNS.map(col => col.label).join(";");
+    const rowsData = filteredRows.map(row =>
+      COLUMNS.map(col => `"${(row[col.key] || "").replace(/"/g, '""')}"` ).join(";")
+    );
+    const csv = [header, ...rowsData].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "prescorings-galp.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Exportado correctamente");
+  };
+
   const copySelected = () => {
     const selected = filteredRows.filter(r => selectedRows.has(r.id));
     const text = selected.map(row =>
