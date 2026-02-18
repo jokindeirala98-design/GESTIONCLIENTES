@@ -290,14 +290,20 @@ export default function PrescoringsGALP() {
                 <td className="px-3 py-1.5 text-[#666666] text-xs font-medium">{idx + 1}</td>
                 {COLUMNS.map(col => (
                   <td key={col.key} className="px-1 py-1">
-                    <input
-                      type="text"
-                      value={getCellValue(row, col.key)}
-                      onChange={e => handleCellChange(row.id, col.key, e.target.value)}
-                      onBlur={() => handleCellBlur(row, col.key)}
-                      className="w-full px-2 py-1.5 rounded border border-transparent hover:border-gray-300 focus:border-[#004D9D] focus:outline-none focus:ring-1 focus:ring-[#004D9D] bg-transparent text-sm transition-colors"
-                      style={{ minWidth: col.width }}
-                    />
+                    {col.key === "created_date" ? (
+                      <span className="px-2 py-1.5 text-xs text-[#666666] whitespace-nowrap" style={{ minWidth: col.width, display: "inline-block" }}>
+                        {formatDate(row.created_date)}
+                      </span>
+                    ) : (
+                      <input
+                        type="text"
+                        value={getCellValue(row, col.key)}
+                        onChange={e => handleCellChange(row.id, col.key, e.target.value)}
+                        onBlur={() => handleCellBlur(row, col.key)}
+                        className="w-full px-2 py-1.5 rounded border border-transparent hover:border-gray-300 focus:border-[#004D9D] focus:outline-none focus:ring-1 focus:ring-[#004D9D] bg-transparent text-sm transition-colors"
+                        style={{ minWidth: col.width }}
+                      />
+                    )}
                   </td>
                 ))}
                 <td className="px-2 py-1">
