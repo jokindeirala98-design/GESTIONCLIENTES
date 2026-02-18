@@ -292,7 +292,6 @@ export default function PrescoringsGALP() {
                   {col.label}
                 </th>
               ))}
-              <th className="px-3 py-3 text-center font-semibold text-xs w-16">ENVIADO</th>
               <th className="px-3 py-3 w-10"></th>
             </tr>
           </thead>
