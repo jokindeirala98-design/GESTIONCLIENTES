@@ -117,6 +117,11 @@ export default function Layout({ children }) {
     // Menú específico para José
     const menuJose = [
     {
+      title: "Prescorings GALP",
+      url: createPageUrl("PrescoringsGALP"),
+      icon: FileText,
+    },
+    {
       title: "Zonas",
       url: createPageUrl("Zonas"),
       icon: MapPin,
