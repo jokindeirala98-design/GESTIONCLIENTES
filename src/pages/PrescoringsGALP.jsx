@@ -39,7 +39,14 @@ export default function PrescoringsGALP() {
   const [search, setSearch] = useState("");
   const [editingCells, setEditingCells] = useState({});
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const [addDialog, setAddDialog] = useState(false);
+  const [newProducto, setNewProducto] = useState("");
+  const [newTarifa, setNewTarifa] = useState("");
+  const [newPartAuto, setNewPartAuto] = useState("");
   const queryClient = useQueryClient();
+
+  const tarifasEnergia = ["2.0TD", "3.0TD", "6.1TD", "6.2TD"];
+  const tarifasGas = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
 
   useEffect(() => {
     const loadUser = async () => {
