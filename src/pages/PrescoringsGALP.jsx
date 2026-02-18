@@ -136,7 +136,7 @@ export default function PrescoringsGALP() {
   const exportCsv = () => {
     const header = COLUMNS.map(col => col.label).join(";");
     const rowsData = filteredRows.map(row =>
-      COLUMNS.map(col => `"${(row[col.key] || "").replace(/"/g, '""')}"` ).join(";")
+      COLUMNS.map(col => `"${getDisplayValue(row, col.key).replace(/"/g, '""')}"` ).join(";")
     );
     const csv = [header, ...rowsData].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
