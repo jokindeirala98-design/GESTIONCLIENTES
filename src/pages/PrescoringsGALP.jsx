@@ -278,5 +278,90 @@ export default function PrescoringsGALP() {
         </table>
       </div>
     </div>
+
+    <Dialog open={addDialog} onOpenChange={setAddDialog}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-[#004D9D]">Añadir cliente</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          {/* PRODUCTO */}
+          <div>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Producto *</p>
+            <div className="flex gap-3">
+              {["Energía", "Gas"].map(p => (
+                <button
+                  key={p}
+                  onClick={() => { setNewProducto(p); setNewTarifa(""); }}
+                  className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
+                    newProducto === p
+                      ? "border-[#004D9D] bg-[#004D9D] text-white"
+                      : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* TARIFA */}
+          {newProducto && (
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-2">
+                Tarifa {newProducto === "Energía" ? "Energía" : "Gas"} *
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {(newProducto === "Energía" ? tarifasEnergia : tarifasGas).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setNewTarifa(t)}
+                    className={`py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      newTarifa === t
+                        ? "border-[#004D9D] bg-[#004D9D] text-white"
+                        : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PARTICULAR / AUTÓNOMO */}
+          <div>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Tipo *</p>
+            <div className="flex gap-3">
+              {["Particular", "Autónomo"].map(tipo => (
+                <button
+                  key={tipo}
+                  onClick={() => setNewPartAuto(tipo)}
+                  className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition-colors ${
+                    newPartAuto === tipo
+                      ? "border-[#004D9D] bg-[#004D9D] text-white"
+                      : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
+                  }`}
+                >
+                  {tipo}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAddDialog(false)}>Cancelar</Button>
+          <Button
+            onClick={handleAddRow}
+            disabled={createMutation.isPending}
+            className="bg-[#004D9D] hover:bg-[#003a7a] text-white"
+          >
+            {createMutation.isPending ? "Añadiendo..." : "Añadir cliente"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
