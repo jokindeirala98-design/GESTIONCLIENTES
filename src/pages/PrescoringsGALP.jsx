@@ -141,23 +141,16 @@ export default function PrescoringsGALP() {
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    const pad = n => String(n).padStart(2, "0");
-    // Get UTC values
-    const utcYear = d.getUTCFullYear();
-    const utcMonth = d.getUTCMonth();
-    const utcDay = d.getUTCDate();
-    const utcHour = d.getUTCHours();
-    const utcMin = d.getUTCMinutes();
-    // Determine if Europe/Madrid is in DST (last Sunday of March to last Sunday of October)
-    const lastSundayMarch = new Date(Date.UTC(utcYear, 2, 31));
-    lastSundayMarch.setUTCDate(31 - lastSundayMarch.getUTCDay());
-    const lastSundayOctober = new Date(Date.UTC(utcYear, 9, 31));
-    lastSundayOctober.setUTCDate(31 - lastSundayOctober.getUTCDay());
-    const isDST = d >= lastSundayMarch && d < lastSundayOctober;
-    const offsetMinutes = isDST ? 120 : 60;
-    const localMs = d.getTime() + offsetMinutes * 60 * 1000;
-    const local = new Date(localMs);
-    return `${pad(local.getUTCDate())}/${pad(local.getUTCMonth() + 1)}/${local.getUTCFullYear()} ${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
+    const formatter = new Intl.DateTimeFormat("es-ES", {
+      timeZone: "Europe/Madrid",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    return formatter.format(d);
   };
 
   const getDisplayValue = (row, key) => {
