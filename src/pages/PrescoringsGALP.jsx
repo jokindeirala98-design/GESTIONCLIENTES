@@ -116,22 +116,22 @@ export default function PrescoringsGALP() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="mb-6">
+        <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D]">Prescorings GALP</h1>
           <p className="text-[#666666] mt-1">{rows.length} cliente{rows.length !== 1 ? "s" : ""}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666666]" />
             <Input
               placeholder="Buscar..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 w-56"
+              className="pl-9 w-full"
             />
           </div>
-          <Button onClick={handleAddRow} className="bg-[#004D9D] hover:bg-[#003a7a] text-white">
+          <Button onClick={handleAddRow} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
             <Plus className="w-4 h-4 mr-2" />
             Añadir cliente
           </Button>
