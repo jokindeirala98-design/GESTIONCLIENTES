@@ -174,6 +174,14 @@ export default function PrescoringsGALP() {
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="bg-[#004D9D] text-white">
+              <th className="px-3 py-3 w-8">
+                <input
+                  type="checkbox"
+                  checked={filteredRows.length > 0 && selectedRows.size === filteredRows.length}
+                  onChange={toggleAll}
+                  className="cursor-pointer w-4 h-4 rounded"
+                />
+              </th>
               <th className="px-3 py-3 text-left font-semibold text-xs w-8">#</th>
               {COLUMNS.map(col => (
                 <th
