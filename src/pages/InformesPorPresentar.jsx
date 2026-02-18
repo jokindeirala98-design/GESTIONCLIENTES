@@ -634,10 +634,10 @@ export default function InformesPorPresentar() {
     // Si está en "Pendiente informe comparativo", mostrar
     if (c.estado === "Pendiente informe comparativo") return true;
 
-    // Si está en estados más avanzados, mostrar SOLO si tiene suministros con potencias pero sin comparativo/final
+    // Si está en estados más avanzados, mostrar SOLO si tiene suministros con potencias (o ignorados) pero sin comparativo/final
     const tieneAlgunSuministroSinComparativo = suministrosActivos.some(s => {
-      // Tiene informe de potencias pero no tiene comparativo ni final
-      return s.informe_potencias && !s.informe_comparativo;
+      // Tiene informe de potencias O fue ignorado, pero no tiene comparativo ni final
+      return (s.informe_potencias || s.potencias_ignorado) && !s.informe_comparativo;
     });
 
     return tieneAlgunSuministroSinComparativo;
