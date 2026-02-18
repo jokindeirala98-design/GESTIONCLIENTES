@@ -80,8 +80,22 @@ export default function PrescoringsGALP() {
     onSuccess: () => queryClient.invalidateQueries(["prescorings_galp"]),
   });
 
+  const openAddDialog = () => {
+    setNewProducto("");
+    setNewTarifa("");
+    setNewPartAuto("");
+    setAddDialog(true);
+  };
+
   const handleAddRow = () => {
-    createMutation.mutate({});
+    if (!newProducto || !newTarifa || !newPartAuto) {
+      toast.error("Completa todos los campos");
+      return;
+    }
+    createMutation.mutate(
+      { producto: newProducto, tarifa: newTarifa, part_auto: newPartAuto },
+      { onSuccess: () => setAddDialog(false) }
+    );
   };
 
   const handleCellChange = (rowId, key, value) => {
