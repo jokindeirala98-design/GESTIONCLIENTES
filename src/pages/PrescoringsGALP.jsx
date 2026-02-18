@@ -141,18 +141,23 @@ export default function PrescoringsGALP() {
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    // Detect if Madrid is UTC+1 (winter) or UTC+2 (summer/DST)
-    const jan = new Date(d.getFullYear(), 0, 1);
-    const jul = new Date(d.getFullYear(), 6, 1);
-    const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-    const madridStd = -60; // UTC+1 in minutes
-    const madridDST = -120; // UTC+2 in minutes
-    // Check if date is in DST by comparing offset
-    const janMadrid = new Date(jan.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
-    const julMadrid = new Date(jul.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
-    const dMadrid = new Date(d.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
     const pad = n => String(n).padStart(2, "0");
-    return `${pad(dMadrid.getDate())}/${pad(dMadrid.getMonth() + 1)}/${dMadrid.getFullYear()} ${pad(dMadrid.getHours())}:${pad(dMadrid.getMinutes())}`;
+    // Get UTC values
+    const utcYear = d.getUTCFullYear();
+    const utcMonth = d.getUTCMonth();
+    const utcDay = d.getUTCDate();
+    const utcHour = d.getUTCHours();
+    const utcMin = d.getUTCMinutes();
+    // Determine if Europe/Madrid is in DST (last Sunday of March to last Sunday of October)
+    const lastSundayMarch = new Date(Date.UTC(utcYear, 2, 31));
+    lastSundayMarch.setUTCDate(31 - lastSundayMarch.getUTCDay());
+    const lastSundayOctober = new Date(Date.UTC(utcYear, 9, 31));
+    lastSundayOctober.setUTCDate(31 - lastSundayOctober.getUTCDay());
+    const isDST = d >= lastSundayMarch && d < lastSundayOctober;
+    const offsetMinutes = isDST ? 120 : 60;
+    const localMs = d.getTime() + offsetMinutes * 60 * 1000;
+    const local = new Date(localMs);
+    return `${pad(local.getUTCDate())}/${pad(local.getUTCMonth() + 1)}/${local.getUTCFullYear()} ${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
   };
 
   const getDisplayValue = (row, key) => {
