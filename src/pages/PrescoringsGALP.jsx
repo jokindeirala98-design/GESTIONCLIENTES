@@ -243,6 +243,20 @@ export default function PrescoringsGALP() {
           <p className="text-[#666666] mt-1">{rows.length} cliente{rows.length !== 1 ? "s" : ""} · {pendientesCount} pendiente{pendientesCount !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <Button onClick={() => setExportDialog(true)} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
+          </Button>
+          <Button onClick={openAddDialog} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
+            <Plus className="w-4 h-4 mr-2" />
+            Añadir cliente
+          </Button>
+          {selectedRows.size > 0 && (
+            <Button onClick={copySelected} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
+              <Copy className="w-4 h-4 mr-2" />
+              Copiar {selectedRows.size} fila(s)
+            </Button>
+          )}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666666]" />
             <Input
@@ -252,20 +266,6 @@ export default function PrescoringsGALP() {
               className="pl-9 w-full"
             />
           </div>
-          {selectedRows.size > 0 && (
-            <Button onClick={copySelected} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
-              <Copy className="w-4 h-4 mr-2" />
-              Copiar {selectedRows.size} fila(s)
-            </Button>
-          )}
-          <Button onClick={() => setExportDialog(true)} variant="outline" className="border-[#004D9D] text-[#004D9D] shrink-0">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar CSV
-          </Button>
-          <Button onClick={openAddDialog} className="bg-[#004D9D] hover:bg-[#003a7a] text-white shrink-0">
-            <Plus className="w-4 h-4 mr-2" />
-            Añadir cliente
-          </Button>
         </div>
       </div>
 
