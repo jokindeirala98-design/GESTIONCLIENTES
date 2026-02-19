@@ -1573,7 +1573,8 @@ export default function Calendario() {
                     >
                       → {nombre}
                     </Button>
-                  ))}
+                  ))
+                }
               </div>
             </div>
             <DialogFooter>
