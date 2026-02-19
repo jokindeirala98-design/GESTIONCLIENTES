@@ -1306,7 +1306,7 @@ export default function Calendario() {
                     toast.error("Añade al menos una descripción");
                     return;
                   }
-                  createTareasMultiplesMutation.mutate({ tareas: tareasValidas, propietarioEmail: propietarioSeleccionado });
+                  createTareasMultiplesMutation.mutate({ tareas: tareasValidas, propietarioEmail: propietarioSeleccionado || user.email });
                 }
               }}
               className="bg-[#004D9D]"
