@@ -136,7 +136,7 @@ export default function SubirFacturasDialog({ open, onClose, cliente, user }) {
                 <input
                   type="file"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.zip"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
@@ -147,7 +147,7 @@ export default function SubirFacturasDialog({ open, onClose, cliente, user }) {
                     Haz clic o arrastra archivos aquí
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    PDF, JPG o PNG
+                    PDF, JPG, PNG o ZIP
                   </p>
                 </label>
               </div>
