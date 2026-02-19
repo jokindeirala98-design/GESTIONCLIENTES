@@ -1313,18 +1313,17 @@ export default function InformesPorPresentar() {
                                     </CardContent>
                       </CollapsibleContent>
                     </Collapsible>
-                  </Card>
-                )}
-              </Card>
-              </div>
-              </Draggable>
-              );
-              })}
-              {provided.placeholder}
-              </div>
-              )}
-              </Droppable>
-              </DragDropContext>
+                    </Card>
+                    </div>
+                    )}
+                    </Draggable>
+                    );
+                    })}
+                    {provided.placeholder}
+                    </div>
+                    )}
+                    </Droppable>
+                    </DragDropContext>
       )}
 
       <YaEsClienteDialog
