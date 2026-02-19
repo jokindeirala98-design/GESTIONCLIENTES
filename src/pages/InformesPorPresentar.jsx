@@ -883,11 +883,13 @@ export default function InformesPorPresentar() {
               <Draggable key={cliente.id} draggableId={cliente.id} index={index}>
                 {(provided, snapshot) => (
                   <Card 
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    className={`border-l-4 border-[#004D9D] ${
-                      snapshot.isDragging ? 'shadow-2xl' : ''
-                    }`}
+                   ref={provided.innerRef}
+                   {...provided.draggableProps}
+                   className={`border-l-4 ${
+                     clientesConPotenciasRecientes.has(cliente.id)
+                       ? 'border-blue-500 shadow-blue-200 shadow-lg ring-2 ring-blue-300'
+                       : 'border-[#004D9D]'
+                   } ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
                   >
                     <Collapsible
                       open={isExpanded}
