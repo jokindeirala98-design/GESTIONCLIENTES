@@ -310,12 +310,23 @@ export default function Calendario() {
     const tarea = tareasCorcho.find(t => t.id === tareaId);
     if (!tarea) return;
 
+    // Si el destinatario es Nico (nicolas@voltisenergia.com), usar el email real del usuario actual
+    // para que coincida con propietarioSeleccionado cuando Nico vea su propio corcho
+    let emailFinal = destinatarioEmail;
+    if (destinatarioEmail === "nicolas@voltisenergia.com" || destinatarioEmail === "nicolasvoltis@gmail.com") {
+      // Buscar el email real de Nico en la lista de usuarios
+      const nicoUsuario = usuarios.find(u => 
+        u.email === "nicolas@voltisenergia.com" || u.email === "nicolasvoltis@gmail.com"
+      );
+      emailFinal = nicoUsuario?.email || destinatarioEmail;
+    }
+
     const maxOrden = tareasCorcho
-      .filter(t => !t.completada && t.propietario_email === destinatarioEmail)
+      .filter(t => !t.completada && t.propietario_email === emailFinal)
       .reduce((max, t) => Math.max(max, t.orden || 0), 0);
 
     await base44.entities.TareaCorcho.update(tareaId, {
-      propietario_email: destinatarioEmail,
+      propietario_email: emailFinal,
       orden: maxOrden + 1
     });
 
