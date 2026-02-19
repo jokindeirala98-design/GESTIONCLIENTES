@@ -305,24 +305,39 @@ export default function Calendario() {
     },
   });
 
+  // Helper: normalizar email de Nico - ambos emails de Nico apuntan al mismo corcho
+  // El corcho de Nico se filtra con propietarioSeleccionado, que se inicializa con user.email
+  // Para garantizar coherencia, todas las tareas de Nico se guardan con el mismo email
+  // que usa el selector del corcho: el email real del usuario Nico logueado.
+  // Si el destinatario es cualquiera de los dos emails de Nico, buscar cuál está en la DB
+  // como propietario de tareas existentes (el que realmente usa), o usar el del selector.
+  const resolverEmailNico = () => {
+    // Si el usuario actual ES Nico, su email es el correcto
+    if (isNico) return user.email;
+    // Si no, buscar tareas existentes de Nico para saber qué email usa
+    const tareaDeNico = tareasCorcho.find(t => 
+      t.propietario_email === "nicolas@voltisenergia.com" || 
+      t.propietario_email === "nicolasvoltis@gmail.com"
+    );
+    if (tareaDeNico) return tareaDeNico.propietario_email;
+    // Fallback: email canónico
+    return "nicolas@voltisenergia.com";
+  };
+
   const pasapalabra = async (tareaId, destinatarioEmail) => {
-    // Reasignar la tarea al destinatario
     const tarea = tareasCorcho.find(t => t.id === tareaId);
     if (!tarea) return;
 
-    // Si el destinatario es Nico (nicolas@voltisenergia.com), usar el email real del usuario actual
-    // para que coincida con propietarioSeleccionado cuando Nico vea su propio corcho
-    let emailFinal = destinatarioEmail;
-    if (destinatarioEmail === "nicolas@voltisenergia.com" || destinatarioEmail === "nicolasvoltis@gmail.com") {
-      // Buscar el email real de Nico en la lista de usuarios
-      const nicoUsuario = usuarios.find(u => 
-        u.email === "nicolas@voltisenergia.com" || u.email === "nicolasvoltis@gmail.com"
-      );
-      emailFinal = nicoUsuario?.email || destinatarioEmail;
-    }
+    // Resolver el email final: si es Nico, usar el email consistente con las tareas existentes
+    const esDestinatarioNico = destinatarioEmail === "nicolas@voltisenergia.com" || destinatarioEmail === "nicolasvoltis@gmail.com";
+    const emailFinal = esDestinatarioNico ? resolverEmailNico() : destinatarioEmail;
 
+    // Calcular nuevo orden (al final de la lista del destinatario)
     const maxOrden = tareasCorcho
-      .filter(t => !t.completada && t.propietario_email === emailFinal)
+      .filter(t => !t.completada && (
+        t.propietario_email === emailFinal || 
+        (esDestinatarioNico && (t.propietario_email === "nicolas@voltisenergia.com" || t.propietario_email === "nicolasvoltis@gmail.com"))
+      ))
       .reduce((max, t) => Math.max(max, t.orden || 0), 0);
 
     await base44.entities.TareaCorcho.update(tareaId, {
@@ -333,8 +348,9 @@ export default function Calendario() {
     queryClient.invalidateQueries(['tareasCorcho']);
     setPasapalabraDialog(null);
     
-    const destinatario = usuarios.find(u => u.email === destinatarioEmail);
-    toast.success(`Tarea enviada a ${destinatario?.full_name || destinatarioEmail}`);
+    const nombreDestinatario = esDestinatarioNico ? "Nico" : 
+      (destinatarioEmail === "iranzu@voltisenergia.com" ? "Iranzu" : "José");
+    toast.success(`Tarea enviada a ${nombreDestinatario}`);
   };
 
   // Auto-eliminar tareas completadas después de 3 semanas
