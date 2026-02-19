@@ -1135,7 +1135,7 @@ export default function Calendario() {
                       }
                     }}
                   >
-                    Realizadas ({tareasCorcho.filter(t => t.completada && t.propietario_email === propietarioSeleccionado).length})
+                    Realizadas ({tareasCorcho.filter(t => t.completada && esPropietario(t.propietario_email, propietarioSeleccionado)).length})
                     {isNico && <span className="text-xs ml-2 opacity-75">📜 click para ver historial</span>}
                   </CardTitle>
                 </CardHeader>
