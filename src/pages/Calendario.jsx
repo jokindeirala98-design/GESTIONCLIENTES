@@ -305,6 +305,27 @@ export default function Calendario() {
     },
   });
 
+  const pasapalabra = async (tareaId, destinatarioEmail) => {
+    // Reasignar la tarea al destinatario
+    const tarea = tareasCorcho.find(t => t.id === tareaId);
+    if (!tarea) return;
+
+    const maxOrden = tareasCorcho
+      .filter(t => !t.completada && t.propietario_email === destinatarioEmail)
+      .reduce((max, t) => Math.max(max, t.orden || 0), 0);
+
+    await base44.entities.TareaCorcho.update(tareaId, {
+      propietario_email: destinatarioEmail,
+      orden: maxOrden + 1
+    });
+
+    queryClient.invalidateQueries(['tareasCorcho']);
+    setPasapalabraDialog(null);
+    
+    const destinatario = usuarios.find(u => u.email === destinatarioEmail);
+    toast.success(`Tarea enviada a ${destinatario?.full_name || destinatarioEmail}`);
+  };
+
   // Auto-eliminar tareas completadas después de 3 semanas
   useEffect(() => {
     const limpiarTareasAntiguas = async () => {
