@@ -31,10 +31,7 @@ export default function InformesPorPresentar() {
   const [guardando, setGuardando] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroPrioridad, setFiltroPrioridad] = useState("all"); // "all", "6.2", "6.1", "3.0", "2.0", "gas"
-  const [ordenManual, setOrdenManual] = useState(() => {
-    const saved = localStorage.getItem('informes-orden-manual');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [ordenManual, setOrdenManual] = useState([]);
   const [notasAdmin, setNotasAdmin] = useState({});
   const [yaEsClienteDialog, setYaEsClienteDialog] = useState({ open: false, cliente: null, suministroId: null });
 
