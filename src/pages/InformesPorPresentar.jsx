@@ -34,6 +34,7 @@ export default function InformesPorPresentar() {
   const [filtroPrioridad, setFiltroPrioridad] = useState("all"); // "all", "6.2", "6.1", "3.0", "2.0", "gas"
   const [ordenManual, setOrdenManual] = useState([]);
   const [notasAdmin, setNotasAdmin] = useState({});
+  const [audioNotasAdmin, setAudioNotasAdmin] = useState({}); // {suministroId: audioUrl}
   const [yaEsClienteDialog, setYaEsClienteDialog] = useState({ open: false, cliente: null, suministroId: null });
 
   useEffect(() => {
