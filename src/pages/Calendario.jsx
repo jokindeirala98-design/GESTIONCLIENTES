@@ -1557,24 +1557,20 @@ export default function Calendario() {
                   { email: "nicolas@voltisenergia.com", nombre: "Nico" },
                   { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
                   { email: "jose@voltisenergia.com", nombre: "José" },
-                ]
-                  .filter(({ email }) => {
-                    // Excluir al usuario actual (ambos emails de Nico cuentan como el mismo)
-                    if (user.email === "nicolas@voltisenergia.com" || user.email === "nicolasvoltis@gmail.com") {
-                      return email !== "nicolas@voltisenergia.com";
-                    }
-                    return email !== user.email;
-                  })
-                  .map(({ email, nombre }) => (
-                    <Button
-                      key={email}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base font-bold py-5"
-                      onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
-                    >
-                      → {nombre}
-                    </Button>
-                  ))
-                }
+                ].filter(({ email }) => {
+                  const esNicoActual = user.email === "nicolas@voltisenergia.com" || user.email === "nicolasvoltis@gmail.com";
+                  const esNicoOpcion = email === "nicolas@voltisenergia.com";
+                  if (esNicoActual) return !esNicoOpcion;
+                  return email !== user.email;
+                }).map(({ email, nombre }) => (
+                  <Button
+                    key={email}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base font-bold py-5"
+                    onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
+                  >
+                    → {nombre}
+                  </Button>
+                ))}
               </div>
             </div>
             <DialogFooter>
