@@ -1585,6 +1585,13 @@ export default function Calendario() {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
+                <div className="flex justify-center">
+                  <img 
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6908eb4fae82961ef57549fe/e576b734b_image.png" 
+                    alt="Pasapalabra" 
+                    className="w-48 h-48 object-cover rounded-xl"
+                  />
+                </div>
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                   <p className="text-xs text-orange-600 font-semibold mb-1">Tarea:</p>
                   <p className="text-sm text-gray-800">{pasapalabraDialog.descripcion}</p>
