@@ -650,19 +650,21 @@ export default function InformesPorPresentar() {
     clientesFacturasPresent = clientesFacturasPresent.filter(c => getTipoMaximo(c) === filtroPrioridad);
   }
 
+  const esGasTipo = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
+
   const conteo = {
+    "6.2": clientesFacturasPresent.filter(c => getTipoMaximo(c) === "6.2").length,
     "6.1": clientesFacturasPresent.filter(c => getTipoMaximo(c) === "6.1").length,
     "3.0": clientesFacturasPresent.filter(c => getTipoMaximo(c) === "3.0").length,
     "2.0": clientesFacturasPresent.filter(c => getTipoMaximo(c) === "2.0").length,
+    "gas": clientesFacturasPresent.filter(c => esGasTipo(getTipoMaximo(c))).length,
   };
 
-  const tipoFacturaOrder = { "6.1": 1, "3.0": 2, "2.0": 3 };
-  
-  // Orden automático por prioridad
+  // Orden automático por prioridad (mayor TIPO_ORDEN = mayor prioridad = primero)
   const clientesOrdenadosAuto = [...clientesFacturasPresent].sort((a, b) => {
-    const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
-    const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
-    return orderA - orderB;
+    const orderA = TIPO_ORDEN[getTipoMaximo(a)] || 0;
+    const orderB = TIPO_ORDEN[getTipoMaximo(b)] || 0;
+    return orderB - orderA;
   });
 
   // Inicializar orden manual si está vacío
