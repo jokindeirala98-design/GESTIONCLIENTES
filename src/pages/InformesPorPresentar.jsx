@@ -663,12 +663,18 @@ export default function InformesPorPresentar() {
     return orderB - orderA;
   });
 
-  // Inicializar orden manual si está vacío
+  // Sincronizar orden manual cuando cambian los clientes
   useEffect(() => {
-    if (ordenManual.length === 0 && clientesOrdenadosAuto.length > 0) {
-      setOrdenManual(clientesOrdenadosAuto.map(c => c.id));
-    }
-  }, [clientesOrdenadosAuto.length]);
+    if (clientesOrdenadosAuto.length === 0) return;
+    setOrdenManual(prev => {
+      const idsActuales = clientesOrdenadosAuto.map(c => c.id);
+      if (prev.length === 0) return idsActuales;
+      // Mantener el orden manual para los que ya existen, añadir nuevos al final
+      const existentes = prev.filter(id => idsActuales.includes(id));
+      const nuevos = idsActuales.filter(id => !prev.includes(id));
+      return [...existentes, ...nuevos];
+    });
+  }, [clientes]); // eslint-disable-line
 
   // Detectar clientes que recién obtuvieron informe de potencias (todos los suministros activos con facturas tienen potencias)
   const clientesConPotenciasRecientes = new Set(
