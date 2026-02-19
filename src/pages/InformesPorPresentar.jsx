@@ -1040,10 +1040,15 @@ export default function InformesPorPresentar() {
                                           </Button>
                                         </div>
                                       </div>
-                                      {suministro.informe_final.notas_admin && (
+                                      {(suministro.informe_final.notas_admin || suministro.informe_final.audio_nota_admin) && (
                                         <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
                                           <p className="text-xs font-semibold text-blue-800">📝 Nota:</p>
-                                          <p className="text-xs text-blue-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
+                                          {suministro.informe_final.notas_admin && (
+                                            <p className="text-xs text-blue-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
+                                          )}
+                                          {suministro.informe_final.audio_nota_admin && (
+                                            <audio controls src={suministro.informe_final.audio_nota_admin} className="w-full mt-1 h-8" />
+                                          )}
                                         </div>
                                       )}
                                       <div className="space-y-2">
