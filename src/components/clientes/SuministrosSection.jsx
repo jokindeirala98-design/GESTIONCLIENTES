@@ -45,6 +45,10 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
       toast.error("El nombre del suministro es obligatorio");
       return;
     }
+    if (!nuevoSuministro.tipo_factura) {
+      toast.error("Selecciona el tipo de tarifa");
+      return;
+    }
 
     const nuevoId = Date.now().toString();
     const nuevosSuministros = [
@@ -141,7 +145,10 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   };
 
   const getTipoColor = (tipo) => {
+    // Gas tarifas -> verde
+    if (["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo)) return "bg-green-600 text-white";
     switch(tipo) {
+      case "6.2": return "bg-purple-600 text-white";
       case "6.1": return "bg-red-600 text-white";
       case "3.0": return "bg-orange-600 text-white";
       case "2.0": return "bg-blue-600 text-white";
