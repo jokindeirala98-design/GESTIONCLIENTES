@@ -238,6 +238,16 @@ export default function InformesPotencias() {
     }
   };
 
+  const TIPO_ORDEN_IP = { "6.2": 8, "6.1": 7, "3.0": 6, "2.0": 5, "RL6": 4, "RL5": 3, "RL4": 2, "RL3": 2, "RL2": 1, "RL1": 1 };
+  const getTipoMaximoIP = (cliente) => {
+    if (!cliente.suministros || cliente.suministros.length === 0) return null;
+    return cliente.suministros.reduce((max, s) => {
+      const actual = TIPO_ORDEN_IP[s.tipo_factura] || 0;
+      const maxActual = TIPO_ORDEN_IP[max] || 0;
+      return actual > maxActual ? s.tipo_factura : max;
+    }, cliente.suministros[0]?.tipo_factura || "2.0");
+  };
+
   // Solo clientes con estado exactamente "Facturas presentadas"
   // que tengan al menos un suministro activo con facturas y sin informe de potencias ni ignorado
   const clientesPendientes = clientes.filter(c => {
