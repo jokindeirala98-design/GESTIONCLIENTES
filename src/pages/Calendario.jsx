@@ -1539,19 +1539,27 @@ export default function Calendario() {
 
       {/* Dialog Pasapalabra */}
       {pasapalabraDialog && (() => {
-        // Opciones hardcodeadas por usuario - sin lógica dinámica
+        // Si Nico está viendo el corcho de otra persona, actuar como si fuera esa persona
+        const usuarioEfectivo = (isNico && propietarioSeleccionado !== "nicolasvoltis@gmail.com" && propietarioSeleccionado !== "nicolas@voltisenergia.com")
+          ? propietarioSeleccionado
+          : user.email;
+
         let opciones = [];
-        if (isNico) {
+        const esNicoEfectivo = usuarioEfectivo === "nicolas@voltisenergia.com" || usuarioEfectivo === "nicolasvoltis@gmail.com";
+        const esIranzuEfectivo = usuarioEfectivo === "iranzu@voltisenergia.com";
+        const esJoseEfectivo = usuarioEfectivo === "jose@voltisenergia.com";
+
+        if (esNicoEfectivo) {
           opciones = [
             { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
             { email: "jose@voltisenergia.com", nombre: "José" },
           ];
-        } else if (isIranzu) {
+        } else if (esIranzuEfectivo) {
           opciones = [
             { email: "nicolas@voltisenergia.com", nombre: "Nico" },
             { email: "jose@voltisenergia.com", nombre: "José" },
           ];
-        } else if (isJose) {
+        } else if (esJoseEfectivo) {
           opciones = [
             { email: "nicolas@voltisenergia.com", nombre: "Nico" },
             { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
