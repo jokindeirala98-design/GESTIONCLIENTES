@@ -30,7 +30,7 @@ export default function InformesPorPresentar() {
   const [sincronizando, setSincronizando] = useState(false);
   const [guardando, setGuardando] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [filtroPrioridad, setFiltroPrioridad] = useState("all"); // "all", "6.1", "3.0", "2.0"
+  const [filtroPrioridad, setFiltroPrioridad] = useState("all"); // "all", "6.2", "6.1", "3.0", "2.0", "gas"
   const [ordenManual, setOrdenManual] = useState(() => {
     const saved = localStorage.getItem('informes-orden-manual');
     return saved ? JSON.parse(saved) : [];
@@ -611,14 +611,16 @@ export default function InformesPorPresentar() {
     }
   };
 
+  // Luz: 6.2 > 6.1 > 3.0 > 2.0. Gas: RL6 > RL5 > RL4 > RL3 > RL2 > RL1. Gas es menos prioritario que luz.
+  const TIPO_ORDEN = { "6.2": 8, "6.1": 7, "3.0": 6, "2.0": 5, "RL6": 4, "RL5": 3, "RL4": 2, "RL3": 2, "RL2": 1, "RL1": 1 };
+
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
-    const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
     return cliente.suministros.reduce((max, s) => {
-      const actual = orden[s.tipo_factura] || 0;
-      const maxActual = orden[max] || 0;
+      const actual = TIPO_ORDEN[s.tipo_factura] || 0;
+      const maxActual = TIPO_ORDEN[max] || 0;
       return actual > maxActual ? s.tipo_factura : max;
-    }, "2.0");
+    }, cliente.suministros[0]?.tipo_factura || "2.0");
   };
 
   // Mostrar clientes en "Pendiente informe comparativo" O clientes que tengan informe de potencias pero sin comparativo
