@@ -1299,7 +1299,7 @@ export default function Calendario() {
                     toast.error("Añade una descripción");
                     return;
                   }
-                  createTareaCorchoMutation.mutate({ ...newTareaCorcho, propietario_email: propietarioSeleccionado });
+                  createTareaCorchoMutation.mutate({ ...newTareaCorcho, propietario_email: propietarioSeleccionado || user.email });
                 } else {
                   const tareasValidas = tareasMultiples.filter(t => t.descripcion.trim() !== "");
                   if (tareasValidas.length === 0) {
