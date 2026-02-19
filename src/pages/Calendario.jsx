@@ -394,11 +394,11 @@ export default function Calendario() {
 
     // Listas ordenadas del propietario seleccionado (igual que en el render)
     const pendientes = tareasCorcho
-      .filter(t => !t.completada && t.propietario_email === propietarioSeleccionado)
+      .filter(t => !t.completada && esPropietario(t.propietario_email, propietarioSeleccionado))
       .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999));
 
     const completadas = tareasCorcho
-      .filter(t => t.completada && t.propietario_email === propietarioSeleccionado)
+      .filter(t => t.completada && esPropietario(t.propietario_email, propietarioSeleccionado))
       .sort((a, b) => {
         if (!a.fecha_completada) return 1;
         if (!b.fecha_completada) return -1;
