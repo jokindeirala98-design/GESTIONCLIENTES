@@ -623,26 +623,21 @@ export default function InformesPorPresentar() {
     }, cliente.suministros[0]?.tipo_factura || "2.0");
   };
 
-  // Mostrar clientes en "Pendiente informe comparativo" O clientes que tengan informe de potencias pero sin comparativo
+  // Mostrar clientes desde que tienen facturas (con o sin informe de potencias)
   // EXCLUIR clientes con estado "Ignorado con mucho éxito"
   let clientesFacturasPresent = clientes.filter(c => {
     if (!c.suministros || c.suministros.length === 0) return false;
     if (c.estado === "Ignorado con mucho éxito") return false;
+    if (["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"].includes(c.estado)) return false;
 
     // Solo considerar suministros NO cerrados
     const suministrosActivos = c.suministros.filter(s => !s.cerrado);
     if (suministrosActivos.length === 0) return false;
 
-    // Si está en "Pendiente informe comparativo", mostrar
-    if (c.estado === "Pendiente informe comparativo") return true;
-
-    // Si está en estados más avanzados, mostrar SOLO si tiene suministros con potencias (o ignorados) pero sin comparativo/final
-    const tieneAlgunSuministroSinComparativo = suministrosActivos.some(s => {
-      // Tiene informe de potencias O fue ignorado, pero no tiene comparativo ni final
-      return (s.informe_potencias || s.potencias_ignorado) && !s.informe_comparativo;
-    });
-
-    return tieneAlgunSuministroSinComparativo;
+    // Mostrar si tiene al menos un suministro con facturas y sin informe final
+    return suministrosActivos.some(s =>
+      s.facturas && s.facturas.length > 0 && !s.informe_comparativo
+    );
   });
 
   // Aplicar filtro de prioridad
