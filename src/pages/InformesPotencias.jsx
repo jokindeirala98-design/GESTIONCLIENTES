@@ -284,7 +284,13 @@ export default function InformesPotencias() {
         </p>
       </div>
 
-      {clientesPendientes.length === 0 ? (
+  const clientesPendientesOrdenados = [...clientesPendientes].sort((a, b) => {
+    const orderA = TIPO_ORDEN_IP[getTipoMaximoIP(a)] || 0;
+    const orderB = TIPO_ORDEN_IP[getTipoMaximoIP(b)] || 0;
+    return orderB - orderA;
+  });
+
+      {clientesPendientesOrdenados.length === 0 ? (
         <Card className="border-none shadow-md">
           <CardContent className="p-12 text-center">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
