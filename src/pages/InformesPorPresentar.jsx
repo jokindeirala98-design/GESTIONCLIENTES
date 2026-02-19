@@ -1271,14 +1271,15 @@ export default function InformesPorPresentar() {
                                         </>
                                       )}
                                     </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
+                                    )}
+                                    ) : null}
+                                    </div>
+                                    </CardContent>
+                                    </Card>
+                                    );
+                                    })}
+                                    </div>
+                                    </CardContent>
                       </CollapsibleContent>
                     </Collapsible>
                   </Card>
