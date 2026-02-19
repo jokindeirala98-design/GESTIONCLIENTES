@@ -1540,32 +1540,41 @@ export default function Calendario() {
       {/* Dialog Pasapalabra */}
       {pasapalabraDialog && (
         <Dialog open={!!pasapalabraDialog} onOpenChange={() => setPasapalabraDialog(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle className="text-[#004D9D]">🔁 Pasapalabra</DialogTitle>
+              <DialogTitle className="text-center text-2xl font-extrabold text-orange-500 tracking-wide">
+                ¡PASAPALABRA!
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                ¿A quién quieres enviar esta tarea?
-              </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Tarea:</p>
-                <p className="text-sm font-medium text-gray-800">{pasapalabraDialog.descripcion}</p>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-xs text-orange-600 font-semibold mb-1">Tarea:</p>
+                <p className="text-sm text-gray-800">{pasapalabraDialog.descripcion}</p>
               </div>
+              <p className="text-sm text-gray-600 text-center font-medium">¿A quién se la mandas?</p>
               <div className="space-y-2">
-                {opcionesPasapalabra.map(email => (
-                  <Button
-                    key={email}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
-                  >
-                    Enviar a {NOMBRES_CORTOS[email] || email}
-                  </Button>
-                ))}
+                {Object.entries(NOMBRES_CORTOS)
+                  .filter(([email]) => email !== user.email && email !== "nicolasvoltis@gmail.com" || (email === "nicolasvoltis@gmail.com" && user.email !== "nicolas@voltisenergia.com"))
+                  .filter(([email]) => {
+                    // Mostrar solo los otros 2 (excluir al usuario actual, y evitar duplicar Nico)
+                    if (user.email === "nicolas@voltisenergia.com" || user.email === "nicolasvoltis@gmail.com") {
+                      return email !== "nicolasvoltis@gmail.com" && email !== "nicolas@voltisenergia.com";
+                    }
+                    return email !== user.email;
+                  })
+                  .map(([email, nombre]) => (
+                    <Button
+                      key={email}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base font-bold py-5"
+                      onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
+                    >
+                      → {nombre}
+                    </Button>
+                  ))}
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setPasapalabraDialog(null)}>
+              <Button variant="outline" className="w-full" onClick={() => setPasapalabraDialog(null)}>
                 Cancelar
               </Button>
             </DialogFooter>
