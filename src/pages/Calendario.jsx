@@ -1148,7 +1148,7 @@ export default function Calendario() {
                         className={`min-h-[300px] space-y-3 ${snapshot.isDraggingOver ? 'bg-green-50 rounded-lg' : ''}`}
                       >
                         {tareasCorcho
-                          .filter(t => t.completada && t.propietario_email === propietarioSeleccionado)
+                          .filter(t => t.completada && esPropietario(t.propietario_email, propietarioSeleccionado))
                           .sort((a, b) => {
                             // Ordenar por fecha_completada descendente (más reciente primero)
                             if (!a.fecha_completada) return 1;
