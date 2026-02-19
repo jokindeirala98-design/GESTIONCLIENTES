@@ -989,7 +989,11 @@ export default function InformesPorPresentar() {
                                     </div>
                                   </div>
 
-                                  {suministro.informe_final ? (
+                                  {!tienePotencias ? (
+                                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-center">
+                                      <p className="text-sm text-gray-500">Esperando a que José suba el informe de potencias para poder subir el informe final</p>
+                                    </div>
+                                  ) : suministro.informe_final ? (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                       <div className="flex items-center justify-between mb-2">
                                         <p className="text-sm text-green-700 font-semibold">✓ Informe(s) subido(s)</p>
