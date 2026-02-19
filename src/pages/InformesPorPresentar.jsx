@@ -256,11 +256,12 @@ export default function InformesPorPresentar() {
               subido_por_email: user.email
             },
             informe_final: {
-              archivos: archivos,
-              fecha_subida: new Date().toISOString(),
-              subido_por_email: user.email,
-              notas_admin: notasAdmin[suministroId]?.trim() || undefined
-            },
+                archivos: archivos,
+                fecha_subida: new Date().toISOString(),
+                subido_por_email: user.email,
+                notas_admin: notasAdmin[suministroId]?.trim() || undefined,
+                audio_nota_admin: audioNotasAdmin[suministroId] || undefined
+              },
             // Comisión y tipo_rappel según selección del admin
             comision: tipoRappel === "manual" ? parseFloat(comision) : 0,
             tipo_rappel: tipoRappel === "manual" ? null : tipoRappel
