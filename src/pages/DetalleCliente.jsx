@@ -148,7 +148,7 @@ export default function DetalleCliente() {
         id: clienteId,
         data: { estado: "Informe listo" }
       });
-    } else if (todosConFacturas && !todosConInforme && cliente.estado !== "Facturas presentadas") {
+    } else if (todosConFacturas && !todosConInforme && !["Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo"].includes(cliente.estado)) {
       console.log("Auto-corrección: Cambiando a Facturas presentadas");
       updateMutation.mutate({
         id: clienteId,
