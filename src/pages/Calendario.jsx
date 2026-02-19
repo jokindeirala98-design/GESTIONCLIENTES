@@ -1209,7 +1209,7 @@ export default function Calendario() {
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tareasCorcho.filter(t => t.completada && t.propietario_email === propietarioSeleccionado).length === 0 && (
+                        {tareasCorcho.filter(t => t.completada && esPropietario(t.propietario_email, propietarioSeleccionado)).length === 0 && (
                           <div className="text-center py-12 text-gray-400">
                             <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No hay tareas completadas</p>
