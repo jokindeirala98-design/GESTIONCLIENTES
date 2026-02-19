@@ -234,10 +234,10 @@ export default function Layout({ children }) {
 
   const prescoringItem = { title: "Prescorings GALP", url: createPageUrl("PrescoringsGALP"), icon: FileText };
 
-  const navigationItems = isAdmin 
+  const navigationItems = isAdmin
     ? (PRESCORING_EMAILS.includes(user.email) ? [...menuAdmin, prescoringItem] : menuAdmin)
-    : (user.email === 'jose@voltisenergia.com' ? menuJose 
-      : (PRESCORING_EMAILS.includes(user.email) 
+    : (user.email === 'jose@voltisenergia.com' ? menuJose
+      : (PRESCORING_EMAILS.includes(user.email)
         ? [...menuComercial, prescoringItem]
         : menuComercial));
 
