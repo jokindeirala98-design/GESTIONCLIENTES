@@ -790,69 +790,36 @@ export default function InformesPorPresentar() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card 
-          className={`border-l-4 border-red-500 cursor-pointer transition-all ${
-            filtroPrioridad === "6.1" ? "ring-2 ring-red-500 shadow-lg" : "hover:shadow-lg"
-          }`}
-          onClick={() => setFiltroPrioridad(filtroPrioridad === "6.1" ? "all" : "6.1")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#666666] mb-1">
-                  Prioridad 6.1 {filtroPrioridad === "6.1" && "✓"}
-                </p>
-                <p className="text-3xl font-bold text-red-600">{conteo["6.1"]}</p>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+        {[
+          { key: "6.2", label: "6.2", color: "purple", border: "border-purple-500", ring: "ring-purple-500", text: "text-purple-600", bg: "bg-purple-100" },
+          { key: "6.1", label: "6.1", color: "red", border: "border-red-500", ring: "ring-red-500", text: "text-red-600", bg: "bg-red-100" },
+          { key: "3.0", label: "3.0", color: "orange", border: "border-orange-500", ring: "ring-orange-500", text: "text-orange-600", bg: "bg-orange-100" },
+          { key: "2.0", label: "2.0", color: "blue", border: "border-blue-500", ring: "ring-blue-500", text: "text-blue-600", bg: "bg-blue-100" },
+          { key: "gas", label: "Gas", color: "green", border: "border-green-500", ring: "ring-green-500", text: "text-green-600", bg: "bg-green-100" },
+        ].map(item => (
+          <Card
+            key={item.key}
+            className={`border-l-4 ${item.border} cursor-pointer transition-all ${
+              filtroPrioridad === item.key ? `ring-2 ${item.ring} shadow-lg` : "hover:shadow-lg"
+            }`}
+            onClick={() => setFiltroPrioridad(filtroPrioridad === item.key ? "all" : item.key)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-xs text-[#666666] mb-1`}>
+                    {item.label} {filtroPrioridad === item.key && "✓"}
+                  </p>
+                  <p className={`text-2xl font-bold ${item.text}`}>{conteo[item.key]}</p>
+                </div>
+                <div className={`w-9 h-9 rounded-full ${item.bg} flex items-center justify-center`}>
+                  <FileText className={`w-5 h-5 ${item.text}`} />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`border-l-4 border-orange-500 cursor-pointer transition-all ${
-            filtroPrioridad === "3.0" ? "ring-2 ring-orange-500 shadow-lg" : "hover:shadow-lg"
-          }`}
-          onClick={() => setFiltroPrioridad(filtroPrioridad === "3.0" ? "all" : "3.0")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#666666] mb-1">
-                  Prioridad 3.0 {filtroPrioridad === "3.0" && "✓"}
-                </p>
-                <p className="text-3xl font-bold text-orange-600">{conteo["3.0"]}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`border-l-4 border-blue-500 cursor-pointer transition-all ${
-            filtroPrioridad === "2.0" ? "ring-2 ring-blue-500 shadow-lg" : "hover:shadow-lg"
-          }`}
-          onClick={() => setFiltroPrioridad(filtroPrioridad === "2.0" ? "all" : "2.0")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#666666] mb-1">
-                  Prioridad 2.0 {filtroPrioridad === "2.0" && "✓"}
-                </p>
-                <p className="text-3xl font-bold text-blue-600">{conteo["2.0"]}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {clientesOrdenados.length === 0 ? (
