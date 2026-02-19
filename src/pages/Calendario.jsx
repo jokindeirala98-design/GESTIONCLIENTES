@@ -439,7 +439,7 @@ export default function Calendario() {
       // Actualización optimista
       queryClient.setQueryData(['tareasCorcho'], (old) => {
         if (!old) return old;
-        const rest = old.filter(t => t.id !== movedTarea.id && !(t.propietario_email === propietarioSeleccionado && t.completada === destCompleted));
+        const rest = old.filter(t => t.id !== movedTarea.id && !(esPropietario(t.propietario_email, propietarioSeleccionado) && t.completada === destCompleted));
         return [...rest, ...destList.map((t, i) => ({ ...t, orden: i }))];
       });
 
