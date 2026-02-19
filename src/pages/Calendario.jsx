@@ -1553,16 +1553,19 @@ export default function Calendario() {
               </div>
               <p className="text-sm text-gray-600 text-center font-medium">¿A quién se la mandas?</p>
               <div className="space-y-2">
-                {Object.entries(NOMBRES_CORTOS)
-                  .filter(([email]) => email !== user.email && email !== "nicolasvoltis@gmail.com" || (email === "nicolasvoltis@gmail.com" && user.email !== "nicolas@voltisenergia.com"))
-                  .filter(([email]) => {
-                    // Mostrar solo los otros 2 (excluir al usuario actual, y evitar duplicar Nico)
+                {[
+                  { email: "nicolas@voltisenergia.com", nombre: "Nico" },
+                  { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
+                  { email: "jose@voltisenergia.com", nombre: "José" },
+                ]
+                  .filter(({ email }) => {
+                    // Excluir al usuario actual (ambos emails de Nico cuentan como el mismo)
                     if (user.email === "nicolas@voltisenergia.com" || user.email === "nicolasvoltis@gmail.com") {
-                      return email !== "nicolasvoltis@gmail.com" && email !== "nicolas@voltisenergia.com";
+                      return email !== "nicolas@voltisenergia.com";
                     }
                     return email !== user.email;
                   })
-                  .map(([email, nombre]) => (
+                  .map(({ email, nombre }) => (
                     <Button
                       key={email}
                       className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base font-bold py-5"
