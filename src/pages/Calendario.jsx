@@ -372,6 +372,7 @@ export default function Calendario() {
       await base44.entities.TareaCorcho.update(destTareas[i].id, { 
         orden: i,
         completada: destCompleted,
+        propietario_email: destTareas[i].propietario_email || propietarioSeleccionado || user.email,
         fecha_completada: destCompleted && !destTareas[i].fecha_completada ? new Date().toISOString() : destTareas[i].fecha_completada
       });
     }
