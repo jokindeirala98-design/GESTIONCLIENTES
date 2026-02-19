@@ -247,6 +247,46 @@ export default function Configuracion() {
 
         {isAdmin && (
           <Card className="border-none shadow-md">
+            <CardHeader className="border-b bg-gradient-to-r from-orange-500 to-orange-600">
+              <CardTitle className="text-white flex items-center gap-2">
+                <MessageCircle className="w-5 h-5" />
+                Bot de Tareas WhatsApp
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <p className="text-[#666666]">
+                  Envía correos de acceso al Bot de Tareas a Nicolás y Jokin para que puedan añadir tareas al corcho por WhatsApp.
+                </p>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-orange-700 mb-1">Se enviará a:</p>
+                  <p className="text-sm text-orange-800">📧 nicolasvoltis@gmail.com</p>
+                  <p className="text-sm text-orange-800">📧 jokin@voltisenergia.com</p>
+                </div>
+                <Button
+                  onClick={async () => {
+                    setIsSendingInvites(true);
+                    try {
+                      await base44.functions.invoke('enviarInvitacionCorcho');
+                      toast.success("Correos enviados correctamente a Nicolás y Jokin");
+                    } catch (error) {
+                      toast.error("Error al enviar los correos");
+                    }
+                    setIsSendingInvites(false);
+                  }}
+                  disabled={isSendingInvites}
+                  className="bg-orange-500 hover:bg-orange-600 w-full md:w-auto"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {isSendingInvites ? "Enviando..." : "📨 Enviar acceso por correo"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-gradient-to-r from-purple-500 to-purple-600">
               <CardTitle className="text-white flex items-center gap-2">
                 <Download className="w-5 h-5" />
