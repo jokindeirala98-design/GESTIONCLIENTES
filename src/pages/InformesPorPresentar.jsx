@@ -1286,7 +1286,6 @@ export default function InformesPorPresentar() {
                                       )}
                                     </div>
                                     )}
-                                    ) : null}
                                     </div>
                                     </CardContent>
                                     </Card>
