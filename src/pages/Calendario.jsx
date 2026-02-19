@@ -335,8 +335,7 @@ export default function Calendario() {
     if (!result.destination) return;
 
     const { source, destination } = result;
-    
-    // Si es el mismo contenedor y misma posición, no hacer nada
+
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
       return;
     }
@@ -344,40 +343,73 @@ export default function Calendario() {
     const sourceCompleted = source.droppableId === 'completadas';
     const destCompleted = destination.droppableId === 'completadas';
 
-    // Obtener tareas filtradas del contenedor origen
-    const sourceTareas = tareasCorcho
-      .filter(t => t.completada === sourceCompleted)
-      .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    // Listas ordenadas del propietario seleccionado (igual que en el render)
+    const pendientes = tareasCorcho
+      .filter(t => !t.completada && t.propietario_email === propietarioSeleccionado)
+      .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999));
 
-    const [movedTarea] = sourceTareas.splice(source.index, 1);
+    const completadas = tareasCorcho
+      .filter(t => t.completada && t.propietario_email === propietarioSeleccionado)
+      .sort((a, b) => {
+        if (!a.fecha_completada) return 1;
+        if (!b.fecha_completada) return -1;
+        return new Date(b.fecha_completada) - new Date(a.fecha_completada);
+      });
 
-    // Si se mueve entre columnas
-    if (sourceCompleted !== destCompleted) {
+    const sourceList = sourceCompleted ? [...completadas] : [...pendientes];
+    const destList = sourceCompleted === destCompleted ? sourceList : (destCompleted ? [...completadas] : [...pendientes]);
+
+    const [movedTarea] = sourceList.splice(source.index, 1);
+
+    if (sourceCompleted === destCompleted) {
+      // Mismo contenedor: reordenar
+      sourceList.splice(destination.index, 0, movedTarea);
+
+      // Actualización optimista inmediata
+      queryClient.setQueryData(['tareasCorcho'], (old) => {
+        if (!old) return old;
+        const otherTareas = old.filter(t => !(t.propietario_email === propietarioSeleccionado && t.completada === sourceCompleted));
+        return [...otherTareas, ...sourceList.map((t, i) => ({ ...t, orden: i }))];
+      });
+
+      // Guardar en servidor solo las tareas que cambiaron de orden
+      for (let i = 0; i < sourceList.length; i++) {
+        if (sourceList[i].orden !== i) {
+          base44.entities.TareaCorcho.update(sourceList[i].id, {
+            orden: i,
+            propietario_email: sourceList[i].propietario_email || propietarioSeleccionado,
+          });
+        }
+      }
+    } else {
+      // Entre columnas: mover y reordenar destino
       const timestamp = destCompleted ? new Date().toISOString() : null;
-      await base44.entities.TareaCorcho.update(movedTarea.id, {
-        completada: destCompleted,
-        fecha_completada: timestamp
+      const updatedMoved = { ...movedTarea, completada: destCompleted, fecha_completada: timestamp };
+      destList.splice(destination.index, 0, updatedMoved);
+
+      // Actualización optimista
+      queryClient.setQueryData(['tareasCorcho'], (old) => {
+        if (!old) return old;
+        const rest = old.filter(t => t.id !== movedTarea.id && !(t.propietario_email === propietarioSeleccionado && t.completada === destCompleted));
+        return [...rest, ...destList.map((t, i) => ({ ...t, orden: i }))];
       });
-    }
 
-    // Obtener tareas del contenedor destino
-    const destTareas = tareasCorcho
-      .filter(t => t.completada === destCompleted && t.id !== movedTarea.id)
-      .sort((a, b) => (a.orden || 0) - (b.orden || 0));
-
-    destTareas.splice(destination.index, 0, movedTarea);
-
-    // Actualizar orden de todas las tareas en el contenedor destino
-    for (let i = 0; i < destTareas.length; i++) {
-      await base44.entities.TareaCorcho.update(destTareas[i].id, { 
-        orden: i,
+      // Guardar en servidor
+      base44.entities.TareaCorcho.update(movedTarea.id, {
         completada: destCompleted,
-        propietario_email: destTareas[i].propietario_email || propietarioSeleccionado || user.email,
-        fecha_completada: destCompleted && !destTareas[i].fecha_completada ? new Date().toISOString() : destTareas[i].fecha_completada
+        fecha_completada: timestamp,
+        propietario_email: movedTarea.propietario_email || propietarioSeleccionado,
+        orden: destination.index,
       });
+      for (let i = 0; i < destList.length; i++) {
+        if (destList[i].id !== movedTarea.id) {
+          base44.entities.TareaCorcho.update(destList[i].id, {
+            orden: i,
+            propietario_email: destList[i].propietario_email || propietarioSeleccionado,
+          });
+        }
+      }
     }
-
-    queryClient.invalidateQueries(['tareasCorcho']);
   };
 
   if (!user) {
