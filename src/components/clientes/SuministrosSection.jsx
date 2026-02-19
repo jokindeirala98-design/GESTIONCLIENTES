@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download, CheckCircle2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import {
@@ -13,63 +13,26 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }) {
   const [suministros, setSuministros] = useState(cliente.suministros || []);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [nuevoSuministro, setNuevoSuministro] = useState({
-    nombre: "",
-    energia: "", // "luz" | "gas"
-    tipo_factura: ""
-  });
+  const [nuevoSuministro, setNuevoSuministro] = useState({ nombre: "", energia: "", tipo_factura: "" });
 
   const tarifasLuz = ["2.0", "3.0", "6.1", "6.2"];
   const tarifasGas = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
 
-  const handleOpenCreateDialog = () => {
-    setNuevoSuministro({ nombre: "", energia: "", tipo_factura: "" });
-    setShowCreateDialog(true);
-  };
-
   const handleCreateSuministro = () => {
-    if (!nuevoSuministro.nombre.trim()) {
-      toast.error("El nombre del suministro es obligatorio");
-      return;
-    }
-    if (!nuevoSuministro.tipo_factura) {
-      toast.error("Selecciona el tipo de tarifa");
-      return;
-    }
+    if (!nuevoSuministro.nombre.trim()) { toast.error("El nombre del suministro es obligatorio"); return; }
+    if (!nuevoSuministro.tipo_factura) { toast.error("Selecciona el tipo de tarifa"); return; }
 
     const nuevoId = Date.now().toString();
-    const nuevosSuministros = [
-      ...suministros,
-      {
-        id: nuevoId,
-        nombre: nuevoSuministro.nombre,
-        tipo_factura: nuevoSuministro.tipo_factura,
-        facturas: [],
-        cerrado: false
-      }
-    ];
-    
-    // Si el cliente estaba cerrado, cambiar a "Esperando facturas" al añadir nuevo suministro
+    const nuevosSuministros = [...suministros, { id: nuevoId, nombre: nuevoSuministro.nombre, tipo_factura: nuevoSuministro.tipo_factura, facturas: [], cerrado: false }];
     const estadoCerrado = cliente.estado === "Firmado con éxito";
-    const updateData = estadoCerrado 
-      ? { suministros: nuevosSuministros, estado: "Esperando facturas" }
-      : { suministros: nuevosSuministros };
-    
     setSuministros(nuevosSuministros);
-    onUpdate(updateData);
+    onUpdate(estadoCerrado ? { suministros: nuevosSuministros, estado: "Esperando facturas" } : { suministros: nuevosSuministros });
     setShowCreateDialog(false);
     toast.success(estadoCerrado ? "Suministro añadido - Cliente reactivado" : "Suministro añadido");
   };
@@ -82,70 +45,39 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     toast.success("Suministro eliminado");
   };
 
-  const handleEditName = (suministro) => {
-    setEditingId(suministro.id);
-    setEditingName(suministro.nombre);
-  };
-
   const handleSaveName = (suministroId) => {
-    const nuevosSuministros = suministros.map(s => {
-      if (s.id === suministroId) {
-        let suministroActualizado = { ...s, nombre: editingName };
-        // LIMPIEZA PREVENTIVA
-        if (s.informe_final) {
-          const archivosValidos = s.informe_final.archivos?.filter(a => 
-            a && a.url && a.url.trim() && a.url !== 'null'
-          ) || [];
-          const tieneUrlLegacy = s.informe_final.url && 
-            s.informe_final.url.trim() && s.informe_final.url !== 'null';
-
-          if (archivosValidos.length === 0 && !tieneUrlLegacy) {
-            const { informe_final, ...resto } = suministroActualizado;
-            return resto;
-          }
-        }
-        return suministroActualizado;
-      }
-      return s;
-    });
+    const nuevosSuministros = suministros.map(s => s.id === suministroId ? { ...s, nombre: editingName } : s);
     setSuministros(nuevosSuministros);
     onUpdate({ suministros: nuevosSuministros });
     setEditingId(null);
     toast.success("Nombre actualizado");
   };
 
-
-
   const handleDeleteFactura = (suministroId, facturaIndex) => {
     const nuevosSuministros = suministros.map(s => {
-      if (s.id === suministroId) {
-        const nuevasFacturas = s.facturas.filter((_, idx) => idx !== facturaIndex);
-
-        let suministroActualizado = { ...s, facturas: nuevasFacturas };
-        // LIMPIEZA PREVENTIVA
-        if (s.informe_final) {
-          const archivosValidos = s.informe_final.archivos?.filter(a => 
-            a && a.url && a.url.trim() && a.url !== 'null'
-          ) || [];
-          const tieneUrlLegacy = s.informe_final.url && 
-            s.informe_final.url.trim() && s.informe_final.url !== 'null';
-
-          if (archivosValidos.length === 0 && !tieneUrlLegacy) {
-            const { informe_final, ...resto } = suministroActualizado;
-            return resto;
-          }
-        }
-        return suministroActualizado;
-      }
-      return s;
+      if (s.id !== suministroId) return s;
+      return { ...s, facturas: s.facturas.filter((_, idx) => idx !== facturaIndex) };
     });
     setSuministros(nuevosSuministros);
     onUpdate({ suministros: nuevosSuministros });
     toast.success("Factura eliminada");
   };
 
+  const handleUploadFacturas = async (suministro, files) => {
+    const remaining = 3 - (suministro.facturas || []).length;
+    const filesToUpload = Array.from(files).slice(0, remaining);
+    toast.loading(`Subiendo ${filesToUpload.length} archivo(s)...`, { id: `upload-${suministro.id}` });
+    const uploads = await Promise.all(filesToUpload.map(file => base44.integrations.Core.UploadFile({ file })));
+    const nuevosSuministros = suministros.map(s => {
+      if (s.id !== suministro.id) return s;
+      return { ...s, facturas: [...(s.facturas || []), ...uploads.map((u, idx) => ({ nombre: filesToUpload[idx].name, url: u.file_url, fecha_subida: new Date().toISOString(), tipo_archivo: filesToUpload[idx].type }))] };
+    });
+    setSuministros(nuevosSuministros);
+    onUpdate({ suministros: nuevosSuministros });
+    toast.success(`${filesToUpload.length} factura(s) subida(s)`, { id: `upload-${suministro.id}` });
+  };
+
   const getTipoColor = (tipo) => {
-    // Gas tarifas -> verde
     if (["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo)) return "bg-green-600 text-white";
     switch(tipo) {
       case "6.2": return "bg-purple-600 text-white";
@@ -175,288 +107,182 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
           </div>
         ) : (
           <>
-            {/* Suministros Activos */}
             {suministrosActivos.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <h3 className="font-semibold text-[#004D9D] text-sm">Suministros Activos</h3>
-                {suministrosActivos.map((suministro, idx) => (
-            <Card key={suministro.id} className="bg-white">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1">
-                    {editingId === suministro.id ? (
-                      <div className="flex items-center gap-2 flex-1">
-                        <Input
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="h-8 text-sm"
-                          placeholder="Ej: Casa, Restaurante"
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveName(suministro.id)}
-                          className="h-8 bg-green-600 hover:bg-green-700"
-                        >
-                          <Check className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingId(null)}
-                          className="h-8"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <h3 className="font-semibold text-[#004D9D]">{suministro.nombre}</h3>
-                        {isOwnerOrAdmin && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEditName(suministro)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={getTipoColor(suministro.tipo_factura)}>
-                      {suministro.tipo_factura}
-                    </Badge>
-                    <Badge variant="outline">
-                      {(suministro.facturas || []).length}/3 facturas
-                    </Badge>
-                    {isOwnerOrAdmin && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteSuministro(suministro.id)}
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {(suministro.facturas || []).map((factura, facturaIdx) => (
-                  <div
-                    key={facturaIdx}
-                    className="flex items-center justify-between bg-gray-50 p-2 rounded"
-                  >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                      <span className="text-sm truncate">{factura.nombre}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={factura.url}
-                        download={factura.nombre}
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        Descargar
-                      </a>
-                      {isOwnerOrAdmin && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteFactura(suministro.id, facturaIdx)}
-                          className="h-6 w-6 p-0 text-red-500"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                {suministrosActivos.map((suministro) => {
+                  const tienePotencias = !!(suministro.informe_potencias || suministro.potencias_ignorado);
+                  const tieneInformeFinal = !!(suministro.informe_final?.archivos?.some(a => a?.url && a.url !== 'null') || (suministro.informe_final?.url && suministro.informe_final.url !== 'null'));
 
-                {isOwnerOrAdmin && (suministro.facturas || []).length < 3 && (
-                  <div>
-                    <input
-                      type="file"
-                      id={`upload-${suministro.id}`}
-                      className="hidden"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      multiple
-                      onChange={async (e) => {
-                        const files = Array.from(e.target.files);
-                        const remaining = 3 - (suministro.facturas || []).length;
-                        const filesToUpload = files.slice(0, remaining);
-                        
-                        // Subir todos los archivos en paralelo
-                        toast.loading(`Subiendo ${filesToUpload.length} archivo(s)...`, { id: `upload-${suministro.id}` });
-                        
-                        try {
-                          const uploads = await Promise.all(
-                            filesToUpload.map(file => base44.integrations.Core.UploadFile({ file }))
-                          );
-                          
-                          const nuevosSuministros = suministros.map(s => {
-                            if (s.id === suministro.id) {
-                              const nuevasFacturas = [
-                                ...(s.facturas || []),
-                                ...uploads.map((upload, idx) => ({
-                                  nombre: filesToUpload[idx].name,
-                                  url: upload.file_url,
-                                  fecha_subida: new Date().toISOString(),
-                                  tipo_archivo: filesToUpload[idx].type
-                                }))
-                              ];
-
-                              // LIMPIEZA PREVENTIVA: Eliminar informe_final corrupto
-                              let suministroActualizado = { ...s, facturas: nuevasFacturas };
-                              if (s.informe_final) {
-                                const archivosValidos = s.informe_final.archivos?.filter(a => 
-                                  a && a.url && a.url.trim() && a.url !== 'null'
-                                ) || [];
-                                const tieneUrlLegacy = s.informe_final.url && 
-                                  s.informe_final.url.trim() && s.informe_final.url !== 'null';
-
-                                if (archivosValidos.length === 0 && !tieneUrlLegacy) {
-                                  const { informe_final, ...resto } = suministroActualizado;
-                                  suministroActualizado = resto;
-                                }
-                              }
-                              return suministroActualizado;
-                            }
-                            return s;
-                          });
-
-                          setSuministros(nuevosSuministros);
-                          onUpdate({ suministros: nuevosSuministros });
-                          toast.success(`${filesToUpload.length} factura(s) subida(s)`, { id: `upload-${suministro.id}` });
-                        } catch (error) {
-                          console.error("Error uploading:", error);
-                          toast.error("Error al subir facturas", { id: `upload-${suministro.id}` });
-                        }
-                        
-                        e.target.value = "";
-                      }}
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => document.getElementById(`upload-${suministro.id}`).click()}
-                      className="w-full"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Añadir Factura(s) ({(suministro.facturas || []).length}/3)
-                    </Button>
-                  </div>
-                )}
-
-                {suministro.informe_final && (
-                  <div className="mt-3 pt-3 border-t">
-                    <p className="text-xs text-gray-500 mb-2 font-semibold">📄 Informe(s) Final(es):</p>
-                    {suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
-                      <div className="space-y-2">
-                        {suministro.informe_final.archivos.map((archivo, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
-                            <span className="text-sm text-green-700 truncate">{archivo.nombre}</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => window.open(archivo.url, '_blank')}
-                              className="text-xs text-green-600 hover:text-green-700 h-auto py-1 px-2"
-                            >
-                              <Download className="w-3 h-3 mr-1" />
-                              Descargar
-                            </Button>
+                  return (
+                    <Card key={suministro.id} className="bg-white overflow-hidden">
+                      {/* Cabecera del suministro */}
+                      <CardHeader className="pb-0 pt-4 px-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1">
+                            {editingId === suministro.id ? (
+                              <div className="flex items-center gap-2 flex-1">
+                                <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="h-8 text-sm" />
+                                <Button size="sm" onClick={() => handleSaveName(suministro.id)} className="h-8 bg-green-600 hover:bg-green-700"><Check className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="h-8"><X className="w-4 h-4" /></Button>
+                              </div>
+                            ) : (
+                              <>
+                                <h3 className="font-semibold text-[#004D9D]">{suministro.nombre}</h3>
+                                {isOwnerOrAdmin && <Button size="sm" variant="ghost" onClick={() => { setEditingId(suministro.id); setEditingName(suministro.nombre); }} className="h-6 w-6 p-0"><Edit2 className="w-3 h-3" /></Button>}
+                              </>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    ) : suministro.informe_final.url ? (
-                      <div className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded">
-                        <span className="text-sm text-green-700">{suministro.informe_final.nombre || 'Informe final'}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => window.open(suministro.informe_final.url, '_blank')}
-                          className="text-xs text-green-600 hover:text-green-700 h-auto py-1 px-2"
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Descargar
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-                ))}
+                          <div className="flex items-center gap-2">
+                            <Badge className={getTipoColor(suministro.tipo_factura)}>{suministro.tipo_factura}</Badge>
+                            {isOwnerOrAdmin && <Button size="sm" variant="ghost" onClick={() => handleDeleteSuministro(suministro.id)} className="h-6 w-6 p-0 text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></Button>}
+                          </div>
+                        </div>
+                      </CardHeader>
+
+                      {/* Dos columnas: Facturas | Informes */}
+                      <CardContent className="p-4">
+                        <div className="grid md:grid-cols-2 gap-4 mt-2">
+
+                          {/* COLUMNA IZQUIERDA: Facturas */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="w-4 h-4 text-blue-600" />
+                              <h4 className="text-sm font-semibold text-blue-800">Facturas</h4>
+                              <Badge variant="outline" className="text-xs">{(suministro.facturas || []).length}/3</Badge>
+                            </div>
+
+                            {(suministro.facturas || []).length === 0 ? (
+                              <p className="text-xs text-gray-400 italic py-2">Sin facturas adjuntas</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {suministro.facturas.map((factura, idx) => (
+                                  <div key={idx} className="flex items-center justify-between bg-blue-50 border border-blue-100 p-2 rounded text-sm">
+                                    <span className="truncate flex-1 text-xs text-gray-700">{factura.nombre}</span>
+                                    <div className="flex items-center gap-1 ml-2">
+                                      <a href={factura.url} download={factura.nombre} className="text-blue-600 hover:text-blue-800">
+                                        <Download className="w-3.5 h-3.5" />
+                                      </a>
+                                      {isOwnerOrAdmin && (
+                                        <button onClick={() => handleDeleteFactura(suministro.id, idx)} className="text-red-400 hover:text-red-600 ml-1">
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {isOwnerOrAdmin && (suministro.facturas || []).length < 3 && (
+                              <>
+                                <input type="file" id={`upload-${suministro.id}`} className="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple onChange={async (e) => { await handleUploadFacturas(suministro, e.target.files); e.target.value = ""; }} />
+                                <Button size="sm" variant="outline" onClick={() => document.getElementById(`upload-${suministro.id}`).click()} className="w-full text-xs h-7 border-blue-300 text-blue-700">
+                                  <Upload className="w-3.5 h-3.5 mr-1" /> Añadir factura(s)
+                                </Button>
+                              </>
+                            )}
+                          </div>
+
+                          {/* COLUMNA DERECHA: Informes */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Zap className="w-4 h-4 text-yellow-600" />
+                              <h4 className="text-sm font-semibold text-yellow-800">Informes</h4>
+                            </div>
+
+                            {/* Informe de Potencias */}
+                            <div className="rounded-lg border p-2 bg-yellow-50 border-yellow-200">
+                              <p className="text-xs font-semibold text-yellow-800 mb-1">⚡ Informe de Potencias</p>
+                              {suministro.potencias_ignorado ? (
+                                <p className="text-xs text-gray-500 italic">Omitido</p>
+                              ) : suministro.informe_potencias ? (
+                                <div className="flex items-center justify-between bg-white border border-yellow-300 p-1.5 rounded">
+                                  <span className="text-xs text-yellow-700 truncate flex-1">{suministro.informe_potencias.nombre}</span>
+                                  <a href={suministro.informe_potencias.url} download={suministro.informe_potencias.nombre} className="text-yellow-600 hover:text-yellow-800 ml-2">
+                                    <Download className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-400 italic">Pendiente (José lo adjuntará)</p>
+                              )}
+                            </div>
+
+                            {/* Informe Final */}
+                            <div className="rounded-lg border p-2 bg-green-50 border-green-200">
+                              <p className="text-xs font-semibold text-green-800 mb-1">📄 Informe Final</p>
+                              {tieneInformeFinal ? (
+                                <div className="space-y-1">
+                                  {suministro.informe_final?.archivos?.filter(a => a?.url && a.url !== 'null').map((archivo, idx) => (
+                                    <div key={idx} className="flex items-center justify-between bg-white border border-green-300 p-1.5 rounded">
+                                      <span className="text-xs text-green-700 truncate flex-1">{archivo.nombre}</span>
+                                      <a href={archivo.url} download={archivo.nombre} className="text-green-600 hover:text-green-800 ml-2">
+                                        <Download className="w-3.5 h-3.5" />
+                                      </a>
+                                    </div>
+                                  ))}
+                                  {suministro.informe_final?.url && suministro.informe_final.url !== 'null' && !suministro.informe_final?.archivos?.length && (
+                                    <div className="flex items-center justify-between bg-white border border-green-300 p-1.5 rounded">
+                                      <span className="text-xs text-green-700 truncate flex-1">{suministro.informe_final.nombre || 'Informe final'}</span>
+                                      <a href={suministro.informe_final.url} download={suministro.informe_final.nombre} className="text-green-600 hover:text-green-800 ml-2">
+                                        <Download className="w-3.5 h-3.5" />
+                                      </a>
+                                    </div>
+                                  )}
+                                  {suministro.informe_final?.notas_admin && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded p-1.5 mt-1">
+                                      <p className="text-xs font-semibold text-blue-700">📝 Nota admin:</p>
+                                      <p className="text-xs text-blue-600">{suministro.informe_final.notas_admin}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-400 italic">{tienePotencias ? "Pendiente (Nicolás lo adjuntará)" : "Esperando informe de potencias"}</p>
+                              )}
+                            </div>
+                          </div>
+
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
 
-            {/* Suministros Cerrados */}
             {suministrosCerrados.length > 0 && (
               <div className="space-y-4 mt-6 pt-6 border-t-2 border-green-300">
                 <h3 className="font-semibold text-green-700 text-sm flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Suministros Cerrados y Comisionados
+                  <CheckCircle2 className="w-4 h-4" /> Suministros Cerrados y Comisionados
                 </h3>
                 {suministrosCerrados.map((suministro) => (
                   <Card key={suministro.id} className="bg-green-50 border-green-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-green-800">{suministro.nombre}</h3>
                           <Badge className="bg-green-600 text-white">Cerrado</Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getTipoColor(suministro.tipo_factura)}>
-                            {suministro.tipo_factura}
-                          </Badge>
-                          {suministro.comision && (
-                            <Badge className="bg-yellow-600 text-white">
-                              {suministro.comision}€
-                            </Badge>
-                          )}
+                          <Badge className={getTipoColor(suministro.tipo_factura)}>{suministro.tipo_factura}</Badge>
+                          {suministro.comision && <Badge className="bg-yellow-600 text-white">{suministro.comision}€</Badge>}
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
                       {suministro.fecha_cierre_suministro && (
-                        <p className="text-xs text-green-700">
-                          📅 Cerrado: {new Date(suministro.fecha_cierre_suministro).toLocaleDateString('es-ES')}
-                        </p>
+                        <p className="text-xs text-green-700 mb-2">📅 Cerrado: {new Date(suministro.fecha_cierre_suministro).toLocaleDateString('es-ES')}</p>
                       )}
                       {suministro.informe_final && (
-                        <div className="mt-2">
-                          <p className="text-xs text-green-700 mb-2 font-semibold">📄 Informe(s):</p>
-                          {suministro.informe_final.archivos && suministro.informe_final.archivos.length > 0 ? (
-                            <div className="space-y-2">
-                              {suministro.informe_final.archivos.map((archivo, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-white border border-green-300 p-2 rounded">
-                                  <span className="text-sm text-green-800 truncate">{archivo.nombre}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => window.open(archivo.url, '_blank')}
-                                    className="text-xs text-green-700 hover:text-green-800"
-                                  >
-                                    <Download className="w-3 h-3 mr-1" />
-                                    Ver
-                                  </Button>
-                                </div>
-                              ))}
+                        <div className="space-y-1">
+                          <p className="text-xs text-green-700 font-semibold">📄 Informe(s) final(es):</p>
+                          {suministro.informe_final.archivos?.filter(a => a?.url).map((archivo, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-white border border-green-300 p-2 rounded">
+                              <span className="text-sm text-green-800 truncate">{archivo.nombre}</span>
+                              <a href={archivo.url} download={archivo.nombre} className="text-green-600 hover:text-green-800"><Download className="w-4 h-4" /></a>
                             </div>
-                          ) : suministro.informe_final.url ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => window.open(suministro.informe_final.url, '_blank')}
-                              className="text-xs text-green-700"
-                            >
-                              <Download className="w-3 h-3 mr-1" />
-                              Ver informe
-                            </Button>
-                          ) : null}
+                          ))}
+                          {suministro.informe_final.url && !suministro.informe_final.archivos?.length && (
+                            <a href={suministro.informe_final.url} download={suministro.informe_final.nombre} className="text-green-600 hover:underline text-sm flex items-center gap-1">
+                              <Download className="w-4 h-4" /> Ver informe
+                            </a>
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -468,13 +294,8 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
         )}
 
         {isOwnerOrAdmin && (
-          <Button
-            onClick={handleOpenCreateDialog}
-            variant="outline"
-            className="w-full border-dashed border-2 border-blue-300 text-[#004D9D]"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Añadir Nuevo Suministro
+          <Button onClick={() => { setNuevoSuministro({ nombre: "", energia: "", tipo_factura: "" }); setShowCreateDialog(true); }} variant="outline" className="w-full border-dashed border-2 border-blue-300 text-[#004D9D]">
+            <Plus className="w-4 h-4 mr-2" /> Añadir Nuevo Suministro
           </Button>
         )}
       </CardContent>
@@ -487,26 +308,14 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Nombre del suministro *</label>
-              <Input
-                value={nuevoSuministro.nombre}
-                onChange={(e) => setNuevoSuministro({ ...nuevoSuministro, nombre: e.target.value })}
-                placeholder="Ej: Casa, Restaurante, Local 1"
-              />
+              <Input value={nuevoSuministro.nombre} onChange={(e) => setNuevoSuministro({ ...nuevoSuministro, nombre: e.target.value })} placeholder="Ej: Casa, Restaurante, Local 1" />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Energía *</label>
               <div className="flex gap-3">
                 {["luz", "gas"].map(e => (
-                  <button
-                    key={e}
-                    type="button"
-                    onClick={() => setNuevoSuministro({ ...nuevoSuministro, energia: e, tipo_factura: "" })}
-                    className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium capitalize transition-colors ${
-                      nuevoSuministro.energia === e
-                        ? "border-[#004D9D] bg-[#004D9D] text-white"
-                        : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
-                    }`}
-                  >
+                  <button key={e} type="button" onClick={() => setNuevoSuministro({ ...nuevoSuministro, energia: e, tipo_factura: "" })}
+                    className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium capitalize transition-colors ${nuevoSuministro.energia === e ? "border-[#004D9D] bg-[#004D9D] text-white" : "border-gray-200 text-gray-600 hover:border-[#004D9D]"}`}>
                     {e === "luz" ? "⚡ Luz" : "🔥 Gas"}
                   </button>
                 ))}
@@ -517,16 +326,8 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                 <label className="text-sm font-medium mb-2 block">Tarifa *</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(nuevoSuministro.energia === "luz" ? tarifasLuz : tarifasGas).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setNuevoSuministro({ ...nuevoSuministro, tipo_factura: t })}
-                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
-                        nuevoSuministro.tipo_factura === t
-                          ? "border-[#004D9D] bg-[#004D9D] text-white"
-                          : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
-                      }`}
-                    >
+                    <button key={t} type="button" onClick={() => setNuevoSuministro({ ...nuevoSuministro, tipo_factura: t })}
+                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-colors ${nuevoSuministro.tipo_factura === t ? "border-[#004D9D] bg-[#004D9D] text-white" : "border-gray-200 text-gray-600 hover:border-[#004D9D]"}`}>
                       {t}
                     </button>
                   ))}
@@ -535,12 +336,8 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateSuministro} className="bg-[#004D9D] hover:bg-[#00AEEF]">
-              Crear Suministro
-            </Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCreateSuministro} className="bg-[#004D9D] hover:bg-[#00AEEF]">Crear Suministro</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

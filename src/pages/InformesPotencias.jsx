@@ -248,14 +248,13 @@ export default function InformesPotencias() {
     }, cliente.suministros[0]?.tipo_factura || "2.0");
   };
 
-  // Solo clientes con estado exactamente "Facturas presentadas"
-  // que tengan al menos un suministro activo con facturas y sin informe de potencias ni ignorado
+  // Clientes que tengan al menos un suministro activo con facturas y sin informe de potencias ni ignorado
+  // (independientemente del estado del cliente)
   const clientesPendientes = clientes.filter(c => {
-    if (c.estado !== "Facturas presentadas") return false;
+    if (["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado", "Ignorado con mucho éxito"].includes(c.estado)) return false;
     if (!c.suministros || c.suministros.length === 0) return false;
 
     const suministrosActivos = c.suministros.filter(s => !s.cerrado);
-    // Debe tener al menos un suministro con facturas pendiente de informe
     return suministrosActivos.some(s =>
       s.facturas && s.facturas.length > 0 && !s.informe_potencias && !s.potencias_ignorado
     );
