@@ -39,6 +39,25 @@ const estadoColors = {
   "Rechazado": "bg-red-500",
 };
 
+const TODOS_ESTADOS = [
+  "Primer contacto",
+  "Esperando facturas",
+  "Facturas presentadas",
+  "Pendiente informe potencias",
+  "Pendiente informe comparativo",
+  "Informe listo",
+  "Pendiente de firma",
+  "Pendiente de aprobación",
+  "Firmado con éxito",
+  "Rechazado",
+  "Ignorado con mucho éxito",
+];
+
+// Estados que implican que ya hay informes subidos
+const ESTADOS_CON_INFORMES = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito"];
+// Estados anteriores a tener informes
+const ESTADOS_SIN_INFORMES = ["Primer contacto", "Esperando facturas", "Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo", "Rechazado", "Ignorado con mucho éxito"];
+
 export default function DetalleCliente() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
