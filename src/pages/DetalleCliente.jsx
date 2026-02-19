@@ -269,7 +269,8 @@ export default function DetalleCliente() {
       );
       
       const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
-      if (todosConFacturas && !estadosFinales.includes(cliente.estado)) {
+      const estadosIntermedios = ["Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo"];
+      if (todosConFacturas && !estadosFinales.includes(cliente.estado) && !estadosIntermedios.includes(cliente.estado)) {
         console.log("Cambiando a Facturas presentadas - todos los suministros activos tienen facturas");
         eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_facturas");
         updateMutation.mutate({
