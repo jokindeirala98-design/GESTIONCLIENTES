@@ -272,6 +272,12 @@ export default function InformesPotencias() {
     );
   }
 
+  const clientesPendientesOrdenados = [...clientesPendientes].sort((a, b) => {
+    const orderA = TIPO_ORDEN_IP[getTipoMaximoIP(a)] || 0;
+    const orderB = TIPO_ORDEN_IP[getTipoMaximoIP(b)] || 0;
+    return orderB - orderA;
+  });
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -283,12 +289,6 @@ export default function InformesPotencias() {
           Clientes pendientes de informe de potencias (Excel)
         </p>
       </div>
-
-  const clientesPendientesOrdenados = [...clientesPendientes].sort((a, b) => {
-    const orderA = TIPO_ORDEN_IP[getTipoMaximoIP(a)] || 0;
-    const orderB = TIPO_ORDEN_IP[getTipoMaximoIP(b)] || 0;
-    return orderB - orderA;
-  });
 
       {clientesPendientesOrdenados.length === 0 ? (
         <Card className="border-none shadow-md">
