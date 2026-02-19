@@ -1243,27 +1243,27 @@ export default function InformesPorPresentar() {
                                               e.preventDefault();
                                               e.currentTarget.classList.remove('border-purple-500', 'bg-purple-100');
                                               const files = Array.from(e.dataTransfer.files);
-                                              const pdfFiles = files.filter(f => f.type === 'application/pdf');
-                                              
-                                              if (pdfFiles.length < files.length) {
-                                                toast.error("Solo se permiten archivos PDF");
+                                              const validFiles = files.filter(f => f.type === 'application/pdf' || f.type === 'application/zip' || f.name.endsWith('.zip'));
+
+                                              if (validFiles.length < files.length) {
+                                               toast.error("Solo se permiten archivos PDF o ZIP");
                                               }
-                                              
-                                              if (pdfFiles.length > 0) {
-                                                handleSeleccionarInformes(suministro.id, pdfFiles);
+
+                                              if (validFiles.length > 0) {
+                                               handleSeleccionarInformes(suministro.id, validFiles);
                                               }
                                             }}
                                             className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center transition-colors"
                                           >
                                             <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2" />
                                             <p className="text-sm text-gray-600 mb-2">
-                                              Arrastra PDFs aquí o haz clic para seleccionar (máx. 5)
+                                              Arrastra PDF/ZIP aquí o haz clic para seleccionar (máx. 5)
                                             </p>
                                             <input
                                               type="file"
                                               id={`upload-${suministro.id}`}
                                               className="hidden"
-                                              accept=".pdf"
+                                              accept=".pdf,.zip"
                                               multiple
                                               onChange={(e) => {
                                                 const files = Array.from(e.target.files);
@@ -1279,7 +1279,7 @@ export default function InformesPorPresentar() {
                                               className="bg-purple-600 hover:bg-purple-700"
                                             >
                                               <Upload className="w-4 h-4 mr-2" />
-                                              Seleccionar PDF
+                                              Seleccionar PDF/ZIP
                                             </Button>
                                           </div>
                                         </>

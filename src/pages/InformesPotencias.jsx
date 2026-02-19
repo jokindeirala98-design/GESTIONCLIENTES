@@ -460,7 +460,7 @@ export default function InformesPotencias() {
                                             type="file"
                                             id={`upload-${suministro.id}`}
                                             className="hidden"
-                                            accept=".xlsx,.xls"
+                                            accept=".xlsx,.xls,.zip"
                                             onChange={(e) => {
                                               const file = e.target.files[0];
                                               if (file) {

@@ -112,7 +112,7 @@ export default function SubirInformeDialog({ open, onClose, cliente, user }) {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.zip"
                   onChange={handleFileChange}
                   multiple
                   className="hidden"
@@ -124,7 +124,7 @@ export default function SubirInformeDialog({ open, onClose, cliente, user }) {
                     Haz clic para seleccionar 1 o 2 informes
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    PDF, JPG o PNG (máx. 2 archivos)
+                    PDF, JPG, PNG o ZIP (máx. 2 archivos)
                   </p>
                 </label>
               </div>
