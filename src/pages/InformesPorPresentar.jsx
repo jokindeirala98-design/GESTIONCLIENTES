@@ -895,50 +895,59 @@ export default function InformesPorPresentar() {
                       open={isExpanded}
                       onOpenChange={() => setClienteExpandido(isExpanded ? null : cliente.id)}
                     >
-                      <CollapsibleTrigger asChild>
-                        <CardHeader className="cursor-pointer hover:bg-gray-50">
+                          <CardHeader className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 flex-1">
-                              <div {...provided.dragHandleProps}>
+                              <div 
+                                {...provided.dragHandleProps}
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <GripVertical className="w-5 h-5 text-gray-400 cursor-grab active:cursor-grabbing" />
                               </div>
-                              <Building2 className="w-6 h-6 text-[#004D9D]" />
-                          <div>
-                            <CardTitle className="text-[#004D9D]">{cliente.nombre_negocio}</CardTitle>
-                            <div className="flex items-center gap-3 mt-2">
-                              {zona && <span className="text-sm text-gray-600">{zona.nombre}</span>}
-                              <span className="text-sm text-gray-600">• {cliente.propietario_iniciales || 'n/s'}</span>
-                              <Badge className={tipoFacturaColors[tipoMax]}>
-                                Max: {tipoMax}
-                              </Badge>
-                              <Badge variant="outline">
-                                {cliente.suministros?.length || 0} suministro(s)
-                              </Badge>
+                              <CollapsibleTrigger asChild>
+                                <div className="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80" >
+                                  <Building2 className="w-6 h-6 text-[#004D9D]" />
+                                  <div>
+                                    <CardTitle className="text-[#004D9D]">{cliente.nombre_negocio}</CardTitle>
+                                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                      {zona && <span className="text-sm text-gray-600">{zona.nombre}</span>}
+                                      <span className="text-sm text-gray-600">• {cliente.propietario_iniciales || 'n/s'}</span>
+                                      <Badge className={tipoFacturaColors[tipoMax]}>
+                                        Max: {tipoMax}
+                                      </Badge>
+                                      <Badge variant="outline">
+                                        {cliente.suministros?.length || 0} suministro(s)
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {primeraFechaFactura && (
+                                <span className={`text-sm ${diasDesdeSubida > 8 ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                                  📅 {primeraFechaFactura}
+                                </span>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleIgnorarCliente(cliente.id);
+                                }}
+                                className="text-gray-600 hover:bg-gray-100"
+                              >
+                                Ignorar
+                              </Button>
+                              <CollapsibleTrigger asChild>
+                                <button className="p-1 hover:opacity-80">
+                                  {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                </button>
+                              </CollapsibleTrigger>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {primeraFechaFactura && (
-                            <span className={`text-sm ${diasDesdeSubida > 8 ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                              📅 {primeraFechaFactura}
-                            </span>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleIgnorarCliente(cliente.id);
-                            }}
-                            className="text-gray-600 hover:bg-gray-100"
-                          >
-                            Ignorar
-                          </Button>
-                          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </CollapsibleTrigger>
+                        </CardHeader>
 
                   <CollapsibleContent>
                     <CardContent className="pt-0">
