@@ -968,7 +968,7 @@ export default function Calendario() {
                         className={`min-h-[300px] space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg' : ''}`}
                       >
                         {tareasCorcho
-                          .filter(t => !t.completada && t.propietario_email === propietarioSeleccionado)
+                          .filter(t => !t.completada && esPropietario(t.propietario_email, propietarioSeleccionado))
                           .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999))
                           .map((tarea, index) => (
                             <Draggable key={tarea.id} draggableId={tarea.id} index={index}>
