@@ -676,20 +676,7 @@ export default function InformesPorPresentar() {
     });
   }, [clientes]); // eslint-disable-line
 
-  // Aplicar orden manual
-  let clientesOrdenados;
-  if (ordenManual.length > 0) {
-    clientesOrdenados = ordenManual
-      .map(id => clientesFacturasPresent.find(c => c.id === id))
-      .filter(c => c !== undefined);
-    // Añadir nuevos que no están en el orden
-    const nuevos = clientesFacturasPresent.filter(c => !ordenManual.includes(c.id));
-    clientesOrdenados = [...clientesOrdenados, ...nuevos];
-  } else {
-    clientesOrdenados = clientesOrdenadosAuto;
-  }
-
-  // Para estilos: clientes con potencias listas
+  // Clientes con potencias listas (todos los suministros activos con facturas tienen potencias)
   const clientesConPotenciasRecientes = new Set(
     clientesFacturasPresent
       .filter(c => {
@@ -698,6 +685,22 @@ export default function InformesPorPresentar() {
       })
       .map(c => c.id)
   );
+
+  // Aplicar orden manual pero siempre con potencias-listos arriba
+  let clientesOrdenados;
+  if (ordenManual.length > 0) {
+    const enOrden = ordenManual
+      .map(id => clientesFacturasPresent.find(c => c.id === id))
+      .filter(c => c !== undefined);
+    const nuevos = clientesFacturasPresent.filter(c => !ordenManual.includes(c.id));
+    const todos = [...enOrden, ...nuevos];
+    // Separar por potencias y mantener el orden manual dentro de cada grupo
+    const conPotencias = todos.filter(c => clientesConPotenciasRecientes.has(c.id));
+    const sinPotencias = todos.filter(c => !clientesConPotenciasRecientes.has(c.id));
+    clientesOrdenados = [...conPotencias, ...sinPotencias];
+  } else {
+    clientesOrdenados = clientesOrdenadosAuto;
+  }
 
   // Filtrar por búsqueda
   if (searchTerm) {
