@@ -603,10 +603,30 @@ export default function DetalleCliente() {
                 <Building2 className="w-7 h-7" />
                 {cliente.nombre_negocio}
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge className={`${estadoColors[cliente.estado]} text-white`}>
-                  {cliente.estado}
-                </Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative">
+                  <Badge
+                    className={`${estadoColors[cliente.estado] || 'bg-gray-500'} text-white cursor-pointer hover:opacity-80 transition-opacity select-none`}
+                    onClick={() => canEdit && setShowEstadoSelector(prev => !prev)}
+                    title={canEdit ? "Haz clic para cambiar el estado" : ""}
+                  >
+                    {cliente.estado} {canEdit && "▾"}
+                  </Badge>
+                  {showEstadoSelector && canEdit && (
+                    <div className="absolute top-8 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
+                      {TODOS_ESTADOS.map(estado => (
+                        <button
+                          key={estado}
+                          onClick={() => handleCambiarEstado(estado)}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${estado === cliente.estado ? 'font-bold text-[#004D9D]' : 'text-gray-700'}`}
+                        >
+                          <span className={`w-2 h-2 rounded-full inline-block ${estadoColors[estado] || 'bg-gray-400'}`} />
+                          {estado}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {tipoFacturaMaximo && (
                   <Badge className={
                     tipoFacturaMaximo === "6.1" ? "bg-red-600 text-white" :
