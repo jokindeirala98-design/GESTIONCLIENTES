@@ -929,21 +929,28 @@ export default function InformesPorPresentar() {
                   <CollapsibleContent>
                     <CardContent className="pt-0">
                       <div className="space-y-4">
-                       {cliente.suministros?.filter(s => !s.cerrado && (s.informe_potencias || s.potencias_ignorado) && !s.informe_comparativo).map((suministro) => {
+                       {cliente.suministros?.filter(s => !s.cerrado && s.facturas && s.facturas.length > 0 && !s.informe_comparativo).map((suministro) => {
                          const informeSubido = informesSubidos[suministro.id];
                          const estaGuardando = guardando[suministro.id];
+                         const tienePotencias = !!(suministro.informe_potencias || suministro.potencias_ignorado);
 
                          return (
-                            <Card key={suministro.id} className="bg-gray-50">
+                            <Card key={suministro.id} className={`${tienePotencias ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 opacity-75'}`}>
                               <CardContent className="p-4">
                                 <div className="flex flex-col gap-4">
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-3">
+                                      <div className="flex items-center gap-2 mb-3 flex-wrap">
                                         <h4 className="font-semibold text-[#004D9D]">{suministro.nombre}</h4>
                                         <Badge className={tipoFacturaColors[suministro.tipo_factura]}>
                                           {suministro.tipo_factura}
                                         </Badge>
+                                        {!tienePotencias && (
+                                          <Badge className="bg-gray-400 text-white text-xs">⏳ Esperando informe de potencias</Badge>
+                                        )}
+                                        {tienePotencias && (
+                                          <Badge className="bg-blue-600 text-white text-xs">⚡ Potencias listas</Badge>
+                                        )}
                                       </div>
 
                                       <div className="space-y-2">
