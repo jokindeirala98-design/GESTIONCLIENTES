@@ -854,20 +854,20 @@ export default function InformesPorPresentar() {
                 ref={provided.innerRef}
               >
                 {clientesOrdenados.map((cliente, index) => {
-            const zona = zonas.find(z => z.id === cliente.zona_id);
-            const tipoMax = getTipoMaximo(cliente);
-            const isExpanded = clienteExpandido === cliente.id;
-            
-            // Calcular fecha de primera factura subida
-            let primeraFechaFactura = null;
-            let diasDesdeSubida = 0;
-            if (cliente.suministros && cliente.suministros.length > 0) {
-              const todasFechas = cliente.suministros
+                const zona = zonas.find(z => z.id === cliente.zona_id);
+                const tipoMax = getTipoMaximo(cliente);
+                const isExpanded = clienteExpandido === cliente.id;
+
+                // Calcular fecha de primera factura subida
+                let primeraFechaFactura = null;
+                let diasDesdeSubida = 0;
+                if (cliente.suministros && cliente.suministros.length > 0) {
+                const todasFechas = cliente.suministros
                 .flatMap(s => s.facturas || [])
                 .map(f => f.fecha_subida)
                 .filter(f => f)
                 .sort();
-              if (todasFechas.length > 0) {
+                if (todasFechas.length > 0) {
                 const fechaSubida = new Date(todasFechas[0]);
                 primeraFechaFactura = fechaSubida.toLocaleDateString('es-ES', {
                   day: '2-digit',
@@ -875,34 +875,32 @@ export default function InformesPorPresentar() {
                   year: 'numeric'
                 });
                 diasDesdeSubida = Math.floor((new Date() - fechaSubida) / (1000 * 60 * 60 * 24));
-              }
-            }
-            
-            return (
-              <Draggable key={cliente.id} draggableId={cliente.id} index={index}>
+                }
+                }
+
+                return (
+                <Draggable key={cliente.id} draggableId={cliente.id} index={index}>
                 {(provided, snapshot) => (
-                  <Card 
-                   ref={provided.innerRef}
-                   {...provided.draggableProps}
-                   className={`border-l-4 ${
-                     clientesConPotenciasRecientes.has(cliente.id)
-                       ? 'border-green-500 bg-green-50'
-                       : 'border-yellow-400 bg-yellow-50'
-                   } ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
                   >
-                    <Collapsible
-                      open={isExpanded}
-                      onOpenChange={() => setClienteExpandido(isExpanded ? null : cliente.id)}
-                    >
-                          <CardHeader className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 flex-1">
-                              <div 
-                                {...provided.dragHandleProps}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <GripVertical className="w-5 h-5 text-gray-400 cursor-grab active:cursor-grabbing" />
-                              </div>
+                    <Card 
+                     className={`border-l-4 ${
+                        clientesConPotenciasRecientes.has(cliente.id)
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-yellow-400 bg-yellow-50'
+                      } ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500' : 'hover:shadow-lg'} transition-all cursor-grab active:cursor-grabbing`}
+                     >
+                     <Collapsible
+                       open={isExpanded}
+                       onOpenChange={() => setClienteExpandido(isExpanded ? null : cliente.id)}
+                     >
+                           <CardHeader className="p-4">
+                           <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-4 flex-1">
+                               <GripVertical className="w-5 h-5 text-gray-400" />
                               <CollapsibleTrigger asChild>
                                 <div className="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80" >
                                   <Building2 className="w-6 h-6 text-[#004D9D]" />
