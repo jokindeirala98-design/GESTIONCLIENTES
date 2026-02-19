@@ -61,6 +61,7 @@ export default function Calendario() {
   const [showHistorial, setShowHistorial] = useState(false);
   const [historialSearchTerm, setHistorialSearchTerm] = useState("");
   const [historialFilterUsuario, setHistorialFilterUsuario] = useState("todos");
+  const [pasapalabraDialog, setPasapalabraDialog] = useState(null); // { tareaId, descripcion }
 
   useEffect(() => {
     const loadUser = async () => {
