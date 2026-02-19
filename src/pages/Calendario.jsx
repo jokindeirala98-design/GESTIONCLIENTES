@@ -1029,39 +1029,42 @@ export default function Calendario() {
                                           </div>
                                         </div>
                                         <div className="flex gap-2 flex-wrap">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setEditingTareaCorcho(tarea)}
-                                          >
-                                            ✏️ Editar
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => toggleAlertaMutation.mutate({ id: tarea.id, tiene_alerta: tarea.tiene_alerta })}
-                                            className={tarea.tiene_alerta ? "border-red-500 text-red-600" : ""}
-                                          >
-                                            <AlertCircle className="w-4 h-4 mr-1" />
-                                            {tarea.tiene_alerta ? "Quitar" : "Alerta"}
-                                          </Button>
-                                          {opcionesPasapalabra.length > 0 && tarea.propietario_email === user.email && (
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => setPasapalabraDialog({ tareaId: tarea.id, descripcion: tarea.descripcion })}
-                                              className="border-orange-400 text-orange-600 hover:bg-orange-50"
-                                            >
-                                              🔁 Pasapalabra
-                                            </Button>
-                                          )}
-                                          <Button
-                                            size="sm"
-                                            onClick={() => completarTareaCorchoMutation.mutate(tarea.id)}
-                                            className="bg-green-600"
-                                          >
-                                            ✓ Hecha
-                                          </Button>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                           <Button
+                                             size="sm"
+                                             variant="outline"
+                                             onClick={() => setEditingTareaCorcho(tarea)}
+                                           >
+                                             ✏️ Editar
+                                           </Button>
+                                           <Button
+                                             size="sm"
+                                             variant="outline"
+                                             onClick={() => toggleAlertaMutation.mutate({ id: tarea.id, tiene_alerta: tarea.tiene_alerta })}
+                                             className={tarea.tiene_alerta ? "border-red-500 text-red-600" : ""}
+                                           >
+                                             <AlertCircle className="w-4 h-4 mr-1" />
+                                             {tarea.tiene_alerta ? "Quitar" : "Alerta"}
+                                           </Button>
+                                           <Button
+                                             size="sm"
+                                             onClick={() => completarTareaCorchoMutation.mutate(tarea.id)}
+                                             className="bg-green-600"
+                                           >
+                                             ✓ Hecha
+                                           </Button>
+                                           {tieneAccesoCorcho && (
+                                             <Button
+                                               size="icon"
+                                               variant="ghost"
+                                               onClick={() => setPasapalabraDialog({ tareaId: tarea.id, descripcion: tarea.descripcion })}
+                                               className="h-7 w-7 text-orange-500 hover:text-orange-700 hover:bg-orange-50"
+                                               title="Pasapalabra"
+                                             >
+                                               <ArrowRightLeft className="w-4 h-4" />
+                                             </Button>
+                                           )}
+                                         </div>
                                         </div>
                                       </>
                                     )}
