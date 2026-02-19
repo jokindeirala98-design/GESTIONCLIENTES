@@ -340,6 +340,11 @@ export default function InformesPorPresentar() {
         delete newState[suministroId];
         return newState;
       });
+      setAudioNotasAdmin(prev => {
+        const newState = { ...prev };
+        delete newState[suministroId];
+        return newState;
+      });
 
       // Enviar email al comercial si todos tienen informe
       if (todosConInforme) {
