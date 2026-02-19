@@ -112,7 +112,7 @@ export default function Layout({ children }) {
       url: createPageUrl("Configuracion"),
       icon: Settings,
     },
-    ];
+  ];
 
     // Menú específico para José
     const menuJose = [
