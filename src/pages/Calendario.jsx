@@ -448,6 +448,23 @@ export default function Calendario() {
   const isJose = user?.email === "jose@voltisenergia.com";
   const tieneAccesoCorcho = isNico || isIranzu || isJose;
 
+  // Opciones de pasapalabra para cada usuario (a quién puede enviar)
+  const PASAPALABRA_OPCIONES = {
+    "nicolasvoltis@gmail.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com"],
+    "nicolas@voltisenergia.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com"],
+    "iranzu@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "jose@voltisenergia.com"],
+    "jose@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "iranzu@voltisenergia.com"],
+  };
+
+  const NOMBRES_CORTOS = {
+    "nicolasvoltis@gmail.com": "Nico",
+    "nicolas@voltisenergia.com": "Nico",
+    "iranzu@voltisenergia.com": "Iranzu",
+    "jose@voltisenergia.com": "José",
+  };
+
+  const opcionesPasapalabra = PASAPALABRA_OPCIONES[user?.email] || [];
+
   // Clientes del usuario (o todos si es admin)
   const misClientes = isAdmin 
     ? clientes 
