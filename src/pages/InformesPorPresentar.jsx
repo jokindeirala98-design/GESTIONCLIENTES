@@ -686,14 +686,17 @@ export default function InformesPorPresentar() {
       .map(c => c.id)
   );
 
-  // Aplicar orden manual — el drag & drop manda, sin forzar ningún grupo arriba
+  // Aplicar orden manual, pero los que tienen potencias recientes siempre van arriba
   let clientesOrdenados;
   if (ordenManual.length > 0) {
     const enOrden = ordenManual
       .map(id => clientesFacturasPresent.find(c => c.id === id))
       .filter(c => c !== undefined);
     const nuevos = clientesFacturasPresent.filter(c => !ordenManual.includes(c.id));
-    clientesOrdenados = [...enOrden, ...nuevos];
+    const todos = [...enOrden, ...nuevos];
+    const conPotencias = todos.filter(c => clientesConPotenciasRecientes.has(c.id));
+    const sinPotencias = todos.filter(c => !clientesConPotenciasRecientes.has(c.id));
+    clientesOrdenados = [...conPotencias, ...sinPotencias];
   } else {
     clientesOrdenados = clientesOrdenadosAuto;
   }
