@@ -647,7 +647,11 @@ export default function InformesPorPresentar() {
 
   // Aplicar filtro de prioridad
   if (filtroPrioridad !== "all") {
-    clientesFacturasPresent = clientesFacturasPresent.filter(c => getTipoMaximo(c) === filtroPrioridad);
+    clientesFacturasPresent = clientesFacturasPresent.filter(c => {
+      const max = getTipoMaximo(c);
+      if (filtroPrioridad === "gas") return esGasTipo(max);
+      return max === filtroPrioridad;
+    });
   }
 
   const esGasTipo = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
