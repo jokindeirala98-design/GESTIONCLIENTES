@@ -628,6 +628,8 @@ export default function InformesPorPresentar() {
     }, cliente.suministros[0]?.tipo_factura || "2.0");
   };
 
+  const esGasTipo = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
+
   // Mostrar clientes desde que tienen facturas (con o sin informe de potencias)
   // EXCLUIR clientes con estado "Ignorado con mucho éxito"
   let clientesFacturasPresent = clientes.filter(c => {
@@ -653,8 +655,6 @@ export default function InformesPorPresentar() {
       return max === filtroPrioridad;
     });
   }
-
-  const esGasTipo = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
 
   const conteo = {
     "6.2": clientesFacturasPresent.filter(c => getTipoMaximo(c) === "6.2").length,
