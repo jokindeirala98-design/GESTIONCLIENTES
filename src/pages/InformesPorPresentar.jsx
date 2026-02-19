@@ -673,6 +673,16 @@ export default function InformesPorPresentar() {
     }
   }, [clientesOrdenadosAuto.length]);
 
+  // Detectar clientes que recién obtuvieron informe de potencias (todos los suministros activos con facturas tienen potencias)
+  const clientesConPotenciasRecientes = new Set(
+    clientesFacturasPresent
+      .filter(c => {
+        const activos = c.suministros.filter(s => !s.cerrado && s.facturas?.length > 0 && !s.informe_comparativo);
+        return activos.length > 0 && activos.every(s => s.informe_potencias || s.potencias_ignorado);
+      })
+      .map(c => c.id)
+  );
+
   // Aplicar orden manual y añadir nuevos clientes que no están en el orden
   let clientesOrdenados;
   if (ordenManual.length > 0) {
@@ -688,13 +698,15 @@ export default function InformesPorPresentar() {
     
     // Ordenar los nuevos por prioridad automáticamente
     const clientesNuevosOrdenados = clientesNuevos.sort((a, b) => {
-      const orderA = tipoFacturaOrder[getTipoMaximo(a)] || 999;
-      const orderB = tipoFacturaOrder[getTipoMaximo(b)] || 999;
+      const orderA = TIPO_ORDEN[getTipoMaximo(a)] || 999;
+      const orderB = TIPO_ORDEN[getTipoMaximo(b)] || 999;
       return orderA - orderB;
     });
     
-    // Combinar: primero los del orden manual, luego los nuevos
-    clientesOrdenados = [...clientesEnOrden, ...clientesNuevosOrdenados];
+    // Combinar: primero los del orden manual (con potencias recientes al top), luego los nuevos
+    const conPotencias = clientesEnOrden.filter(c => clientesConPotenciasRecientes.has(c.id));
+    const sinPotencias = clientesEnOrden.filter(c => !clientesConPotenciasRecientes.has(c.id));
+    clientesOrdenados = [...conPotencias, ...sinPotencias, ...clientesNuevosOrdenados];
   } else {
     clientesOrdenados = clientesOrdenadosAuto;
   }
