@@ -496,6 +496,35 @@ export default function DetalleCliente() {
     });
   };
 
+  const handleCambiarEstado = async (nuevoEstado) => {
+    setShowEstadoSelector(false);
+    if (nuevoEstado === cliente.estado) return;
+
+    const estaVolviendo = ESTADOS_SIN_INFORMES.includes(nuevoEstado) && ESTADOS_CON_INFORMES.includes(cliente.estado);
+
+    let mensaje = `¿Cambiar el estado a "${nuevoEstado}"?`;
+    if (estaVolviendo) {
+      mensaje = `¿Cambiar el estado a "${nuevoEstado}"?\n\nAVISO: Los informes finales subidos serán eliminados.`;
+    }
+
+    if (!window.confirm(mensaje)) return;
+
+    let updateData = { estado: nuevoEstado };
+
+    if (estaVolviendo && cliente.suministros) {
+      // Eliminar informes finales y comparativos de todos los suministros activos
+      const nuevosSuministros = cliente.suministros.map(s => {
+        if (s.cerrado) return s;
+        const { informe_final, informe_comparativo, ...resto } = s;
+        return resto;
+      });
+      updateData.suministros = nuevosSuministros;
+      updateData.comision = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
+    }
+
+    updateMutation.mutate({ id: clienteId, data: updateData });
+  };
+
   const handleChangePropietario = (nuevoEmail) => {
     const nuevoPropietario = comerciales.find(u => u.email === nuevoEmail);
     if (!nuevoPropietario) return;
