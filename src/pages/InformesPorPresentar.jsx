@@ -676,7 +676,20 @@ export default function InformesPorPresentar() {
     });
   }, [clientes]); // eslint-disable-line
 
-  // Detectar clientes que recién obtuvieron informe de potencias (todos los suministros activos con facturas tienen potencias)
+  // Aplicar orden manual
+  let clientesOrdenados;
+  if (ordenManual.length > 0) {
+    clientesOrdenados = ordenManual
+      .map(id => clientesFacturasPresent.find(c => c.id === id))
+      .filter(c => c !== undefined);
+    // Añadir nuevos que no están en el orden
+    const nuevos = clientesFacturasPresent.filter(c => !ordenManual.includes(c.id));
+    clientesOrdenados = [...clientesOrdenados, ...nuevos];
+  } else {
+    clientesOrdenados = clientesOrdenadosAuto;
+  }
+
+  // Para estilos: clientes con potencias listas
   const clientesConPotenciasRecientes = new Set(
     clientesFacturasPresent
       .filter(c => {
@@ -685,34 +698,6 @@ export default function InformesPorPresentar() {
       })
       .map(c => c.id)
   );
-
-  // Aplicar orden manual y añadir nuevos clientes que no están en el orden
-  let clientesOrdenados;
-  if (ordenManual.length > 0) {
-    // Clientes que están en el orden manual
-    const clientesEnOrden = ordenManual
-      .map(id => clientesFacturasPresent.find(c => c.id === id))
-      .filter(c => c !== undefined);
-    
-    // Clientes nuevos que NO están en el orden manual
-    const clientesNuevos = clientesFacturasPresent.filter(
-      c => !ordenManual.includes(c.id)
-    );
-    
-    // Ordenar los nuevos por prioridad automáticamente
-    const clientesNuevosOrdenados = clientesNuevos.sort((a, b) => {
-      const orderA = TIPO_ORDEN[getTipoMaximo(a)] || 999;
-      const orderB = TIPO_ORDEN[getTipoMaximo(b)] || 999;
-      return orderA - orderB;
-    });
-    
-    // Combinar: primero los del orden manual (con potencias recientes al top), luego los nuevos
-    const conPotencias = clientesEnOrden.filter(c => clientesConPotenciasRecientes.has(c.id));
-    const sinPotencias = clientesEnOrden.filter(c => !clientesConPotenciasRecientes.has(c.id));
-    clientesOrdenados = [...conPotencias, ...sinPotencias, ...clientesNuevosOrdenados];
-  } else {
-    clientesOrdenados = clientesOrdenadosAuto;
-  }
 
   // Filtrar por búsqueda
   if (searchTerm) {
