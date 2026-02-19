@@ -956,7 +956,7 @@ export default function Calendario() {
               <Card className="border-none shadow-md">
                 <CardHeader className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
                   <CardTitle className="text-white">
-                    Por Realizar ({tareasCorcho.filter(t => !t.completada && t.propietario_email === propietarioSeleccionado).length})
+                    Por Realizar ({tareasCorcho.filter(t => !t.completada && esPropietario(t.propietario_email, propietarioSeleccionado)).length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
