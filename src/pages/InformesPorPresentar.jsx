@@ -1153,8 +1153,8 @@ export default function InformesPorPresentar() {
                                             <div className="mt-2">
                                               <p className="text-xs text-gray-500 mb-1">🎙️ Audio para el comercial (opcional)</p>
                                               <AudioRecorder
-                                                audioUrl={audioNotasAdmin[suministro.id] || null}
-                                                onAudioChange={(url) => setAudioNotasAdmin(prev => ({ ...prev, [suministro.id]: url }))}
+                                                existingAudioUrl={audioNotasAdmin[suministro.id] || null}
+                                                onAudioSaved={(url) => setAudioNotasAdmin(prev => ({ ...prev, [suministro.id]: url }))}
                                               />
                                             </div>
                                             </div>
