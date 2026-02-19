@@ -475,6 +475,15 @@ export default function Calendario() {
   const isJose = user?.email === "jose@voltisenergia.com";
   const tieneAccesoCorcho = isNico || isIranzu || isJose;
 
+  // Helper para comparar propietario - Nico tiene dos emails posibles que comparten el mismo corcho
+  const esPropietario = (tareaEmail, selectorEmail) => {
+    const EMAILS_NICO = ["nicolas@voltisenergia.com", "nicolasvoltis@gmail.com"];
+    const selectorEsNico = EMAILS_NICO.includes(selectorEmail);
+    const tareaEsNico = EMAILS_NICO.includes(tareaEmail);
+    if (selectorEsNico && tareaEsNico) return true;
+    return tareaEmail === selectorEmail;
+  };
+
   // Opciones de pasapalabra para cada usuario (a quién puede enviar)
   const PASAPALABRA_OPCIONES = {
     "nicolasvoltis@gmail.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com"],
