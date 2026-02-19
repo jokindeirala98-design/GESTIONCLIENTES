@@ -494,36 +494,45 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Tipo de factura *</label>
-              <Select
-                value={nuevoSuministro.tipo_factura}
-                onValueChange={(value) => setNuevoSuministro({ ...nuevoSuministro, tipo_factura: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6.1">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-red-600 text-white text-xs">6.1</Badge>
-                      <span>Máxima prioridad</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="3.0">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-orange-600 text-white text-xs">3.0</Badge>
-                      <span>Alta prioridad</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="2.0">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-blue-600 text-white text-xs">2.0</Badge>
-                      <span>Prioridad media</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium mb-2 block">Energía *</label>
+              <div className="flex gap-3">
+                {["luz", "gas"].map(e => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setNuevoSuministro({ ...nuevoSuministro, energia: e, tipo_factura: "" })}
+                    className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium capitalize transition-colors ${
+                      nuevoSuministro.energia === e
+                        ? "border-[#004D9D] bg-[#004D9D] text-white"
+                        : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
+                    }`}
+                  >
+                    {e === "luz" ? "⚡ Luz" : "🔥 Gas"}
+                  </button>
+                ))}
+              </div>
             </div>
+            {nuevoSuministro.energia && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tarifa *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(nuevoSuministro.energia === "luz" ? tarifasLuz : tarifasGas).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setNuevoSuministro({ ...nuevoSuministro, tipo_factura: t })}
+                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                        nuevoSuministro.tipo_factura === t
+                          ? "border-[#004D9D] bg-[#004D9D] text-white"
+                          : "border-gray-200 text-gray-600 hover:border-[#004D9D]"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
