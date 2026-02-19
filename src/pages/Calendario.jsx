@@ -417,7 +417,7 @@ export default function Calendario() {
       // Actualización optimista inmediata
       queryClient.setQueryData(['tareasCorcho'], (old) => {
         if (!old) return old;
-        const otherTareas = old.filter(t => !(t.propietario_email === propietarioSeleccionado && t.completada === sourceCompleted));
+        const otherTareas = old.filter(t => !(esPropietario(t.propietario_email, propietarioSeleccionado) && t.completada === sourceCompleted));
         return [...otherTareas, ...sourceList.map((t, i) => ({ ...t, orden: i }))];
       });
 
