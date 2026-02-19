@@ -736,13 +736,14 @@ export default function InformesPorPresentar() {
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-    
-    const items = Array.from(ordenManual);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setOrdenManual(items);
-    localStorage.setItem('informes-orden-manual', JSON.stringify(items));
+    if (result.source.index === result.destination.index) return;
+
+    setOrdenManual(prev => {
+      const items = Array.from(prev);
+      const [reorderedItem] = items.splice(result.source.index, 1);
+      items.splice(result.destination.index, 0, reorderedItem);
+      return items;
+    });
   };
 
   const tipoFacturaColors = {
