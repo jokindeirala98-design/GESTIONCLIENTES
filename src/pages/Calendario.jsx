@@ -1538,49 +1538,60 @@ export default function Calendario() {
       </Dialog>
 
       {/* Dialog Pasapalabra */}
-      {pasapalabraDialog && (
-        <Dialog open={!!pasapalabraDialog} onOpenChange={() => setPasapalabraDialog(null)}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="text-center text-2xl font-extrabold text-orange-500 tracking-wide">
-                ¡PASAPALABRA!
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <p className="text-xs text-orange-600 font-semibold mb-1">Tarea:</p>
-                <p className="text-sm text-gray-800">{pasapalabraDialog.descripcion}</p>
+      {pasapalabraDialog && (() => {
+        // Opciones hardcodeadas por usuario - sin lógica dinámica
+        let opciones = [];
+        if (isNico) {
+          opciones = [
+            { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
+            { email: "jose@voltisenergia.com", nombre: "José" },
+          ];
+        } else if (isIranzu) {
+          opciones = [
+            { email: "nicolas@voltisenergia.com", nombre: "Nico" },
+            { email: "jose@voltisenergia.com", nombre: "José" },
+          ];
+        } else if (isJose) {
+          opciones = [
+            { email: "nicolas@voltisenergia.com", nombre: "Nico" },
+            { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
+          ];
+        }
+        return (
+          <Dialog open={!!pasapalabraDialog} onOpenChange={() => setPasapalabraDialog(null)}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-center text-2xl font-extrabold text-orange-500 tracking-wide">
+                  ¡PASAPALABRA!
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <p className="text-xs text-orange-600 font-semibold mb-1">Tarea:</p>
+                  <p className="text-sm text-gray-800">{pasapalabraDialog.descripcion}</p>
+                </div>
+                <p className="text-sm text-gray-600 text-center font-medium">¿A quién se la mandas?</p>
+                <div className="space-y-2">
+                  {opciones.map(({ email, nombre }) => (
+                    <Button
+                      key={email}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base font-bold py-5"
+                      onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
+                    >
+                      → {nombre}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <p className="text-sm text-gray-600 text-center font-medium">¿A quién se la mandas?</p>
-              <div className="space-y-2">
-                {[
-                  { email: "nicolas@voltisenergia.com", nombre: "Nico" },
-                  { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
-                  { email: "jose@voltisenergia.com", nombre: "José" },
-                ].filter(({ email }) => {
-                  const esNicoActual = user.email === "nicolas@voltisenergia.com" || user.email === "nicolasvoltis@gmail.com";
-                  const esNicoOpcion = email === "nicolas@voltisenergia.com";
-                  if (esNicoActual) return !esNicoOpcion;
-                  return email !== user.email;
-                }).map(({ email, nombre }) => (
-                  <Button
-                    key={email}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white text-base font-bold py-5"
-                    onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
-                  >
-                    → {nombre}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" className="w-full" onClick={() => setPasapalabraDialog(null)}>
-                Cancelar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+              <DialogFooter>
+                <Button variant="outline" className="w-full" onClick={() => setPasapalabraDialog(null)}>
+                  Cancelar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
 
       {/* Dialog para crear evento */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
