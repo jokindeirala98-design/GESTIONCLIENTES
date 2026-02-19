@@ -28,11 +28,15 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [nuevoSuministro, setNuevoSuministro] = useState({
     nombre: "",
-    tipo_factura: "3.0"
+    energia: "", // "luz" | "gas"
+    tipo_factura: ""
   });
 
+  const tarifasLuz = ["2.0", "3.0", "6.1", "6.2"];
+  const tarifasGas = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
+
   const handleOpenCreateDialog = () => {
-    setNuevoSuministro({ nombre: "", tipo_factura: "3.0" });
+    setNuevoSuministro({ nombre: "", energia: "", tipo_factura: "" });
     setShowCreateDialog(true);
   };
 
