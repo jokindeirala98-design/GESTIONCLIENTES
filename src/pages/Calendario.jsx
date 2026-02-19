@@ -1045,6 +1045,16 @@ export default function Calendario() {
                                             <AlertCircle className="w-4 h-4 mr-1" />
                                             {tarea.tiene_alerta ? "Quitar" : "Alerta"}
                                           </Button>
+                                          {opcionesPasapalabra.length > 0 && tarea.propietario_email === user.email && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => setPasapalabraDialog({ tareaId: tarea.id, descripcion: tarea.descripcion })}
+                                              className="border-orange-400 text-orange-600 hover:bg-orange-50"
+                                            >
+                                              🔁 Pasapalabra
+                                            </Button>
+                                          )}
                                           <Button
                                             size="sm"
                                             onClick={() => completarTareaCorchoMutation.mutate(tarea.id)}
