@@ -1315,14 +1315,16 @@ export default function InformesPorPresentar() {
                     </Collapsible>
                   </Card>
                 )}
+              </Card>
+              </div>
               </Draggable>
-            );
-          })}
-          {provided.placeholder}
-        </div>
-      )}
-    </Droppable>
-  </DragDropContext>
+              );
+              })}
+              {provided.placeholder}
+              </div>
+              )}
+              </Droppable>
+              </DragDropContext>
       )}
 
       <YaEsClienteDialog
