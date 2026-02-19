@@ -1534,6 +1534,42 @@ export default function Calendario() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Pasapalabra */}
+      {pasapalabraDialog && (
+        <Dialog open={!!pasapalabraDialog} onOpenChange={() => setPasapalabraDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-[#004D9D]">🔁 Pasapalabra</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                ¿A quién quieres enviar esta tarea?
+              </p>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Tarea:</p>
+                <p className="text-sm font-medium text-gray-800">{pasapalabraDialog.descripcion}</p>
+              </div>
+              <div className="space-y-2">
+                {opcionesPasapalabra.map(email => (
+                  <Button
+                    key={email}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={() => pasapalabra(pasapalabraDialog.tareaId, email)}
+                  >
+                    Enviar a {NOMBRES_CORTOS[email] || email}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPasapalabraDialog(null)}>
+                Cancelar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Dialog para crear evento */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
