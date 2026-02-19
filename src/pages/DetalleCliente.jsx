@@ -289,7 +289,7 @@ export default function DetalleCliente() {
         return tieneArchivosValidos || tieneUrlValida;
       });
 
-      if (todosConInforme && cliente.estado === "Facturas presentadas") {
+      if (todosConInforme && ["Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo"].includes(cliente.estado)) {
         console.log("Cambiando a Informe listo - todos los suministros activos tienen informe");
         updateMutation.mutate({
           id: clienteId,
