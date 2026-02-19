@@ -301,7 +301,7 @@ export default function InformesPotencias() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {clientesPendientes.map((cliente) => {
+          {clientesPendientesOrdenados.map((cliente) => {
             const zona = zonas.find(z => z.id === cliente.zona_id);
             const isExpanded = clienteExpandido === cliente.id;
             
