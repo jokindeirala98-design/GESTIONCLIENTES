@@ -18,6 +18,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { esGas, esLuz20, recalcularRappelComercial, aplicarActualizacionesRappel } from "../components/utils/rappelComisiones";
 import YaEsClienteDialog from "../components/informes/YaEsClienteDialog";
+import AudioRecorder from "../components/calendario/AudioRecorder";
 
 export default function InformesPorPresentar() {
   const navigate = useNavigate();
