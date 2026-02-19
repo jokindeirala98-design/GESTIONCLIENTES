@@ -879,8 +879,8 @@ export default function InformesPorPresentar() {
                    {...provided.draggableProps}
                    className={`border-l-4 ${
                      clientesConPotenciasRecientes.has(cliente.id)
-                       ? 'border-blue-500 shadow-blue-200 shadow-lg ring-2 ring-blue-300'
-                       : 'border-[#004D9D]'
+                       ? 'border-green-500 bg-green-50'
+                       : 'border-yellow-400 bg-yellow-50'
                    } ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
                   >
                     <Collapsible
