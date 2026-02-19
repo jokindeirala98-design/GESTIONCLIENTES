@@ -861,15 +861,7 @@ export default function Calendario() {
                       >
                         {tareasCorcho
                           .filter(t => !t.completada && t.propietario_email === propietarioSeleccionado)
-                          .sort((a, b) => {
-                            // Ordenar por prioridad primero (rojo > amarillo > verde)
-                            const prioridadOrden = { rojo: 0, amarillo: 1, verde: 2 };
-                            const prioA = prioridadOrden[a.prioridad] ?? 2;
-                            const prioB = prioridadOrden[b.prioridad] ?? 2;
-                            if (prioA !== prioB) return prioA - prioB;
-                            // Si tienen la misma prioridad, ordenar por orden
-                            return (a.orden || 0) - (b.orden || 0);
-                          })
+                          .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999))
                           .map((tarea, index) => (
                             <Draggable key={tarea.id} draggableId={tarea.id} index={index}>
                               {(provided, snapshot) => (
