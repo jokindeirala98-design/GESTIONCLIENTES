@@ -17,6 +17,7 @@ export default function Configuracion() {
     notificaciones_email: true,
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [isSendingInvites, setIsSendingInvites] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
