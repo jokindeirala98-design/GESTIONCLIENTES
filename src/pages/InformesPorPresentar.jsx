@@ -732,9 +732,16 @@ export default function InformesPorPresentar() {
   };
 
   const tipoFacturaColors = {
+    "6.2": "bg-purple-600 text-white",
     "6.1": "bg-red-600 text-white",
     "3.0": "bg-orange-600 text-white",
-    "2.0": "bg-blue-600 text-white"
+    "2.0": "bg-blue-600 text-white",
+    "RL1": "bg-green-600 text-white",
+    "RL2": "bg-green-600 text-white",
+    "RL3": "bg-green-600 text-white",
+    "RL4": "bg-green-600 text-white",
+    "RL5": "bg-green-600 text-white",
+    "RL6": "bg-green-600 text-white",
   };
 
   return (
