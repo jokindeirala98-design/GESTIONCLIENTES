@@ -410,7 +410,7 @@ export default function InformesPotencias() {
                                     </div>
                                   ) : (
                                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                      <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe de potencias (Excel)</p>
+                                      <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe de potencias (Excel o PDF)</p>
                                       
                                       {informeSubido ? (
                                         <div className="space-y-3">
@@ -460,7 +460,7 @@ export default function InformesPotencias() {
                                             type="file"
                                             id={`upload-${suministro.id}`}
                                             className="hidden"
-                                            accept=".xlsx,.xls,.zip"
+                                            accept=".xlsx,.xls,.zip,.pdf"
                                             onChange={(e) => {
                                               const file = e.target.files[0];
                                               if (file) {
@@ -475,7 +475,7 @@ export default function InformesPotencias() {
                                             className="bg-purple-600 hover:bg-purple-700"
                                           >
                                             <Upload className="w-4 h-4 mr-2" />
-                                            Seleccionar Excel
+                                              Seleccionar Excel / PDF
                                           </Button>
                                         </>
                                       )}
