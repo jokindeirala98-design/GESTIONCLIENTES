@@ -237,7 +237,7 @@ export default function GestionUsuarios() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-4">
                       <Badge className="bg-green-100 text-green-700">
                         Comercial
                       </Badge>
