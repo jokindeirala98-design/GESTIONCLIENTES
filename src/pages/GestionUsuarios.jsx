@@ -18,7 +18,7 @@ export default function GestionUsuarios() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
+
   const [inviteForm, setInviteForm] = useState({
     nombre: "",
     iniciales: "",
