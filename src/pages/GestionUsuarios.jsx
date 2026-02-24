@@ -241,18 +241,6 @@ export default function GestionUsuarios() {
                       <Badge className="bg-green-100 text-green-700">
                         Comercial
                       </Badge>
-                      {usuario.email === 'jose@voltisenergia.com' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => reenviarAccesoWhatsapp(usuario.email)}
-                          disabled={enviandoWhatsapp}
-                          className="text-green-700 border-green-300 hover:bg-green-50 text-xs"
-                        >
-                          <MessageCircle className="w-3 h-3 mr-1" />
-                          Reenviar acceso WhatsApp
-                        </Button>
-                      )}
                       
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-[#666666]" />
