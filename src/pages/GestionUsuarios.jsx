@@ -87,18 +87,6 @@ export default function GestionUsuarios() {
     });
   };
 
-  const reenviarAccesoWhatsapp = async (email) => {
-    setEnviandoWhatsapp(true);
-    try {
-      await base44.functions.invoke('enviarAccesoWhatsappJose');
-      toast.success(`Email de acceso WhatsApp reenviado a ${email}`);
-    } catch (error) {
-      toast.error("Error al reenviar el email");
-    } finally {
-      setEnviandoWhatsapp(false);
-    }
-  };
-
   const toggleActivo = (usuario) => {
     updateUserMutation.mutate({
       email: usuario.email,
