@@ -9,7 +9,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const whatsappUrl = `https://app.base44.com/whatsapp-connect?agent=corcho_whatsapp&app=${Deno.env.get('BASE44_APP_ID')}`;
+    const appId = Deno.env.get('BASE44_APP_ID');
+    const whatsappUrl = `https://app.base44.com/apps/${appId}/whatsapp-connect?agent=corcho_whatsapp`;
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: 'jose@voltisenergia.com',
