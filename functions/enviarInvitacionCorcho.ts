@@ -13,7 +13,8 @@ Deno.serve(async (req) => {
 
     const destinatarios = [
       { email: 'nicolasvoltis@gmail.com', nombre: 'Nicolás' },
-      { email: 'jokin@voltisenergia.com', nombre: 'Jokin' }
+      { email: 'jokin@voltisenergia.com', nombre: 'Jokin' },
+      { email: 'jose@voltisenergia.com', nombre: 'José' }
     ];
 
     for (const dest of destinatarios) {
@@ -52,7 +53,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ success: true, message: 'Correos enviados correctamente' });
+    return Response.json({ success: true, message: 'Correos enviados correctamente a Nicolás, Jokin y José' });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
