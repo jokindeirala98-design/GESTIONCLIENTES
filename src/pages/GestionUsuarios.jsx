@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { UserPlus, Mail, Shield, User, AlertCircle } from "lucide-react";
+import { UserPlus, Mail, Shield, User, AlertCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function GestionUsuarios() {
