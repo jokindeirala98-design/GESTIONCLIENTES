@@ -1471,6 +1471,7 @@ export default function Calendario() {
                 <SelectItem value="nicolasvoltis@gmail.com">Nico</SelectItem>
                 <SelectItem value="iranzu@voltisenergia.com">Iranzu</SelectItem>
                 <SelectItem value="jose@voltisenergia.com">José</SelectItem>
+                <SelectItem value="jokin@voltisenergia.com">Jokin</SelectItem>
               </SelectContent>
             </Select>
           </div>
