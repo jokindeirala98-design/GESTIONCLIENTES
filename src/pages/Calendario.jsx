@@ -487,10 +487,11 @@ export default function Calendario() {
 
   // Opciones de pasapalabra para cada usuario (a quién puede enviar)
   const PASAPALABRA_OPCIONES = {
-    "nicolasvoltis@gmail.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com"],
-    "nicolas@voltisenergia.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com"],
-    "iranzu@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "jose@voltisenergia.com"],
-    "jose@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "iranzu@voltisenergia.com"],
+    "nicolasvoltis@gmail.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com", "jokin@voltisenergia.com"],
+    "nicolas@voltisenergia.com": ["iranzu@voltisenergia.com", "jose@voltisenergia.com", "jokin@voltisenergia.com"],
+    "iranzu@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "jose@voltisenergia.com", "jokin@voltisenergia.com"],
+    "jose@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "iranzu@voltisenergia.com", "jokin@voltisenergia.com"],
+    "jokin@voltisenergia.com": ["nicolasvoltis@gmail.com", "nicolas@voltisenergia.com", "iranzu@voltisenergia.com", "jose@voltisenergia.com"],
   };
 
   const NOMBRES_CORTOS = {
@@ -498,6 +499,7 @@ export default function Calendario() {
     "nicolas@voltisenergia.com": "Nico",
     "iranzu@voltisenergia.com": "Iranzu",
     "jose@voltisenergia.com": "José",
+    "jokin@voltisenergia.com": "Jokin",
   };
 
   const opcionesPasapalabra = PASAPALABRA_OPCIONES[user?.email] || [];
