@@ -473,7 +473,8 @@ export default function Calendario() {
   const isNico = user?.email === "nicolasvoltis@gmail.com" || user?.email === "nicolas@voltisenergia.com";
   const isIranzu = user?.email === "iranzu@voltisenergia.com";
   const isJose = user?.email === "jose@voltisenergia.com";
-  const tieneAccesoCorcho = isNico || isIranzu || isJose;
+  const isJokin = user?.email === "jokin@voltisenergia.com";
+  const tieneAccesoCorcho = isNico || isIranzu || isJose || isJokin;
 
   // Helper para comparar propietario - Nico tiene dos emails posibles que comparten el mismo corcho
   const esPropietario = (tareaEmail, selectorEmail) => {
