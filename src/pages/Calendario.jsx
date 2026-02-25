@@ -349,7 +349,8 @@ export default function Calendario() {
     setPasapalabraDialog(null);
     
     const nombreDestinatario = esDestinatarioNico ? "Nico" : 
-      (destinatarioEmail === "iranzu@voltisenergia.com" ? "Iranzu" : "José");
+      (destinatarioEmail === "iranzu@voltisenergia.com" ? "Iranzu" : 
+      destinatarioEmail === "jose@voltisenergia.com" ? "José" : "Jokin");
     toast.success(`Tarea enviada a ${nombreDestinatario}`);
   };
 
