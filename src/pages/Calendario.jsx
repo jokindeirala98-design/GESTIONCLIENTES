@@ -1588,21 +1588,31 @@ export default function Calendario() {
         const esNicoEfectivo = usuarioEfectivo === "nicolas@voltisenergia.com" || usuarioEfectivo === "nicolasvoltis@gmail.com";
         const esIranzuEfectivo = usuarioEfectivo === "iranzu@voltisenergia.com";
         const esJoseEfectivo = usuarioEfectivo === "jose@voltisenergia.com";
+        const esJokinEfectivo = usuarioEfectivo === "jokin@voltisenergia.com";
 
         if (esNicoEfectivo) {
           opciones = [
             { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
             { email: "jose@voltisenergia.com", nombre: "José" },
+            { email: "jokin@voltisenergia.com", nombre: "Jokin" },
           ];
         } else if (esIranzuEfectivo) {
           opciones = [
             { email: "nicolas@voltisenergia.com", nombre: "Nico" },
             { email: "jose@voltisenergia.com", nombre: "José" },
+            { email: "jokin@voltisenergia.com", nombre: "Jokin" },
           ];
         } else if (esJoseEfectivo) {
           opciones = [
             { email: "nicolas@voltisenergia.com", nombre: "Nico" },
             { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
+            { email: "jokin@voltisenergia.com", nombre: "Jokin" },
+          ];
+        } else if (esJokinEfectivo) {
+          opciones = [
+            { email: "nicolas@voltisenergia.com", nombre: "Nico" },
+            { email: "iranzu@voltisenergia.com", nombre: "Iranzu" },
+            { email: "jose@voltisenergia.com", nombre: "José" },
           ];
         }
         return (
