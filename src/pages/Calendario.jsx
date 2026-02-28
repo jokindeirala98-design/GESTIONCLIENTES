@@ -1124,12 +1124,13 @@ export default function Calendario() {
                                            )}
                                          </div>
                                         </div>
-                                      </>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              )}
-                            </Draggable>
+                                        </>
+                                        )}
+                                        </CardContent>
+                                        </Card>
+                                        );
+                                        }}
+                                        </Draggable>
                           ))}
                         {provided.placeholder}
                         {tareasCorcho.filter(t => !t.completada && esPropietario(t.propietario_email, propietarioSeleccionado)).length === 0 && (
