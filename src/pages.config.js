@@ -55,6 +55,7 @@ import Clientes from './pages/Clientes';
 import Comisiones from './pages/Comisiones';
 import ComisionesAdmin from './pages/ComisionesAdmin';
 import Configuracion from './pages/Configuracion';
+import ContratosAdmin from './pages/ContratosAdmin';
 import CorregirIniciales from './pages/CorregirIniciales';
 import Dashboard from './pages/Dashboard';
 import DetalleCliente from './pages/DetalleCliente';
@@ -67,7 +68,6 @@ import InformesPotencias from './pages/InformesPotencias';
 import PrescoringsGALP from './pages/PrescoringsGALP';
 import ReadyToGo from './pages/ReadyToGo';
 import Zonas from './pages/Zonas';
-import ContratosAdmin from './pages/ContratosAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -80,6 +80,7 @@ export const PAGES = {
     "Comisiones": Comisiones,
     "ComisionesAdmin": ComisionesAdmin,
     "Configuracion": Configuracion,
+    "ContratosAdmin": ContratosAdmin,
     "CorregirIniciales": CorregirIniciales,
     "Dashboard": Dashboard,
     "DetalleCliente": DetalleCliente,
@@ -92,7 +93,6 @@ export const PAGES = {
     "PrescoringsGALP": PrescoringsGALP,
     "ReadyToGo": ReadyToGo,
     "Zonas": Zonas,
-    "ContratosAdmin": ContratosAdmin,
 }
 
 export const pagesConfig = {
