@@ -566,7 +566,7 @@ export default function InformesPorPresentar() {
       if (todosCerrados) {
         try {
           await base44.integrations.Core.SendEmail({
-            to: "iranzu@voltisenergia.com",
+            to: "iranzu@voltisenergia.com,jose@voltisenergia.com",
             subject: `Cierre verificado - ${cliente.nombre_negocio}`,
             body: `${cliente.nombre_negocio} ha sido cerrado con éxito y está listo para contabilidad.`
           });

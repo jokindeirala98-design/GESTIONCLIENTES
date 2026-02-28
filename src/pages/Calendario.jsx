@@ -834,8 +834,8 @@ export default function Calendario() {
                            />
                            <div className="flex-1 min-w-0">
                              <div 
-                               className={evento.es_tarea || evento.es_tarea_corcho ? "" : "cursor-pointer hover:underline"}
-                               onClick={() => !evento.es_tarea && !evento.es_tarea_corcho && navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
+                               className={evento.es_tarea ? "" : "cursor-pointer hover:underline"}
+                               onClick={() => !evento.es_tarea && navigate(createPageUrl(`DetalleCliente?id=${evento.cliente_id}`))}
                              >
                                <div className="flex items-center gap-2 mb-1">
                                  <span className={`font-semibold text-sm truncate ${
