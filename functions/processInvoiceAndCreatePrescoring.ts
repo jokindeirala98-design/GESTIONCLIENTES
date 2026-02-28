@@ -105,6 +105,19 @@ Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve 
                     denegado: false,
                 });
                 console.log("PrescoringGALP creado para CUPS:", extractedCups);
+
+                // Crear tarea en el corcho de Iranzu para solicitar prescoring
+                const IRANZU_EMAIL = 'iranzu@voltisenergia.com';
+                await base44.asServiceRole.entities.TareaCorcho.create({
+                    descripcion: `Solicitar prescoring CUPS: ${extractedCups}`,
+                    notas: `Cliente: ${clienteData.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
+                    completada: false,
+                    prioridad: 'amarillo',
+                    orden: Date.now(),
+                    creador_email: IRANZU_EMAIL,
+                    propietario_email: IRANZU_EMAIL,
+                });
+                console.log("TareaCorcho creada para Iranzu, CUPS:", extractedCups);
             }
         }
 
