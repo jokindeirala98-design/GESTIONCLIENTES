@@ -60,15 +60,17 @@ const ESTADOS_CON_INFORMES = ["Informe listo", "Pendiente de firma", "Pendiente 
 const ESTADOS_SIN_INFORMES = ["Primer contacto", "Esperando facturas", "Facturas presentadas", "Pendiente informe potencias", "Rechazado", "Ignorado con mucho éxito"];
 
 export default function DetalleCliente() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showPropietarioPopover, setShowPropietarioPopover] = useState(false);
-  const [showEstadoSelector, setShowEstadoSelector] = useState(false);
+   const navigate = useNavigate();
+   const queryClient = useQueryClient();
+   const [user, setUser] = useState(null);
+   const [showEditDialog, setShowEditDialog] = useState(false);
+   const [showPropietarioPopover, setShowPropietarioPopover] = useState(false);
+   const [showEstadoSelector, setShowEstadoSelector] = useState(false);
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const clienteId = urlParams.get('id');
+   const urlParams = new URLSearchParams(window.location.search);
+   const clienteId = urlParams.get('id');
+   const from = urlParams.get('from');
+   const tab = urlParams.get('tab');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -560,13 +562,19 @@ export default function DetalleCliente() {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto">
         <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
-        </Button>
+           variant="outline"
+           onClick={() => {
+             if (from === 'readyToGo' && tab) {
+               navigate(createPageUrl(`ReadyToGo?tab=${tab}`));
+             } else {
+               window.history.back();
+             }
+           }}
+           className="mb-6"
+         >
+           <ArrowLeft className="w-4 h-4 mr-2" />
+           Volver
+         </Button>
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-[#666666]">No tienes permisos para ver este cliente</p>

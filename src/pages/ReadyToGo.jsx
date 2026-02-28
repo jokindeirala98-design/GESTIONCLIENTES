@@ -469,10 +469,10 @@ function ClientesParaVisitarSection({ clientesCompletos, clientesPotencias, zona
               const bgColor = badgeColor === "green" ? "border-green-500 bg-green-50" : "border-amber-500 bg-amber-50";
               return (
                 <Card
-                  key={cliente.id}
-                  className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor} cursor-pointer`}
-                  onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-                >
+                   key={cliente.id}
+                   className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor} cursor-pointer`}
+                   onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}&from=readyToGo&tab=visitar`))}
+                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -555,8 +555,8 @@ function ClientesPendientesEstudioSection({ clientes, zonas, user, navigate, tip
             <Card
               key={cliente.id}
               className="hover:shadow-lg transition-all duration-300 border-l-4 border-amber-500 bg-amber-50 cursor-pointer"
-              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-            >
+              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}&from=readyToGo&tab=pendientes-estudio`))}
+              >
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -616,12 +616,12 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
 
             {clientesPorZona[zonaNombre].map(cliente => (
               <Card
-                key={cliente.id}
-                className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor}`}
+               key={cliente.id}
+               className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor}`}
               >
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}>
+               <CardContent className="p-4 md:p-6">
+                 <div className="flex items-center justify-between mb-3">
+                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}&from=readyToGo&tab=contratos`))}>
                       <Building2 className="w-5 h-5 text-[#004D9D]" />
                       <div>
                         <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
