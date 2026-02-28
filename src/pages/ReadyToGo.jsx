@@ -665,8 +665,127 @@ function ClientesParaVisitarSection({ clientes, zonas, user, isAdmin, navigate, 
               </div>
             </div>
           );
-        })
-      )}
-    </div>
+        })}
+    </>
+  );
+}
+
+// COMPONENTE: Clientes pendientes de estudio
+function ClientesPendientesEstudioSection({ clientes, zonas, user, navigate, tipoColors }) {
+  const clientesPorZona = clientes.reduce((acc, cliente) => {
+    const zona = zonas.find(z => z.id === cliente.zona_id);
+    const zonaNombre = zona?.nombre || "Sin zona";
+    if (!acc[zonaNombre]) acc[zonaNombre] = [];
+    acc[zonaNombre].push(cliente);
+    return acc;
+  }, {});
+
+  return (
+    <>
+      {Object.keys(clientesPorZona).map(zonaNombre => (
+        <div key={zonaNombre} className="space-y-3">
+          <div className="flex items-center gap-3">
+            <MapPin className="w-6 h-6 text-[#004D9D]" />
+            <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+            <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+          </div>
+
+          {clientesPorZona[zonaNombre].map(cliente => (
+            <Card
+              key={cliente.id}
+              className="hover:shadow-lg transition-all duration-300 border-l-4 border-amber-500 bg-amber-50 cursor-pointer"
+              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+            >
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="w-5 h-5 text-[#004D9D]" />
+                    <div>
+                      <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
+                      <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-amber-600 text-white">⏳ Pendiente estudio</Badge>
+                </div>
+
+                <div className="space-y-2">
+                  {cliente.suministros?.filter(s => s.tipo_factura !== "2.0" && s.facturas?.length > 0).map(s => (
+                    <div key={s.id} className="flex items-center justify-between bg-white p-2 rounded border border-amber-200">
+                      <div className="flex items-center gap-2">
+                        <Badge className={tipoColors[s.tipo_factura]}>{s.tipo_factura}</Badge>
+                        <span className="text-sm font-medium text-gray-700">{s.nombre}</span>
+                      </div>
+                      <span className="text-xs text-gray-600">{s.facturas?.length} factura(s)</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+// COMPONENTE: Contratos para firmar
+function ContratosParaFirmarSection({ clientes, zonas, user, isAdmin, navigate, handleCambiarEstado, tipoColors }) {
+  const clientesPorZona = clientes.reduce((acc, cliente) => {
+    const zona = zonas.find(z => z.id === cliente.zona_id);
+    const zonaNombre = zona?.nombre || "Sin zona";
+    if (!acc[zonaNombre]) acc[zonaNombre] = [];
+    acc[zonaNombre].push(cliente);
+    return acc;
+  }, {});
+
+  return (
+    <>
+      {Object.keys(clientesPorZona).map(zonaNombre => (
+        <div key={zonaNombre} className="space-y-3">
+          <div className="flex items-center gap-3">
+            <MapPin className="w-6 h-6 text-[#004D9D]" />
+            <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+            <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+          </div>
+
+          {clientesPorZona[zonaNombre].map(cliente => (
+            <Card
+              key={cliente.id}
+              className="hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500 bg-blue-50"
+            >
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}>
+                    <Building2 className="w-5 h-5 text-[#004D9D]" />
+                    <div>
+                      <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
+                      <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-600 text-white">📄 Contrato listo</Badge>
+                </div>
+
+                {cliente.contrato_original_url && (
+                  <div className="space-y-2">
+                    <a href={cliente.contrato_original_url} download className="block">
+                      <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar contrato
+                      </Button>
+                    </a>
+                  </div>
+                )}
+
+                {!cliente.contrato_original_url && (
+                  <p className="text-sm text-blue-700 bg-blue-100 p-2 rounded">
+                    ⏳ Esperando contrato del administrador
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ))}
+    </>
   );
 }
