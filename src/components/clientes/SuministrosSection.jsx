@@ -67,10 +67,24 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     const remaining = 3 - (suministro.facturas || []).length;
     const filesToUpload = Array.from(files).slice(0, remaining);
     toast.loading(`Subiendo ${filesToUpload.length} archivo(s)...`, { id: `upload-${suministro.id}` });
-    const uploads = await Promise.all(filesToUpload.map(file => base44.integrations.Core.UploadFile({ file })));
+
+    const newFacturas = [];
+    for (const file of filesToUpload) {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      newFacturas.push({ nombre: file.name, url: file_url, fecha_subida: new Date().toISOString(), tipo_archivo: file.type });
+
+      // Process invoice: extract CUPS + create PrescoringGALP if needed (non-blocking)
+      base44.functions.invoke('processInvoiceAndCreatePrescoring', {
+        file_url,
+        cliente_id: cliente.id,
+        suministro_id: suministro.id,
+        suministro_tipo_factura: suministro.tipo_factura,
+      }).catch(e => console.warn("processInvoice error:", e));
+    }
+
     const nuevosSuministros = suministros.map(s => {
       if (s.id !== suministro.id) return s;
-      return { ...s, facturas: [...(s.facturas || []), ...uploads.map((u, idx) => ({ nombre: filesToUpload[idx].name, url: u.file_url, fecha_subida: new Date().toISOString(), tipo_archivo: filesToUpload[idx].type }))] };
+      return { ...s, facturas: [...(s.facturas || []), ...newFacturas] };
     });
     setSuministros(nuevosSuministros);
     onUpdate({ suministros: nuevosSuministros });
