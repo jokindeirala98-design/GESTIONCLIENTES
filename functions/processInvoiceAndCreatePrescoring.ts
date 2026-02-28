@@ -34,7 +34,11 @@ Si no encuentras un CUPS válido, devuelve null.`,
             }
         });
 
-        const extractedCups = extractionResult?.cups || null;
+        // Clean up: if LLM returns string "null" or empty, treat as null
+        let extractedCups = extractionResult?.cups || null;
+        if (extractedCups === "null" || extractedCups === "" || extractedCups === "undefined") {
+            extractedCups = null;
+        }
         console.log("CUPS extraído:", extractedCups);
 
         // 2. Update DocumentosCliente with extracted CUPS
