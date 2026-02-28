@@ -252,6 +252,14 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
                 </div>
               </div>
             )}
+            {docs.cif_archivo_url && (
+              <div className="bg-white border border-purple-100 rounded-lg p-3">
+                <p className="text-xs text-gray-500 font-medium mb-1">Archivo CIF</p>
+                <a href={docs.cif_archivo_url} download>
+                  <Button size="sm" variant="outline" className="text-xs border-purple-300 text-purple-700"><Download className="w-3 h-3 mr-1" /> Descargar</Button>
+                </a>
+              </div>
+            )}
             {docs.iban_archivo_url && (
               <div className="bg-white border border-purple-100 rounded-lg p-3">
                 <p className="text-xs text-gray-500 font-medium mb-1">Archivo IBAN</p>
