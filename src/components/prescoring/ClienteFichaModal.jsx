@@ -12,11 +12,13 @@ import { Download, FileText, Zap, FolderOpen, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function ClienteFichaModal({ cups, onClose }) {
+  const isOpen = !!cups;
+
   // Buscar DocumentosCliente por CUPS
   const { data: docsList = [], isLoading: loadingDocs } = useQuery({
     queryKey: ["docs_por_cups", cups],
     queryFn: () => base44.entities.DocumentosCliente.filter({ cups }),
-    enabled: !!cups,
+    enabled: isOpen,
   });
 
   const doc = docsList[0] || null;
