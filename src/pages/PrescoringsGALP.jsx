@@ -44,7 +44,7 @@ export default function PrescoringsGALP() {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [addDialog, setAddDialog] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
-  const [clienteDialog, setClienteDialog] = useState(null); // { cups, cliente } o null
+  const [fichaModalCups, setFichaModalCups] = useState(null);
   const [newProducto, setNewProducto] = useState("");
   const [newTarifa, setNewTarifa] = useState("");
   const [newPartAuto, setNewPartAuto] = useState("");
