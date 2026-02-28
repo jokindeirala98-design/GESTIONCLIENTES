@@ -69,6 +69,7 @@ export default function DetalleCliente() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const clienteId = urlParams.get('id');
+  const from = urlParams.get('from') || 'Clientes';
 
   useEffect(() => {
     const loadUser = async () => {
@@ -561,17 +562,17 @@ export default function DetalleCliente() {
       <div className="p-4 md:p-8 max-w-4xl mx-auto">
         <Button
           variant="outline"
-          onClick={() => navigate(createPageUrl("Clientes"))}
+          onClick={() => navigate(createPageUrl(from))}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Volver
         </Button>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <p className="text-[#666666]">No tienes permisos para ver este cliente</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-12 text-center">
+              <p className="text-[#666666]">No tienes permisos para ver este cliente</p>
+            </CardContent>
+          </Card>
       </div>
     );
   }
@@ -589,7 +590,7 @@ export default function DetalleCliente() {
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <Button
         variant="outline"
-        onClick={() => navigate(createPageUrl("Clientes"))}
+        onClick={() => navigate(createPageUrl(from))}
         className="mb-6"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
