@@ -977,20 +977,30 @@ export default function Calendario() {
                           .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999))
                           .map((tarea, index) => (
                             <Draggable key={tarea.id} draggableId={tarea.id} index={index}>
-                              {(provided, snapshot) => (
-                                <Card
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`${
-                                    tarea.tiene_alerta ? 'border-2 border-red-500 bg-red-50' : 'hover:shadow-lg'
-                                  } transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''} border-l-4 ${
-                                    tarea.prioridad === 'rojo' ? 'border-l-red-500' : 
-                                    tarea.prioridad === 'amarillo' ? 'border-l-yellow-500' : 
-                                    'border-l-green-500'
-                                  }`}
-                                >
-                                  <CardContent className="p-4">
+                              {(provided, snapshot) => {
+                                const clienteIdMatch = tarea.notas?.match(/Cliente ID:\s*([a-f0-9]+)/i);
+                                const clienteId = clienteIdMatch?.[1];
+                                const handleClick = () => {
+                                  if (clienteId) {
+                                    navigate(createPageUrl(`DetalleCliente?id=${clienteId}`));
+                                  }
+                                };
+
+                                return (
+                                 <Card
+                                   ref={provided.innerRef}
+                                   {...provided.draggableProps}
+                                   {...provided.dragHandleProps}
+                                   onClick={handleClick}
+                                   className={`${
+                                     tarea.tiene_alerta ? 'border-2 border-red-500 bg-red-50' : 'hover:shadow-lg'
+                                   } transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''} border-l-4 ${
+                                     tarea.prioridad === 'rojo' ? 'border-l-red-500' : 
+                                     tarea.prioridad === 'amarillo' ? 'border-l-yellow-500' : 
+                                     'border-l-green-500'
+                                   } ${clienteId ? 'cursor-pointer' : ''}`}
+                                 >
+                                   <CardContent className="p-4">
                                     {editingTareaCorcho?.id === tarea.id ? (
                                       <div className="space-y-3">
                                         <Textarea
