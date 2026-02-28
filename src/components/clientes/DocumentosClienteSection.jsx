@@ -162,6 +162,25 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
               ))}
             </div>
 
+            {/* CIF archivo */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700">Archivo CIF</Label>
+              {form.cif_archivo_url ? (
+                <div className="flex items-center gap-2 bg-white border border-purple-200 p-2 rounded text-sm mt-1">
+                  <span className="flex-1 text-purple-700">Archivo adjunto</span>
+                  <a href={form.cif_archivo_url} download className="text-purple-600"><Download className="w-4 h-4" /></a>
+                  <button onClick={() => setForm(prev => ({ ...prev, cif_archivo_url: "" }))} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+                </div>
+              ) : (
+                <>
+                  <input type="file" id="upload-cif" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => { if (e.target.files[0]) handleUploadArchivo("cif", e.target.files[0]); e.target.value = ""; }} />
+                  <Button size="sm" variant="outline" disabled={uploading.cif} onClick={() => document.getElementById("upload-cif").click()} className="border-purple-300 text-purple-700 w-full text-xs mt-1">
+                    <Upload className="w-3.5 h-3.5 mr-1" /> {uploading.cif ? "Subiendo..." : "Adjuntar CIF"}
+                  </Button>
+                </>
+              )}
+            </div>
+
             {/* DNI archivos */}
             <div>
               <Label className="text-sm font-medium text-gray-700">Archivos DNI (máx. 2)</Label>
