@@ -428,6 +428,10 @@ export default function PrescoringsGALP() {
       </div>
     </div>
 
+    {fichaModalCups && (
+      <ClienteFichaModal cups={fichaModalCups} onClose={() => setFichaModalCups(null)} />
+    )}
+
     {/* Export Dialog */}
     <Dialog open={exportDialog} onOpenChange={setExportDialog}>
       <DialogContent className="max-w-sm">
