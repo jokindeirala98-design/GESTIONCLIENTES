@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock, StickyNote } from "lucide-react";
+import { CheckCircle, Building2, MapPin, FileText, Download, DollarSign, Clock, StickyNote, Eye, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -20,6 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ReadyToGo() {
   const navigate = useNavigate();
