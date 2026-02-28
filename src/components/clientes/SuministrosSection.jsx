@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download, CheckCircle2, Zap } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, Edit2, Check, X, Download, CheckCircle2, Zap, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import {
@@ -51,6 +51,15 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     onUpdate({ suministros: nuevosSuministros });
     setEditingId(null);
     toast.success("Nombre actualizado");
+  };
+
+  const handleIgnorarPotencias = (suministroId) => {
+    const nuevosSuministros = suministros.map(s => 
+      s.id === suministroId ? { ...s, potencias_ignorado: !s.potencias_ignorado } : s
+    );
+    setSuministros(nuevosSuministros);
+    onUpdate({ suministros: nuevosSuministros });
+    toast.success(nuevosSuministros.find(s => s.id === suministroId).potencias_ignorado ? "Informe de potencias omitido" : "Informe de potencias requerido");
   };
 
   const handleDeleteFactura = (suministroId, facturaIndex) => {
@@ -206,21 +215,44 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                             </div>
 
                             {/* Informe de Potencias */}
-                            <div className="rounded-lg border p-2 bg-yellow-50 border-yellow-200">
-                              <p className="text-xs font-semibold text-yellow-800 mb-1">⚡ Informe de Potencias</p>
-                              {suministro.potencias_ignorado ? (
-                                <p className="text-xs text-gray-500 italic">Omitido</p>
-                              ) : suministro.informe_potencias ? (
-                                <div className="flex items-center justify-between bg-white border border-yellow-300 p-1.5 rounded">
-                                  <span className="text-xs text-yellow-700 truncate flex-1">{suministro.informe_potencias.nombre}</span>
-                                  <a href={suministro.informe_potencias.url} download={suministro.informe_potencias.nombre} className="text-yellow-600 hover:text-yellow-800 ml-2">
-                                    <Download className="w-3.5 h-3.5" />
-                                  </a>
-                                </div>
-                              ) : (
-                                <p className="text-xs text-gray-400 italic">Pendiente (José lo adjuntará)</p>
-                              )}
-                            </div>
+                             <div className="rounded-lg border p-2 bg-yellow-50 border-yellow-200">
+                               <div className="flex items-center justify-between mb-1">
+                                 <p className="text-xs font-semibold text-yellow-800">⚡ Informe de Potencias</p>
+                               </div>
+                               {suministro.potencias_ignorado ? (
+                                 <div className="flex items-center justify-between">
+                                   <p className="text-xs text-gray-500 italic">Omitido</p>
+                                   {isOwnerOrAdmin && (
+                                     <Button size="sm" variant="ghost" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-0 text-xs text-amber-600 hover:text-amber-800">
+                                       <SkipForward className="w-3.5 h-3.5" />
+                                     </Button>
+                                   )}
+                                 </div>
+                               ) : suministro.informe_potencias ? (
+                                 <div className="flex items-center justify-between bg-white border border-yellow-300 p-1.5 rounded">
+                                   <span className="text-xs text-yellow-700 truncate flex-1">{suministro.informe_potencias.nombre}</span>
+                                   <div className="flex items-center gap-1">
+                                     <a href={suministro.informe_potencias.url} download={suministro.informe_potencias.nombre} className="text-yellow-600 hover:text-yellow-800">
+                                       <Download className="w-3.5 h-3.5" />
+                                     </a>
+                                     {isOwnerOrAdmin && (
+                                       <Button size="sm" variant="ghost" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-0 text-xs text-yellow-600 hover:text-yellow-800">
+                                         <X className="w-3.5 h-3.5" />
+                                       </Button>
+                                     )}
+                                   </div>
+                                 </div>
+                               ) : (
+                                 <div className="flex items-center justify-between">
+                                   <p className="text-xs text-gray-400 italic">Pendiente (José lo adjuntará)</p>
+                                   {isOwnerOrAdmin && (
+                                     <Button size="sm" variant="outline" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-1 text-xs text-gray-600 hover:bg-yellow-100">
+                                       <SkipForward className="w-3 h-3 mr-0.5" /> Omitir
+                                     </Button>
+                                   )}
+                                 </div>
+                               )}
+                             </div>
 
                             {/* Informe Final */}
                             <div className="rounded-lg border p-2 bg-green-50 border-green-200">
