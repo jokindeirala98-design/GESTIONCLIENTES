@@ -290,6 +290,13 @@ export default function ReadyToGo() {
     return orderA - orderB;
   });
 
+  // SECCIÓN 4: Clientes pendientes de firma
+  const clientesPendientesFirma = clientes.filter(c => {
+    if (c.estado !== "Pendiente de firma") return false;
+    if (!isAdmin && c.propietario_email !== user.email) return false;
+    return true;
+  });
+
   const clientesPorZona = clientesOrdenados.reduce((acc, cliente) => {
     const zona = zonas.find(z => z.id === cliente.zona_id);
     const zonaNombre = zona?.nombre || "Sin zona";
@@ -326,32 +333,40 @@ export default function ReadyToGo() {
       </div>
 
       <Tabs defaultValue="contratos" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="contratos" className="flex items-center gap-2">
-            <FileCheck className="w-4 h-4" />
-            <span className="hidden sm:inline">Contratos</span>
-            <span className="sm:hidden">Firmas</span>
-            {contractosPendienteFirma.length > 0 && (
-              <Badge className="bg-blue-600 text-white ml-1">{contractosPendienteFirma.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="visitar" className="flex items-center gap-2">
-            <Eye className="w-4 h-4" />
-            <span className="hidden sm:inline">Para visitar</span>
-            <span className="sm:hidden">Visitar</span>
-            {clientesParaVisitar.length > 0 && (
-              <Badge className="bg-green-600 text-white ml-1">{clientesParaVisitar.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="pendientes-estudio" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Pendientes estudio</span>
-            <span className="sm:hidden">Estudio</span>
-            {clientesPendientesEstudio.length > 0 && (
-              <Badge className="bg-orange-600 text-white ml-1">{clientesPendientesEstudio.length}</Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+         <TabsList className="grid w-full grid-cols-4 mb-6">
+           <TabsTrigger value="contratos" className="flex items-center gap-2">
+             <FileCheck className="w-4 h-4" />
+             <span className="hidden sm:inline">Contratos</span>
+             <span className="sm:hidden">Firmas</span>
+             {contractosPendienteFirma.length > 0 && (
+               <Badge className="bg-blue-600 text-white ml-1">{contractosPendienteFirma.length}</Badge>
+             )}
+           </TabsTrigger>
+           <TabsTrigger value="visitar" className="flex items-center gap-2">
+             <Eye className="w-4 h-4" />
+             <span className="hidden sm:inline">Para visitar</span>
+             <span className="sm:hidden">Visitar</span>
+             {clientesParaVisitar.length > 0 && (
+               <Badge className="bg-green-600 text-white ml-1">{clientesParaVisitar.length}</Badge>
+             )}
+           </TabsTrigger>
+           <TabsTrigger value="pendientes-estudio" className="flex items-center gap-2">
+             <FileText className="w-4 h-4" />
+             <span className="hidden sm:inline">Pendientes estudio</span>
+             <span className="sm:hidden">Estudio</span>
+             {clientesPendientesEstudio.length > 0 && (
+               <Badge className="bg-orange-600 text-white ml-1">{clientesPendientesEstudio.length}</Badge>
+             )}
+           </TabsTrigger>
+           <TabsTrigger value="pendientes-firma" className="flex items-center gap-2">
+             <Clock className="w-4 h-4" />
+             <span className="hidden sm:inline">Pendientes firma</span>
+             <span className="sm:hidden">Firma</span>
+             {clientesPendientesFirma.length > 0 && (
+               <Badge className="bg-purple-600 text-white ml-1">{clientesPendientesFirma.length}</Badge>
+             )}
+           </TabsTrigger>
+         </TabsList>
 
         {/* SECCIÓN 0: CONTRATOS PENDIENTES DE FIRMA */}
         <TabsContent value="contratos" className="space-y-4">
@@ -405,30 +420,52 @@ export default function ReadyToGo() {
         </TabsContent>
 
         {/* SECCIÓN 2: CLIENTES PENDIENTES DE ESTUDIO */}
-        <TabsContent value="pendientes-estudio" className="space-y-4">
-          {clientesPendientesEstudio.length === 0 ? (
-            <Card className="border-none shadow-md">
-              <CardContent className="p-12 text-center">
-                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-[#666666] text-lg">No hay clientes pendientes</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Los clientes con facturas pero sin estudios aparecerán aquí
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <ClientesPendientesEstudioSection
-              clientes={clientesPendientesEstudio}
-              zonas={zonas}
-              user={user}
-              navigate={navigate}
-              tipoColors={tipoColors}
-            />
-          )}
-        </TabsContent>
+         <TabsContent value="pendientes-estudio" className="space-y-4">
+           {clientesPendientesEstudio.length === 0 ? (
+             <Card className="border-none shadow-md">
+               <CardContent className="p-12 text-center">
+                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                 <p className="text-[#666666] text-lg">No hay clientes pendientes</p>
+                 <p className="text-gray-400 text-sm mt-2">
+                   Los clientes con facturas pero sin estudios aparecerán aquí
+                 </p>
+               </CardContent>
+             </Card>
+           ) : (
+             <ClientesPendientesEstudioSection
+               clientes={clientesPendientesEstudio}
+               zonas={zonas}
+               user={user}
+               navigate={navigate}
+               tipoColors={tipoColors}
+             />
+           )}
+         </TabsContent>
 
+         {/* SECCIÓN 4: CLIENTES PENDIENTES DE FIRMA */}
+         <TabsContent value="pendientes-firma" className="space-y-4">
+           {clientesPendientesFirma.length === 0 ? (
+             <Card className="border-none shadow-md">
+               <CardContent className="p-12 text-center">
+                 <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                 <p className="text-[#666666] text-lg">No hay clientes pendientes de firma</p>
+                 <p className="text-gray-400 text-sm mt-2">
+                   Los clientes en estado "Pendiente de firma" aparecerán aquí
+                 </p>
+               </CardContent>
+             </Card>
+           ) : (
+             <ClientesPendientesFirmaSection
+               clientes={clientesPendientesFirma}
+               zonas={zonas}
+               user={user}
+               navigate={navigate}
+               tipoColors={tipoColors}
+             />
+           )}
+         </TabsContent>
 
-      </Tabs>
+        </Tabs>
     </div>
   );
 }
@@ -583,6 +620,78 @@ function ClientesPendientesEstudioSection({ clientes, zonas, user, navigate, tip
               </CardContent>
             </Card>
           ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+// COMPONENTE: Clientes pendientes de firma
+function ClientesPendientesFirmaSection({ clientes, zonas, user, navigate, tipoColors }) {
+  const getTipoMaximo = (cliente) => {
+    if (!cliente.suministros || cliente.suministros.length === 0) return null;
+    const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
+    return cliente.suministros.reduce((max, s) => {
+      const actual = orden[s.tipo_factura] || 0;
+      const maxActual = orden[max] || 0;
+      return actual > maxActual ? s.tipo_factura : max;
+    }, "2.0");
+  };
+
+  const clientesPorZona = clientes.reduce((acc, cliente) => {
+    const zona = zonas.find(z => z.id === cliente.zona_id);
+    const zonaNombre = zona?.nombre || "Sin zona";
+    if (!acc[zonaNombre]) acc[zonaNombre] = [];
+    acc[zonaNombre].push(cliente);
+    return acc;
+  }, {});
+
+  return (
+    <>
+      {Object.keys(clientesPorZona).map(zonaNombre => (
+        <div key={zonaNombre} className="space-y-3">
+          <div className="flex items-center gap-3">
+            <MapPin className="w-6 h-6 text-[#004D9D]" />
+            <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+            <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+          </div>
+
+          {clientesPorZona[zonaNombre].map(cliente => {
+            const tipoMax = getTipoMaximo(cliente);
+            const diasPendiente = Math.floor((new Date() - new Date(cliente.fecha_cambio_pendiente_firma)) / (1000 * 60 * 60 * 24));
+            const diasRestantes = Math.max(0, 30 - diasPendiente);
+            
+            return (
+              <Card
+                key={cliente.id}
+                className="hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500 bg-purple-50 cursor-pointer"
+                onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}&from=readyToGo&tab=pendientes-firma`))}
+              >
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-5 h-5 text-[#004D9D]" />
+                      <div>
+                        <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
+                        <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-purple-600 text-white">⏳ Pendiente de firma</Badge>
+                  </div>
+
+                  {tipoMax && (
+                    <Badge className={`${tipoColors[tipoMax]} text-xs mr-2`}>{tipoMax}</Badge>
+                  )}
+                  
+                  {diasRestantes <= 5 && (
+                    <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
+                      ⚠️ {diasRestantes} días para auto-rechazo
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ))}
     </>
