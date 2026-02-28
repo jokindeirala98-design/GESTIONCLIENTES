@@ -282,9 +282,6 @@ export default function InformesPorPresentar() {
       // Solo considerar suministros NO cerrados
       const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
       
-      // Primero verificar si todos tienen comparativo
-      const todosConComparativo = suministrosActivos.every(s => s.informe_comparativo);
-      
       const todosConInforme = suministrosActivos.every(s => {
         if (!s.informe_final) return false;
         const tieneArchivosValidos = s.informe_final.archivos?.some(a => 
@@ -294,9 +291,7 @@ export default function InformesPorPresentar() {
         return tieneArchivosValidos || tieneUrlValida;
       });
       const comisionTotal = nuevosSuministros.reduce((sum, s) => sum + (s.comision || 0), 0);
-      const nuevoEstado = todosConInforme ? "Informe listo" : 
-                          todosConComparativo ? "Pendiente informe comparativo" : 
-                          "Pendiente informe potencias";
+      const nuevoEstado = todosConInforme ? "Informe listo" : "Facturas presentadas";
 
       await updateClienteMutation.mutateAsync({
         id: cliente.id,
@@ -627,18 +622,18 @@ export default function InformesPorPresentar() {
   // Mostrar clientes desde que tienen facturas (con o sin informe de potencias)
   // EXCLUIR clientes con estado "Ignorado con mucho éxito"
   let clientesFacturasPresent = clientes.filter(c => {
-    if (!c.suministros || c.suministros.length === 0) return false;
-    if (c.estado === "Ignorado con mucho éxito") return false;
-    if (["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"].includes(c.estado)) return false;
+  if (!c.suministros || c.suministros.length === 0) return false;
+  if (c.estado === "Ignorado con mucho éxito") return false;
+  if (["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"].includes(c.estado)) return false;
 
-    // Solo considerar suministros NO cerrados
-    const suministrosActivos = c.suministros.filter(s => !s.cerrado);
-    if (suministrosActivos.length === 0) return false;
+  // Solo considerar suministros NO cerrados
+  const suministrosActivos = c.suministros.filter(s => !s.cerrado);
+  if (suministrosActivos.length === 0) return false;
 
-    // Mostrar si tiene al menos un suministro con facturas y sin informe final
-    return suministrosActivos.some(s =>
-      s.facturas && s.facturas.length > 0 && !s.informe_comparativo
-    );
+  // Mostrar si tiene al menos un suministro con facturas y sin informe final
+  return suministrosActivos.some(s =>
+    s.facturas && s.facturas.length > 0 && !s.informe_final
+  );
   });
 
   // Aplicar filtro de prioridad
@@ -682,7 +677,7 @@ export default function InformesPorPresentar() {
   const clientesConPotenciasRecientes = new Set(
     clientesFacturasPresent
       .filter(c => {
-        const activos = c.suministros.filter(s => !s.cerrado && s.facturas?.length > 0 && !s.informe_comparativo);
+        const activos = c.suministros.filter(s => !s.cerrado && s.facturas?.length > 0 && !s.informe_final);
         return activos.length > 0 && activos.every(s => s.informe_potencias || s.potencias_ignorado);
       })
       .map(c => c.id)
@@ -940,7 +935,7 @@ export default function InformesPorPresentar() {
                   <CollapsibleContent>
                     <CardContent className="pt-0">
                       <div className="space-y-4">
-                       {cliente.suministros?.filter(s => !s.cerrado && s.facturas && s.facturas.length > 0 && !s.informe_comparativo).map((suministro) => {
+                       {cliente.suministros?.filter(s => !s.cerrado && s.facturas && s.facturas.length > 0 && !s.informe_final).map((suministro) => {
                          const informeSubido = informesSubidos[suministro.id];
                          const estaGuardando = guardando[suministro.id];
                          const tienePotencias = !!(suministro.informe_potencias || suministro.potencias_ignorado);
