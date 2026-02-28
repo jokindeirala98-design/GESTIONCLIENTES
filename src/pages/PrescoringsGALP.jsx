@@ -396,18 +396,9 @@ export default function PrescoringsGALP() {
                 {COLUMNS.map(col => (
                   <td key={col.key} className="px-1 py-1">
                     {col.key === "created_date" ? (
-                      <div className="flex items-center gap-2 justify-between" style={{ minWidth: col.width }}>
-                        <span className="px-2 py-1.5 text-xs text-[#666666] whitespace-nowrap">
-                          {formatDate(row.created_date)}
-                        </span>
-                        <button
-                          onClick={() => setFichaModalCups(row.cups || row.nombre_razon_social || row.id)}
-                          className="bg-black text-white hover:bg-gray-700 transition-colors p-2 rounded-lg flex-shrink-0"
-                          title="Ver ficha del cliente"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="px-2 py-1.5 text-xs text-[#666666] whitespace-nowrap">
+                        {formatDate(row.created_date)}
+                      </span>
                     ) : (
                       <input
                         type="text"
