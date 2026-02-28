@@ -81,6 +81,11 @@ export default function ReadyToGo() {
     queryFn: () => base44.entities.Zona.list(),
   });
 
+  const { data: documentosCliente = [] } = useQuery({
+    queryKey: ['documentosCliente'],
+    queryFn: () => base44.entities.DocumentosCliente.list(),
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ clienteId, nuevoEstado, cliente }) => {
       const updateData = { estado: nuevoEstado };
@@ -197,27 +202,64 @@ export default function ReadyToGo() {
 
   const isAdmin = user.role === "admin";
 
-  // SECCIÓN 1: Clientes para visitar (con estudios listos)
-  const clientesParaVisitar = clientes.filter(c => {
-    if (isAdmin) return c.estado === "Informe listo";
-    return c.estado === "Informe listo" && c.propietario_email === user.email;
-  });
+  // Helper: obtener documento del cliente
+  const getDocumentoCliente = (clienteId) => {
+    return documentosCliente.find(d => d.cliente_id === clienteId);
+  };
 
-  // SECCIÓN 2: Clientes pendientes de estudio (con facturas, sin estudios completos)
-  const clientesPendientesEstudio = clientes.filter(c => {
-    const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
-    const tieneFacturas = suministrosNoLuz20.some(s => s.facturas && s.facturas.length > 0);
-    const sinEstudios = suministrosNoLuz20.some(s => !s.informe_potencias?.url);
+  // Helper: verificar si tiene informe final
+  const tieneInformeFinal = (suministro) => {
+    if (!suministro.informe_final) return false;
+    if (Array.isArray(suministro.informe_final?.archivos)) {
+      return suministro.informe_final.archivos.some(a => a?.url && a.url !== "null");
+    }
+    return suministro.informe_final?.url && suministro.informe_final.url !== "null";
+  };
+
+  // SECCIÓN 1: Clientes para visitar CON INFORME FINAL (verde)
+  const clientesParaVisitarCompletos = clientes.filter(c => {
+    if (c.estado !== "Informe listo") return false;
+    if (!isAdmin && c.propietario_email !== user.email) return false;
     
-    if (isAdmin) return tieneFacturas && sinEstudios;
-    return tieneFacturas && sinEstudios && c.propietario_email === user.email;
+    const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
+    return suministrosNoLuz20.every(s => s.informe_potencias?.url && tieneInformeFinal(s));
   });
 
-  // SECCIÓN 3: Contratos pendientes de firma (estado Pendiente de firma)
-  const contractosPendienteFirma = clientes.filter(c => {
-    if (isAdmin) return c.estado === "Pendiente de firma";
-    return c.estado === "Pendiente de firma" && c.propietario_email === user.email;
+  // SECCIÓN 1B: Clientes para visitar SOLO CON POTENCIAS (amarillo)
+  const clientesParaVisitarPotencias = clientes.filter(c => {
+    if (c.estado !== "Informe listo") return false;
+    if (!isAdmin && c.propietario_email !== user.email) return false;
+    
+    const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
+    return suministrosNoLuz20.some(s => s.informe_potencias?.url && !tieneInformeFinal(s));
   });
+
+  const clientesParaVisitar = [...clientesParaVisitarCompletos, ...clientesParaVisitarPotencias];
+
+  // SECCIÓN 2: Clientes pendientes de estudio (estado "Facturas presentadas" sin informes)
+  const clientesPendientesEstudio = clientes.filter(c => {
+    if (c.estado !== "Facturas presentadas") return false;
+    if (!isAdmin && c.propietario_email !== user.email) return false;
+    
+    const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
+    return suministrosNoLuz20.some(s => s.facturas?.length > 0 && !s.informe_potencias?.url);
+  });
+
+  // SECCIÓN 3: Contratos CON CONTRATO ADJUNTADO (verde)
+  const contratosConArchivo = clientes.filter(c => {
+    if (!isAdmin && c.propietario_email !== user.email) return false;
+    const doc = getDocumentoCliente(c.id);
+    return doc?.iban && c.contrato_original_url;
+  });
+
+  // SECCIÓN 3B: Contratos CON IBAN PERO SIN CONTRATO (amarillo)
+  const contratosIbanSinArchivo = clientes.filter(c => {
+    if (!isAdmin && c.propietario_email !== user.email) return false;
+    const doc = getDocumentoCliente(c.id);
+    return doc?.iban && !c.contrato_original_url;
+  });
+
+  const contractosPendienteFirma = [...contratosConArchivo, ...contratosIbanSinArchivo];
 
   const misClientesReady = clientes.filter(c => {
     const estadosReady = c.estado === "Informe listo" || 
@@ -283,8 +325,16 @@ export default function ReadyToGo() {
         </p>
       </div>
 
-      <Tabs defaultValue="visitar" className="w-full">
+      <Tabs defaultValue="contratos" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="contratos" className="flex items-center gap-2">
+            <FileCheck className="w-4 h-4" />
+            <span className="hidden sm:inline">Contratos</span>
+            <span className="sm:hidden">Firmas</span>
+            {contractosPendienteFirma.length > 0 && (
+              <Badge className="bg-blue-600 text-white ml-1">{contractosPendienteFirma.length}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="visitar" className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
             <span className="hidden sm:inline">Para visitar</span>
@@ -301,15 +351,32 @@ export default function ReadyToGo() {
               <Badge className="bg-orange-600 text-white ml-1">{clientesPendientesEstudio.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="contratos" className="flex items-center gap-2">
-            <FileCheck className="w-4 h-4" />
-            <span className="hidden sm:inline">Contratos</span>
-            <span className="sm:hidden">Firmas</span>
-            {contractosPendienteFirma.length > 0 && (
-              <Badge className="bg-blue-600 text-white ml-1">{contractosPendienteFirma.length}</Badge>
-            )}
-          </TabsTrigger>
         </TabsList>
+
+        {/* SECCIÓN 0: CONTRATOS PENDIENTES DE FIRMA */}
+        <TabsContent value="contratos" className="space-y-4">
+          {contractosPendienteFirma.length === 0 ? (
+            <Card className="border-none shadow-md">
+              <CardContent className="p-12 text-center">
+                <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-[#666666] text-lg">No hay contratos pendientes</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Los contratos listos para firmar aparecerán aquí
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <ContratosParaFirmarSection
+              clientesConArchivo={contratosConArchivo}
+              clientesSinArchivo={contratosIbanSinArchivo}
+              zonas={zonas}
+              user={user}
+              isAdmin={isAdmin}
+              navigate={navigate}
+              tipoColors={tipoColors}
+            />
+          )}
+        </TabsContent>
 
         {/* SECCIÓN 1: CLIENTES PARA VISITAR */}
         <TabsContent value="visitar" className="space-y-4">
@@ -325,7 +392,8 @@ export default function ReadyToGo() {
             </Card>
           ) : (
             <ClientesParaVisitarSection
-              clientes={clientesParaVisitar}
+              clientesCompletos={clientesParaVisitarCompletos}
+              clientesPotencias={clientesParaVisitarPotencias}
               zonas={zonas}
               user={user}
               isAdmin={isAdmin}
@@ -359,45 +427,14 @@ export default function ReadyToGo() {
           )}
         </TabsContent>
 
-        {/* SECCIÓN 3: CONTRATOS PENDIENTES DE FIRMA */}
-        <TabsContent value="contratos" className="space-y-4">
-          {contractosPendienteFirma.length === 0 ? (
-            <Card className="border-none shadow-md">
-              <CardContent className="p-12 text-center">
-                <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-[#666666] text-lg">No hay contratos pendientes</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Los contratos listos para firmar aparecerán aquí
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <ContratosParaFirmarSection
-              clientes={contractosPendienteFirma}
-              zonas={zonas}
-              user={user}
-              isAdmin={isAdmin}
-              navigate={navigate}
-              handleCambiarEstado={handleCambiarEstado}
-              tipoColors={tipoColors}
-            />
-          )}
-        </TabsContent>
+
       </Tabs>
     </div>
   );
 }
 
-// COMPONENTE: Clientes para visitar (con estudios listos)
-function ClientesParaVisitarSection({ clientes, zonas, user, isAdmin, navigate, getArchivosValidos, tipoColors }) {
-  const clientesPorZona = clientes.reduce((acc, cliente) => {
-    const zona = zonas.find(z => z.id === cliente.zona_id);
-    const zonaNombre = zona?.nombre || "Sin zona";
-    if (!acc[zonaNombre]) acc[zonaNombre] = [];
-    acc[zonaNombre].push(cliente);
-    return acc;
-  }, {});
-
+// COMPONENTE: Clientes para visitar (con y sin informe final)
+function ClientesParaVisitarSection({ clientesCompletos, clientesPotencias, zonas, user, isAdmin, navigate, getArchivosValidos, tipoColors }) {
   const getTipoMaximo = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
@@ -408,46 +445,89 @@ function ClientesParaVisitarSection({ clientes, zonas, user, isAdmin, navigate, 
     }, "2.0");
   };
 
-  return (
-    <>
-      {Object.keys(clientesPorZona).map(zonaNombre => (
-        <div key={zonaNombre} className="space-y-3">
-          <div className="flex items-center gap-3">
-            <MapPin className="w-6 h-6 text-[#004D9D]" />
-            <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
-            <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
-          </div>
+  const renderClientesPorSeccion = (clientes, badgeColor, badgeText) => {
+    const clientesPorZona = clientes.reduce((acc, cliente) => {
+      const zona = zonas.find(z => z.id === cliente.zona_id);
+      const zonaNombre = zona?.nombre || "Sin zona";
+      if (!acc[zonaNombre]) acc[zonaNombre] = [];
+      acc[zonaNombre].push(cliente);
+      return acc;
+    }, {});
 
-          {clientesPorZona[zonaNombre].map(cliente => {
-            const tipoMax = getTipoMaximo(cliente);
-            return (
-              <Card
-                key={cliente.id}
-                className="hover:shadow-lg transition-all duration-300 border-l-4 border-green-500 bg-green-50 cursor-pointer"
-                onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-              >
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <Building2 className="w-5 h-5 text-[#004D9D]" />
-                      <div>
-                        <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
-                        <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+    return (
+      <>
+        {Object.keys(clientesPorZona).map(zonaNombre => (
+          <div key={zonaNombre} className="space-y-3">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-6 h-6 text-[#004D9D]" />
+              <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+              <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+            </div>
+
+            {clientesPorZona[zonaNombre].map(cliente => {
+              const tipoMax = getTipoMaximo(cliente);
+              const bgColor = badgeColor === "green" ? "border-green-500 bg-green-50" : "border-amber-500 bg-amber-50";
+              return (
+                <Card
+                  key={cliente.id}
+                  className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor} cursor-pointer`}
+                  onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Building2 className="w-5 h-5 text-[#004D9D]" />
+                        <div>
+                          <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
+                          <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+                        </div>
                       </div>
+                      <Badge className={`${badgeColor === "green" ? "bg-green-600" : "bg-amber-600"} text-white`}>
+                        {badgeText}
+                      </Badge>
                     </div>
-                    <Badge className="bg-green-600 text-white">✓ Listo para visitar</Badge>
-                  </div>
 
-                  {tipoMax && (
-                    <Badge className={`${tipoColors[tipoMax]} text-xs`}>{tipoMax}</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                    {tipoMax && (
+                      <Badge className={`${tipoColors[tipoMax]} text-xs`}>{tipoMax}</Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ))}
+      </>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {clientesCompletos.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-green-600 mb-4">✓ Listos con informe final</h3>
+          {renderClientesPorSeccion(clientesCompletos, "green", "✓ Listo para visitar")}
         </div>
-      ))}
-    </>
+      )}
+      
+      {clientesPotencias.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-amber-600 mb-4">⏳ Falta informe final</h3>
+          {renderClientesPorSeccion(clientesPotencias, "amber", "⏳ Falta informe final")}
+        </div>
+      )}
+
+      {clientesCompletos.length === 0 && clientesPotencias.length === 0 && (
+        <Card className="border-none shadow-md">
+          <CardContent className="p-12 text-center">
+            <Eye className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-[#666666] text-lg">No hay clientes para visitar</p>
+            <p className="text-gray-400 text-sm mt-2">
+              Los clientes con estudios listos aparecerán aquí
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
@@ -510,63 +590,87 @@ function ClientesPendientesEstudioSection({ clientes, zonas, user, navigate, tip
 }
 
 // COMPONENTE: Contratos para firmar
-function ContratosParaFirmarSection({ clientes, zonas, user, isAdmin, navigate, handleCambiarEstado, tipoColors }) {
-  const clientesPorZona = clientes.reduce((acc, cliente) => {
-    const zona = zonas.find(z => z.id === cliente.zona_id);
-    const zonaNombre = zona?.nombre || "Sin zona";
-    if (!acc[zonaNombre]) acc[zonaNombre] = [];
-    acc[zonaNombre].push(cliente);
-    return acc;
-  }, {});
+function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zonas, user, isAdmin, navigate, tipoColors }) {
+  const renderContratos = (clientes, tieneArchivo) => {
+    const clientesPorZona = clientes.reduce((acc, cliente) => {
+      const zona = zonas.find(z => z.id === cliente.zona_id);
+      const zonaNombre = zona?.nombre || "Sin zona";
+      if (!acc[zonaNombre]) acc[zonaNombre] = [];
+      acc[zonaNombre].push(cliente);
+      return acc;
+    }, {});
+
+    const bgColor = tieneArchivo ? "border-green-500 bg-green-50" : "border-amber-500 bg-amber-50";
+    const badgeClass = tieneArchivo ? "bg-green-600" : "bg-amber-600";
+    const badgeText = tieneArchivo ? "✓ Contrato listo" : "⏳ Esperando contrato";
+
+    return (
+      <>
+        {Object.keys(clientesPorZona).map(zonaNombre => (
+          <div key={zonaNombre} className="space-y-3">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-6 h-6 text-[#004D9D]" />
+              <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+              <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+            </div>
+
+            {clientesPorZona[zonaNombre].map(cliente => (
+              <Card
+                key={cliente.id}
+                className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor}`}
+              >
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}>
+                      <Building2 className="w-5 h-5 text-[#004D9D]" />
+                      <div>
+                        <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
+                        <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+                      </div>
+                    </div>
+                    <Badge className={`${badgeClass} text-white`}>📄 {badgeText}</Badge>
+                  </div>
+
+                  {tieneArchivo && cliente.contrato_original_url && (
+                    <div className="space-y-2">
+                      <a href={cliente.contrato_original_url} download className="block">
+                        <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                          <Download className="w-4 h-4 mr-2" />
+                          Descargar contrato
+                        </Button>
+                      </a>
+                    </div>
+                  )}
+
+                  {!tieneArchivo && (
+                    <p className="text-sm text-amber-700 bg-amber-100 p-2 rounded">
+                      ⏳ El administrador aún no ha adjuntado el contrato
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ))}
+      </>
+    );
+  };
 
   return (
-    <>
-      {Object.keys(clientesPorZona).map(zonaNombre => (
-        <div key={zonaNombre} className="space-y-3">
-          <div className="flex items-center gap-3">
-            <MapPin className="w-6 h-6 text-[#004D9D]" />
-            <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
-            <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
-          </div>
-
-          {clientesPorZona[zonaNombre].map(cliente => (
-            <Card
-              key={cliente.id}
-              className="hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500 bg-blue-50"
-            >
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}>
-                    <Building2 className="w-5 h-5 text-[#004D9D]" />
-                    <div>
-                      <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
-                      <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-blue-600 text-white">📄 Contrato listo</Badge>
-                </div>
-
-                {cliente.contrato_original_url && (
-                  <div className="space-y-2">
-                    <a href={cliente.contrato_original_url} download className="block">
-                      <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                        <Download className="w-4 h-4 mr-2" />
-                        Descargar contrato
-                      </Button>
-                    </a>
-                  </div>
-                )}
-
-                {!cliente.contrato_original_url && (
-                  <p className="text-sm text-blue-700 bg-blue-100 p-2 rounded">
-                    ⏳ Esperando contrato del administrador
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+    <div className="space-y-6">
+      {clientesConArchivo.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-green-600 mb-4">✓ Contratos listos</h3>
+          {renderContratos(clientesConArchivo, true)}
         </div>
-      ))}
-    </>
+      )}
+      
+      {clientesSinArchivo.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-amber-600 mb-4">⏳ Esperando contrato</h3>
+          {renderContratos(clientesSinArchivo, false)}
+        </div>
+      )}
+    </div>
   );
 }
