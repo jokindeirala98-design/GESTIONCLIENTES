@@ -46,7 +46,6 @@ const TODOS_ESTADOS = [
   "Esperando facturas",
   "Facturas presentadas",
   "Pendiente informe potencias",
-  "Pendiente informe comparativo",
   "Informe listo",
   "Pendiente de firma",
   "Pendiente de aprobación",
@@ -58,7 +57,7 @@ const TODOS_ESTADOS = [
 // Estados que implican que ya hay informes subidos
 const ESTADOS_CON_INFORMES = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito"];
 // Estados anteriores a tener informes
-const ESTADOS_SIN_INFORMES = ["Primer contacto", "Esperando facturas", "Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo", "Rechazado", "Ignorado con mucho éxito"];
+const ESTADOS_SIN_INFORMES = ["Primer contacto", "Esperando facturas", "Facturas presentadas", "Pendiente informe potencias", "Rechazado", "Ignorado con mucho éxito"];
 
 export default function DetalleCliente() {
   const navigate = useNavigate();
