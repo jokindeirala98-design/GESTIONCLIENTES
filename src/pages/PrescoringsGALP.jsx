@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Search, Copy, Download, Check, X, ExternalLink } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import ClienteFichaModal from "@/components/prescoring/ClienteFichaModal";
 import {
   Dialog,
   DialogContent,
