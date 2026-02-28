@@ -700,6 +700,27 @@ function ClientesPendientesFirmaSection({ clientes, zonas, user, navigate, tipoC
 
 // COMPONENTE: Contratos para firmar
 function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zonas, user, isAdmin, navigate, tipoColors }) {
+  const queryClient = useQueryClient();
+
+  const uploadContratoFirmadoMutation = useMutation({
+    mutationFn: async ({ clienteId, file }) => {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.entities.Cliente.update(clienteId, { contrato_firmado_url: file_url });
+      return { clienteId, file_url };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clientes']);
+      toast.success("Contrato firmado adjuntado");
+    },
+  });
+
+  const handleUploadContratoFirmado = (clienteId, event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadContratoFirmadoMutation.mutate({ clienteId, file });
+    }
+  };
+
   const renderContratos = (clientes, tieneArchivo) => {
     const clientesPorZona = clientes.reduce((acc, cliente) => {
       const zona = zonas.find(z => z.id === cliente.zona_id);
@@ -725,12 +746,12 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
 
             {clientesPorZona[zonaNombre].map(cliente => (
               <Card
-               key={cliente.id}
-               className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor}`}
+                key={cliente.id}
+                className={`hover:shadow-lg transition-all duration-300 border-l-4 ${bgColor}`}
               >
-               <CardContent className="p-4 md:p-6">
-                 <div className="flex items-center justify-between mb-3">
-                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}&from=readyToGo&tab=contratos`))}>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}&from=readyToGo&tab=contratos`))}>
                       <Building2 className="w-5 h-5 text-[#004D9D]" />
                       <div>
                         <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
@@ -748,6 +769,40 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
                           Descargar contrato
                         </Button>
                       </a>
+
+                      {!cliente.contrato_firmado_url ? (
+                        <label>
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => handleUploadContratoFirmado(cliente.id, e)}
+                            className="hidden"
+                            disabled={uploadContratoFirmadoMutation.isPending}
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full cursor-pointer"
+                            asChild
+                            disabled={uploadContratoFirmadoMutation.isPending}
+                          >
+                            <span>
+                              {uploadContratoFirmadoMutation.isPending ? "Subiendo..." : "📤 Adjuntar contrato firmado"}
+                            </span>
+                          </Button>
+                        </label>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          asChild
+                        >
+                          <a href={cliente.contrato_firmado_url} download>
+                            <Download className="w-4 h-4 mr-2" />
+                            Descargar contrato firmado
+                          </a>
+                        </Button>
+                      )}
                     </div>
                   )}
 
