@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import EditClienteDialog from "../components/clientes/EditClienteDialog.jsx";
 import SuministrosSection from "../components/clientes/SuministrosSection.jsx";
 import EventosSection from "../components/clientes/EventosSection.jsx";
+import DocumentosClienteSection from "../components/clientes/DocumentosClienteSection.jsx";
+import ContratoClienteSection from "../components/clientes/ContratoClienteSection.jsx";
 import {
   Select,
   SelectContent,
@@ -959,6 +961,18 @@ export default function DetalleCliente() {
           </Card>
         )}
         
+        <DocumentosClienteSection
+          cliente={cliente}
+          isOwnerOrAdmin={canEdit}
+          isAdmin={isAdmin}
+        />
+
+        <ContratoClienteSection
+          cliente={cliente}
+          isAdmin={isAdmin}
+          isOwner={isOwner}
+        />
+
         <EventosSection
           cliente={cliente}
           onUpdate={handleUpdate}

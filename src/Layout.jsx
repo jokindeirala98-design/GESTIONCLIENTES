@@ -191,6 +191,11 @@ export default function Layout({ children }) {
       icon: FileText,
     },
     {
+      title: "Contratos",
+      url: createPageUrl("ContratosAdmin"),
+      icon: FileText,
+    },
+    {
       title: "Zonas",
       url: createPageUrl("Zonas"),
       icon: MapPin,
