@@ -384,21 +384,21 @@ export default function PrescoringsGALP() {
                     </button>
                   )}
                 </td>
-                <td className="px-2 py-1 text-center">
-                  <button
-                    onClick={() => setFichaModalCups(row.cups || row.nombre_razon_social || row.id)}
-                    className="bg-blue-50 hover:bg-[#004D9D] text-[#004D9D] hover:text-white transition-colors p-1.5 rounded-lg border border-blue-200 hover:border-[#004D9D]"
-                    title="Ver ficha del cliente"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </td>
                 {COLUMNS.map(col => (
                   <td key={col.key} className="px-1 py-1">
                     {col.key === "created_date" ? (
-                      <span className="px-2 py-1.5 text-xs text-[#666666] whitespace-nowrap" style={{ minWidth: col.width, display: "inline-block" }}>
-                        {formatDate(row.created_date)}
-                      </span>
+                      <div className="flex items-center gap-2 justify-between" style={{ minWidth: col.width }}>
+                        <span className="px-2 py-1.5 text-xs text-[#666666] whitespace-nowrap">
+                          {formatDate(row.created_date)}
+                        </span>
+                        <button
+                          onClick={() => setFichaModalCups(row.cups || row.nombre_razon_social || row.id)}
+                          className="bg-yellow-100 hover:bg-[#004D9D] text-[#004D9D] hover:text-white transition-colors p-1.5 rounded-lg border border-yellow-300 hover:border-[#004D9D] flex-shrink-0"
+                          title="Ver ficha del cliente"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
                     ) : (
                       <input
                         type="text"
