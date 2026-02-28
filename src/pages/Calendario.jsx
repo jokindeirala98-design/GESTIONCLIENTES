@@ -981,7 +981,8 @@ export default function Calendario() {
                                 const clienteIdMatch = tarea.notas?.match(/Cliente ID:\s*([a-f0-9]+)/i);
                                 const clienteId = clienteIdMatch?.[1];
                                 const handleCardClick = (e) => {
-                                  if (clienteId && e.target === e.currentTarget) {
+                                  // Solo navegar si hay clienteId y el clic no vino de un botón
+                                  if (clienteId && !e.target.closest('button')) {
                                     navigate(createPageUrl(`DetalleCliente?id=${clienteId}`));
                                   }
                                 };
