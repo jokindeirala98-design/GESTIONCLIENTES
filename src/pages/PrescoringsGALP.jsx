@@ -384,15 +384,6 @@ export default function PrescoringsGALP() {
                     </button>
                   )}
                 </td>
-                <td className="px-2 py-1">
-                  <button
-                    onClick={() => setFichaModalCups(row.cups || row.nombre_razon_social || row.id)}
-                    className="bg-black text-white hover:bg-gray-700 transition-colors p-2 rounded-lg"
-                    title="Ver ficha del cliente"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </td>
                 {COLUMNS.map(col => (
                   <td key={col.key} className="px-1 py-1">
                     {col.key === "created_date" ? (
