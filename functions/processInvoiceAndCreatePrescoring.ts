@@ -106,23 +106,25 @@ Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve 
                 });
                 console.log("PrescoringGALP creado para CUPS:", extractedCups);
 
-                // Crear tarea en el corcho de Iranzu para solicitar prescoring (urgente, primera)
-                const IRANZU_EMAIL = 'iranzu@voltisenergia.com';
-                // Desplazar todas las tareas existentes de Iranzu para que la nueva quede primera
-                const tareasIranzu = await base44.asServiceRole.entities.TareaCorcho.filter({ propietario_email: IRANZU_EMAIL });
-                for (const tarea of tareasIranzu) {
-                    await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
+                // Crear tarea en el corcho para Iranzu y José
+                const PROPIETARIOS = ['iranzu@voltisenergia.com', 'jose@voltisenergia.com'];
+                for (const propietarioEmail of PROPIETARIOS) {
+                    // Desplazar todas las tareas existentes para que la nueva quede primera
+                    const tareasExistentes = await base44.asServiceRole.entities.TareaCorcho.filter({ propietario_email: propietarioEmail });
+                    for (const tarea of tareasExistentes) {
+                        await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
+                    }
+                    await base44.asServiceRole.entities.TareaCorcho.create({
+                        descripcion: `Solicitar prescoring CUPS: ${extractedCups} - ${clienteData.nombre_negocio}`,
+                        notas: `Cliente ID: ${cliente_id} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
+                        completada: false,
+                        prioridad: 'rojo',
+                        orden: 0,
+                        creador_email: propietarioEmail,
+                        propietario_email: propietarioEmail,
+                    });
+                    console.log(`TareaCorcho creada para ${propietarioEmail}, CUPS: ${extractedCups}`);
                 }
-                await base44.asServiceRole.entities.TareaCorcho.create({
-                    descripcion: `Solicitar prescoring CUPS: ${extractedCups}`,
-                    notas: `Cliente: ${clienteData.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
-                    completada: false,
-                    prioridad: 'rojo',
-                    orden: 0,
-                    creador_email: IRANZU_EMAIL,
-                    propietario_email: IRANZU_EMAIL,
-                });
-                console.log("TareaCorcho creada para Iranzu, CUPS:", extractedCups);
             }
         }
 
