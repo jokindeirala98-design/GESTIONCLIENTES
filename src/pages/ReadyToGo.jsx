@@ -705,12 +705,35 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
   const uploadContratoFirmadoMutation = useMutation({
     mutationFn: async ({ clienteId, file }) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.Cliente.update(clienteId, { contrato_firmado_url: file_url });
+      
+      // Obtener cliente actual para calcular comisión
+      const cliente = clientes.find(c => c.id === clienteId);
+      if (!cliente) throw new Error("Cliente no encontrado");
+      
+      // Calcular comisión total de todos los suministros
+      let comisionTotal = 0;
+      if (cliente.suministros && cliente.suministros.length > 0) {
+        comisionTotal = cliente.suministros.reduce((sum, s) => sum + (s.comision || 0), 0);
+      }
+      
+      const fechaCierre = new Date().toISOString().split('T')[0];
+      const mesComision = fechaCierre.substring(0, 7);
+      
+      // Actualizar cliente: contrato firmado, estado "Firmado con éxito", comisión y fecha de cierre
+      await base44.entities.Cliente.update(clienteId, { 
+        contrato_firmado_url: file_url,
+        estado: "Firmado con éxito",
+        comision: comisionTotal,
+        fecha_cierre: fechaCierre,
+        mes_comision: mesComision,
+        aprobado_admin: false
+      });
+      
       return { clienteId, file_url };
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
-      toast.success("Contrato firmado adjuntado");
+      toast.success("Contrato firmado adjuntado y cliente marcado como firmado con éxito");
     },
   });
 
