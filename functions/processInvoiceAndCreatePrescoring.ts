@@ -20,37 +20,29 @@ Deno.serve(async (req) => {
         const esLuz20 = !esGas && suministro_tipo_factura === "2.0";
 
         // 1. Extract CUPS from the invoice using AI
-        // For image files, upload to get a public URL first
-        let processableUrl = file_url;
         const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i);
-        
-        if (isImage) {
-            // Download and re-upload the image using FormData/Blob
-            const imgResponse = await fetch(file_url);
-            const imgBlob = await imgResponse.blob();
-            const ext = file_url.toLowerCase().includes('.png') ? 'png' : 'jpeg';
-            const mimeType = `image/${ext}`;
-            
-            // Upload via raw fetch to the Base44 upload endpoint
-            const formData = new FormData();
-            formData.append('file', new Blob([imgBlob], { type: mimeType }), `invoice.${ext}`);
-            
-            const uploadResp = await fetch(`https://base44.app/api/apps/${Deno.env.get('BASE44_APP_ID')}/integrations/core/upload-file`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': req.headers.get('Authorization') || '',
-                },
-                body: formData,
-            });
-            if (uploadResp.ok) {
-                const uploadData = await uploadResp.json();
-                processableUrl = uploadData.file_url;
-                console.log("Imagen re-subida:", processableUrl);
-            }
-        }
 
-        const extractionResult = await base44.integrations.Core.InvokeLLM({
-            prompt: `Eres un extractor de datos de facturas de energía española. 
+        let extractionResult;
+        if (isImage) {
+            // For images: use ExtractDataFromUploadedFile which handles images better
+            extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+                file_url: file_url,
+                json_schema: {
+                    type: "object",
+                    properties: {
+                        cups: { type: "string", description: "El código CUPS completo de la factura. Empieza siempre por ES seguido de 18-20 caracteres alfanuméricos. Ej: ES0021000006726872YJ" }
+                    }
+                }
+            });
+            // ExtractDataFromUploadedFile returns { status, output } 
+            if (extractionResult?.status === 'success' && extractionResult?.output) {
+                extractionResult = extractionResult.output;
+            } else {
+                extractionResult = { cups: null };
+            }
+        } else {
+            extractionResult = await base44.integrations.Core.InvokeLLM({
+                prompt: `Eres un extractor de datos de facturas de energía española. 
 Analiza el documento adjunto (factura de electricidad o gas) y extrae el código CUPS.
 
 El CUPS (Código Universal de Punto de Suministro) es un identificador único de 20 a 22 caracteres alfanuméricos que:
@@ -61,14 +53,15 @@ El CUPS (Código Universal de Punto de Suministro) es un identificador único de
 
 Extrae el CUPS tal cual aparece en la factura, sin modificarlo. 
 Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve null en el campo cups.`,
-            file_urls: [processableUrl],
-            response_json_schema: {
-                type: "object",
-                properties: {
-                    cups: { type: "string", description: "El código CUPS completo extraído de la factura. Null si no se encuentra." }
+                file_urls: [file_url],
+                response_json_schema: {
+                    type: "object",
+                    properties: {
+                        cups: { type: "string", description: "El código CUPS completo extraído de la factura. Null si no se encuentra." }
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Clean up: if LLM returns string "null" or empty, treat as null
         let extractedCups = extractionResult?.cups || null;
