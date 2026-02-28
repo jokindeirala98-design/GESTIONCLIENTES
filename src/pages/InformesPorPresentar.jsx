@@ -668,9 +668,9 @@ export default function InformesPorPresentar() {
   const suministrosActivos = c.suministros.filter(s => !s.cerrado);
   if (suministrosActivos.length === 0) return false;
 
-  // Mostrar si tiene al menos un suministro con facturas y sin informe final
+  // Mostrar si tiene al menos un suministro con facturas, sin informe final, y (con potencias o con potencias ignoradas)
   return suministrosActivos.some(s =>
-    s.facturas && s.facturas.length > 0 && !s.informe_final
+    s.facturas && s.facturas.length > 0 && !s.informe_final && (s.informe_potencias || s.potencias_ignorado)
   );
   });
 
