@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,51 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FolderOpen, Upload, Download, Save, X } from "lucide-react";
 import { toast } from "sonner";
+
+function DropZone({ label, fileUrl, uploading, onFile, onRemove, accept = ".pdf,.jpg,.jpeg,.png", inputId }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) onFile(file);
+  };
+
+  if (fileUrl) {
+    return (
+      <div className="flex items-center gap-2 bg-white border border-purple-200 p-2 rounded text-sm mt-1">
+        <span className="flex-1 text-purple-700 truncate">Archivo adjunto</span>
+        <a href={fileUrl} download className="text-purple-600"><Download className="w-4 h-4" /></a>
+        <button onClick={onRemove} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <input type="file" id={inputId} className="hidden" accept={accept}
+        onChange={e => { if (e.target.files[0]) onFile(e.target.files[0]); e.target.value = ""; }} />
+      <div
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => document.getElementById(inputId).click()}
+        className={`mt-1 border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors text-xs
+          ${dragOver ? "border-purple-500 bg-purple-100" : "border-purple-300 bg-white hover:bg-purple-50 text-purple-600"}`}
+      >
+        {uploading ? (
+          <span className="text-purple-500">Subiendo...</span>
+        ) : (
+          <>
+            <Upload className="w-4 h-4 mx-auto mb-1 text-purple-400" />
+            <span>Arrastra aquí o haz clic para adjuntar {label}</span>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
 
 export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAdmin }) {
   const queryClient = useQueryClient();
