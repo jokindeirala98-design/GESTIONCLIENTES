@@ -169,7 +169,7 @@ export default function DetalleCliente() {
         id: clienteId,
         data: { estado: "Informe listo" }
       });
-    } else if (todosConFacturas && !todosConInforme && !["Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo"].includes(cliente.estado)) {
+    } else if (todosConFacturas && !todosConInforme && !["Facturas presentadas", "Pendiente informe potencias"].includes(cliente.estado)) {
       console.log("Auto-corrección: Cambiando a Facturas presentadas");
       updateMutation.mutate({
         id: clienteId,
@@ -290,7 +290,7 @@ export default function DetalleCliente() {
       );
       
       const estadosFinales = ["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado"];
-      const estadosIntermedios = ["Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo"];
+      const estadosIntermedios = ["Facturas presentadas", "Pendiente informe potencias"];
       if (todosConFacturas && !estadosFinales.includes(cliente.estado) && !estadosIntermedios.includes(cliente.estado)) {
         console.log("Cambiando a Facturas presentadas - todos los suministros activos tienen facturas");
         eventosActualizados = eventosActualizados.filter(e => e.tipo_automatico !== "recordar_facturas");
@@ -310,7 +310,7 @@ export default function DetalleCliente() {
         return tieneArchivosValidos || tieneUrlValida;
       });
 
-      if (todosConInforme && ["Facturas presentadas", "Pendiente informe potencias", "Pendiente informe comparativo"].includes(cliente.estado)) {
+      if (todosConInforme && ["Facturas presentadas", "Pendiente informe potencias"].includes(cliente.estado)) {
         console.log("Cambiando a Informe listo - todos los suministros activos tienen informe");
         updateMutation.mutate({
           id: clienteId,
