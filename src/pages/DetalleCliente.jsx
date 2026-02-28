@@ -69,7 +69,6 @@ export default function DetalleCliente() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const clienteId = urlParams.get('id');
-  const from = urlParams.get('from') || 'Clientes';
 
   useEffect(() => {
     const loadUser = async () => {
@@ -562,7 +561,7 @@ export default function DetalleCliente() {
       <div className="p-4 md:p-8 max-w-4xl mx-auto">
         <Button
           variant="outline"
-          onClick={() => navigate(createPageUrl(from))}
+          onClick={() => window.history.back()}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -590,7 +589,7 @@ export default function DetalleCliente() {
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <Button
         variant="outline"
-        onClick={() => navigate(createPageUrl(from))}
+        onClick={() => window.history.back()}
         className="mb-6"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
