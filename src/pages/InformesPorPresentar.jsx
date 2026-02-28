@@ -403,29 +403,36 @@ export default function InformesPorPresentar() {
     
     if (!suministro) return;
 
-    if (!window.confirm("¿Omitir el informe de potencias para este suministro? Se habilitará la opción de subir el informe final.")) {
-      return;
-    }
-
-    try {
-      const nuevosSuministros = cliente.suministros.map(s => {
-        if (s.id === suministroId) {
-          // Solo marcar como ignorado, sin cambiar estado del cliente
-          return { ...s, potencias_ignorado: true };
-        }
-        return s;
-      });
-
-      // NO cambiar el estado del cliente, mantenerlo igual
-      await updateClienteMutation.mutateAsync({
-        id: cliente.id,
-        data: { suministros: nuevosSuministros }
-      });
-
-      toast.success("Informe de potencias omitido. Puedes subir el informe final.");
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Error al omitir informe de potencias");
+    // Si ya está ignorado, cambiar estado del cliente a "Ignorado con mucho éxito"
+    if (suministro.potencias_ignorado) {
+      if (!window.confirm("¿Cambiar el estado del cliente a 'Ignorado con mucho éxito'?")) {
+        return;
+      }
+      try {
+        await updateClienteMutation.mutateAsync({
+          id: cliente.id,
+          data: { estado: "Ignorado con mucho éxito" }
+        });
+        toast.success("Cliente ignorado con mucho éxito");
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("Error al ignorar cliente");
+      }
+    } else {
+      // Si no está ignorado, ignorar potencias
+      try {
+        const nuevosSuministros = cliente.suministros.map(s =>
+          s.id === suministroId ? { ...s, potencias_ignorado: true } : s
+        );
+        await updateClienteMutation.mutateAsync({
+          id: cliente.id,
+          data: { suministros: nuevosSuministros }
+        });
+        toast.success("Informe de potencias omitido. Puedes subir el informe final.");
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("Error al omitir informe de potencias");
+      }
     }
   };
 
@@ -1028,17 +1035,14 @@ export default function InformesPorPresentar() {
 
                                   {!tienePotencias ? (
                                     <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-                                      <div className="flex items-center justify-between gap-3">
-                                        <div className="flex-1">
-                                          <p className="text-sm text-gray-600">⏳ Esperando a que José suba el informe de potencias</p>
-                                          <p className="text-xs text-gray-500 mt-1">O puedes ignorar este paso si no es necesario</p>
-                                        </div>
+                                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <p className="text-sm text-gray-600">Esperando a que José suba el informe de potencias</p>
                                         <Button
                                           size="sm"
                                           onClick={() => handleIgnorarPotenciasSuply(cliente, suministro.id)}
-                                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs h-8 whitespace-nowrap flex-shrink-0"
+                                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs h-8 whitespace-nowrap"
                                         >
-                                          <SkipForward className="w-4 h-4 mr-1" /> Ignorar potencias
+                                          <SkipForward className="w-4 h-4 mr-1" /> Ignorar informe
                                         </Button>
                                       </div>
                                     </div>
