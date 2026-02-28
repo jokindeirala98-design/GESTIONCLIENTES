@@ -1101,7 +1101,10 @@ export default function Calendario() {
                                            <Button
                                              size="sm"
                                              variant="outline"
-                                             onClick={() => toggleAlertaMutation.mutate({ id: tarea.id, tiene_alerta: tarea.tiene_alerta })}
+                                             onClick={(e) => {
+                                               e.stopPropagation();
+                                               toggleAlertaMutation.mutate({ id: tarea.id, tiene_alerta: tarea.tiene_alerta });
+                                             }}
                                              className={tarea.tiene_alerta ? "border-red-500 text-red-600" : ""}
                                            >
                                              <AlertCircle className="w-4 h-4 mr-1" />
@@ -1109,7 +1112,10 @@ export default function Calendario() {
                                            </Button>
                                            <Button
                                              size="sm"
-                                             onClick={() => completarTareaCorchoMutation.mutate(tarea.id)}
+                                             onClick={(e) => {
+                                               e.stopPropagation();
+                                               completarTareaCorchoMutation.mutate(tarea.id);
+                                             }}
                                              className="bg-green-600"
                                            >
                                              ✓ Hecha
@@ -1118,7 +1124,10 @@ export default function Calendario() {
                                              <Button
                                                size="icon"
                                                variant="ghost"
-                                               onClick={() => setPasapalabraDialog({ tareaId: tarea.id, descripcion: tarea.descripcion })}
+                                               onClick={(e) => {
+                                                 e.stopPropagation();
+                                                 setPasapalabraDialog({ tareaId: tarea.id, descripcion: tarea.descripcion });
+                                               }}
                                                className="h-7 w-7 text-orange-500 hover:text-orange-700 hover:bg-orange-50"
                                                title="Pasapalabra"
                                              >
