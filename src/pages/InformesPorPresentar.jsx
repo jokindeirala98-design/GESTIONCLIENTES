@@ -403,36 +403,22 @@ export default function InformesPorPresentar() {
     
     if (!suministro) return;
 
-    // Si ya está ignorado, cambiar estado del cliente a "Ignorado con mucho éxito"
-    if (suministro.potencias_ignorado) {
-      if (!window.confirm("¿Cambiar el estado del cliente a 'Ignorado con mucho éxito'?")) {
-        return;
-      }
-      try {
-        await updateClienteMutation.mutateAsync({
-          id: cliente.id,
-          data: { estado: "Ignorado con mucho éxito" }
-        });
-        toast.success("Cliente ignorado con mucho éxito");
-      } catch (error) {
-        console.error("Error:", error);
-        toast.error("Error al ignorar cliente");
-      }
-    } else {
-      // Si no está ignorado, ignorar potencias
-      try {
-        const nuevosSuministros = cliente.suministros.map(s =>
-          s.id === suministroId ? { ...s, potencias_ignorado: true } : s
-        );
-        await updateClienteMutation.mutateAsync({
-          id: cliente.id,
-          data: { suministros: nuevosSuministros }
-        });
-        toast.success("Informe de potencias omitido. Puedes subir el informe final.");
-      } catch (error) {
-        console.error("Error:", error);
-        toast.error("Error al omitir informe de potencias");
-      }
+    if (!window.confirm("¿Omitir el informe de potencias para este suministro? Se habilitará la opción de subir el informe final.")) {
+      return;
+    }
+
+    try {
+      const nuevosSuministros = cliente.suministros.map(s =>
+        s.id === suministroId ? { ...s, potencias_ignorado: true } : s
+      );
+      await updateClienteMutation.mutateAsync({
+        id: cliente.id,
+        data: { suministros: nuevosSuministros }
+      });
+      toast.success("Informe de potencias omitido. Puedes subir el informe final.");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al omitir informe de potencias");
     }
   };
 
