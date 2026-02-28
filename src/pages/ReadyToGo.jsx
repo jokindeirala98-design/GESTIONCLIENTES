@@ -274,62 +274,42 @@ export default function ReadyToGo() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
-              <CheckCircle className="w-8 h-8" />
-              Ready to Go
-            </h1>
-            <p className="text-[#666666]">
-              {isAdmin ? 'Todos los clientes listos para presentar y cerrar' : 'Tus clientes listos para presentar y cerrar'}
-            </p>
-          </div>
-        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2 flex items-center gap-3">
+          <CheckCircle className="w-8 h-8" />
+          Ready to Go
+        </h1>
+        <p className="text-[#666666]">
+          {isAdmin ? 'Gestión de clientes listos para cerrar' : 'Tus clientes en progreso'}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="border-l-4 border-green-500">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#666666] mb-1">📄 Informes listos</p>
-                <p className="text-4xl font-bold text-green-600">{informesListos}</p>
-              </div>
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-orange-500">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#666666] mb-1">⏳ Pendientes de firma</p>
-                <p className="text-4xl font-bold text-orange-600">{pendientesFirma}</p>
-              </div>
-              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
-                <Clock className="w-8 h-8 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-emerald-500">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#666666] mb-1">✅ Firmados (pendiente admin)</p>
-                <p className="text-4xl font-bold text-emerald-600">{pendientesAprobacion}</p>
-              </div>
-              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-emerald-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="visitar" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="visitar" className="flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            <span className="hidden sm:inline">Para visitar</span>
+            <span className="sm:hidden">Visitar</span>
+            {clientesParaVisitar.length > 0 && (
+              <Badge className="bg-green-600 text-white ml-1">{clientesParaVisitar.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="pendientes-estudio" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Pendientes estudio</span>
+            <span className="sm:hidden">Estudio</span>
+            {clientesPendientesEstudio.length > 0 && (
+              <Badge className="bg-orange-600 text-white ml-1">{clientesPendientesEstudio.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="contratos" className="flex items-center gap-2">
+            <FileCheck className="w-4 h-4" />
+            <span className="hidden sm:inline">Contratos</span>
+            <span className="sm:hidden">Firmas</span>
+            {contractosPendienteFirma.length > 0 && (
+              <Badge className="bg-blue-600 text-white ml-1">{contractosPendienteFirma.length}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
       {zonasOrdenadas.length === 0 ? (
         <Card className="border-none shadow-md">
