@@ -197,6 +197,28 @@ export default function ReadyToGo() {
 
   const isAdmin = user.role === "admin";
 
+  // SECCIÓN 1: Clientes para visitar (con estudios listos)
+  const clientesParaVisitar = clientes.filter(c => {
+    if (isAdmin) return c.estado === "Informe listo";
+    return c.estado === "Informe listo" && c.propietario_email === user.email;
+  });
+
+  // SECCIÓN 2: Clientes pendientes de estudio (con facturas, sin estudios completos)
+  const clientesPendientesEstudio = clientes.filter(c => {
+    const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
+    const tieneFacturas = suministrosNoLuz20.some(s => s.facturas && s.facturas.length > 0);
+    const sinEstudios = suministrosNoLuz20.some(s => !s.informe_potencias?.url);
+    
+    if (isAdmin) return tieneFacturas && sinEstudios;
+    return tieneFacturas && sinEstudios && c.propietario_email === user.email;
+  });
+
+  // SECCIÓN 3: Contratos pendientes de firma (estado Pendiente de firma)
+  const contractosPendienteFirma = clientes.filter(c => {
+    if (isAdmin) return c.estado === "Pendiente de firma";
+    return c.estado === "Pendiente de firma" && c.propietario_email === user.email;
+  });
+
   const misClientesReady = clientes.filter(c => {
     const estadosReady = c.estado === "Informe listo" || 
                          c.estado === "Pendiente de firma" ||
