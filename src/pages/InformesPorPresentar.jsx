@@ -1034,15 +1034,16 @@ export default function InformesPorPresentar() {
                                   </div>
 
                                   {!tienePotencias ? (
-                                    <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-                                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                                        <p className="text-sm text-gray-600">Esperando a que José suba el informe de potencias</p>
+                                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <p className="text-sm text-gray-500">Esperando a que José suba el informe de potencias</p>
                                         <Button
                                           size="sm"
+                                          variant="outline"
                                           onClick={() => handleIgnorarPotenciasSuply(cliente, suministro.id)}
-                                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs h-8 whitespace-nowrap"
+                                          className="h-7 text-xs text-gray-600 hover:bg-gray-200"
                                         >
-                                          <SkipForward className="w-4 h-4 mr-1" /> Ignorar informe
+                                          <SkipForward className="w-3 h-3 mr-1" /> Ignorar
                                         </Button>
                                       </div>
                                     </div>
