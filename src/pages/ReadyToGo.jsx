@@ -398,274 +398,55 @@ function ClientesParaVisitarSection({ clientes, zonas, user, isAdmin, navigate, 
     return acc;
   }, {});
 
+  const getTipoMaximo = (cliente) => {
+    if (!cliente.suministros || cliente.suministros.length === 0) return null;
+    const orden = { "6.1": 3, "3.0": 2, "2.0": 1 };
+    return cliente.suministros.reduce((max, s) => {
+      const actual = orden[s.tipo_factura] || 0;
+      const maxActual = orden[max] || 0;
+      return actual > maxActual ? s.tipo_factura : max;
+    }, "2.0");
+  };
+
   return (
     <>
       {Object.keys(clientesPorZona).map(zonaNombre => (
-          const zona = zonas.find(z => z.nombre === zonaNombre);
-          const otrosComerciales = zona ? clientes.filter(c => 
-            c.zona_id === zona.id && 
-            c.propietario_email !== user.email &&
-            (c.estado === "Informe listo" || 
-             c.estado === "Pendiente de firma" || 
-             c.estado === "Facturas presentadas")
-          ) : [];
+        <div key={zonaNombre} className="space-y-3">
+          <div className="flex items-center gap-3">
+            <MapPin className="w-6 h-6 text-[#004D9D]" />
+            <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
+            <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
+          </div>
 
-          const porComercial = otrosComerciales.reduce((acc, c) => {
-            const iniciales = c.propietario_iniciales || 'n/s';
-            if (!acc[iniciales]) {
-              acc[iniciales] = { informeListo: 0, facturasPresentadas: 0, pendienteFirma: 0 };
-            }
-            if (c.estado === "Informe listo") acc[iniciales].informeListo++;
-            if (c.estado === "Facturas presentadas") acc[iniciales].facturasPresentadas++;
-            if (c.estado === "Pendiente de firma") acc[iniciales].pendienteFirma++;
-            return acc;
-          }, {});
-
-          return (
-            <div key={zonaNombre} className="mb-8">
-              <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <MapPin className="w-6 h-6 text-[#004D9D]" />
-                <h2 className="text-xl font-bold text-[#004D9D]">{zonaNombre}</h2>
-                <Badge variant="outline">{clientesPorZona[zonaNombre].length} cliente(s)</Badge>
-
-                {Object.keys(porComercial).length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {Object.entries(porComercial).map(([iniciales, counts]) => (
-                      <Badge key={iniciales} className="bg-orange-100 text-orange-700 border border-orange-300">
-                        👤 {iniciales} tiene {
-                          [
-                            counts.informeListo > 0 && `${counts.informeListo} informe${counts.informeListo > 1 ? 's' : ''} listo${counts.informeListo > 1 ? 's' : ''}`,
-                            counts.pendienteFirma > 0 && `${counts.pendienteFirma} pendiente${counts.pendienteFirma > 1 ? 's' : ''} de firma`,
-                            counts.facturasPresentadas > 0 && `${counts.facturasPresentadas} factura${counts.facturasPresentadas > 1 ? 's' : ''} presentada${counts.facturasPresentadas > 1 ? 's' : ''}`
-                          ].filter(Boolean).join(' y ')
-                        }
-                      </Badge>
-                    ))}
+          {clientesPorZona[zonaNombre].map(cliente => {
+            const tipoMax = getTipoMaximo(cliente);
+            return (
+              <Card
+                key={cliente.id}
+                className="hover:shadow-lg transition-all duration-300 border-l-4 border-green-500 bg-green-50 cursor-pointer"
+                onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+              >
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-5 h-5 text-[#004D9D]" />
+                      <div>
+                        <h3 className="font-bold text-[#004D9D] hover:underline">{cliente.nombre_negocio}</h3>
+                        <p className="text-xs text-gray-600">{cliente.propietario_iniciales || 'n/s'}</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-600 text-white">✓ Listo para visitar</Badge>
                   </div>
-                )}
-              </div>
 
-              <div className="space-y-4">
-                {clientesPorZona[zonaNombre].map(cliente => {
-                  const esMio = cliente.propietario_email === user.email;
-                  const puedoActualizar = esMio || isAdmin;
-                  const tipoMax = getTipoMaximo(cliente);
-                  const isPendienteFirma = cliente.estado === "Pendiente de firma";
-                  const isPendienteAprobacion = cliente.estado === "Pendiente de aprobación";
-                  
-                  const borderColor = isPendienteAprobacion ? "border-emerald-500" : 
-                                     isPendienteFirma ? "border-orange-500" : "border-green-500";
-                  const bgColor = isPendienteAprobacion ? "bg-emerald-50" : 
-                                 isPendienteFirma ? "bg-orange-50" : "bg-green-50";
-
-                  return (
-                    <Card 
-                      key={cliente.id}
-                      className={`hover:shadow-lg transition-all duration-300 border-l-4 ${borderColor}`}
-                    >
-                      <CardContent className="p-4 md:p-6">
-                        {/* Header del cliente */}
-                        <div 
-                          className="cursor-pointer mb-4"
-                          onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <Building2 className="w-5 h-5 text-[#004D9D]" />
-                            <h3 className="font-bold text-[#004D9D] text-base md:text-lg hover:underline">
-                              {cliente.nombre_negocio}
-                            </h3>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <span className="text-xs text-gray-600 font-medium">{cliente.propietario_iniciales || 'n/s'}</span>
-                            
-                            {isPendienteAprobacion ? (
-                              <Badge className="bg-emerald-600 text-white text-xs">
-                                ✅ Firmado
-                              </Badge>
-                            ) : isPendienteFirma ? (
-                              <Badge className="bg-orange-600 text-white text-xs">
-                                ⏳ Pend. firma
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-green-600 text-white text-xs">
-                                ✓ Listo
-                              </Badge>
-                            )}
-                            
-                            {tipoMax && (
-                              <Badge className={`${tipoColors[tipoMax]} text-xs`}>
-                                {tipoMax}
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs">
-                              {cliente.suministros?.length || 0} sum.
-                            </Badge>
-                            {cliente.comision && (
-                              <Badge className="bg-yellow-600 text-white text-xs">
-                                <DollarSign className="w-3 h-3 mr-1" />
-                                {cliente.comision}€
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Suministros e Informes */}
-                        {cliente.suministros && cliente.suministros.filter(s => !s.cerrado).length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 mb-2">
-                              <FileText className={`w-4 h-4 ${
-                                isPendienteAprobacion ? "text-emerald-600" :
-                                isPendienteFirma ? "text-orange-600" : "text-green-600"
-                              }`} />
-                              <p className={`text-xs md:text-sm font-semibold ${
-                                isPendienteAprobacion ? "text-emerald-700" :
-                                isPendienteFirma ? "text-orange-700" : "text-green-700"
-                              }`}>
-                                Informes:
-                              </p>
-                            </div>
-                            
-                            {cliente.suministros.filter(s => !s.cerrado).map(suministro => {
-                              const archivosValidos = getArchivosValidos(suministro);
-                              const informeValido = archivosValidos.length > 0;
-                              
-                              return (
-                                <div key={suministro.id} className={`${bgColor} border ${
-                                  isPendienteAprobacion ? "border-emerald-200" :
-                                  isPendienteFirma ? "border-orange-200" : "border-green-200"
-                                } rounded-lg p-3`}>
-                                  {/* Info del suministro */}
-                                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                    <Badge className={`${tipoColors[suministro.tipo_factura]} text-xs`}>
-                                      {suministro.tipo_factura}
-                                    </Badge>
-                                    <span className="text-xs md:text-sm font-medium text-gray-700">{suministro.nombre}</span>
-                                    {suministro.comision && (
-                                      <Badge className={`text-xs ${
-                                        isPendienteAprobacion ? "bg-emerald-100 text-emerald-700" :
-                                        isPendienteFirma ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
-                                      }`}>
-                                        {suministro.comision}€
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Botones de descarga */}
-                                  {informeValido ? (
-                                    <div className="space-y-2">
-                                      {/* Notas del admin si existen */}
-                                      {suministro.informe_final?.notas_admin && (
-                                        <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
-                                          <div className="flex items-start gap-2">
-                                            <StickyNote className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                              <p className="text-xs font-semibold text-blue-800 mb-1">Nota del administrador:</p>
-                                              <p className="text-xs text-blue-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      <div className="flex flex-col gap-2">
-                                        {archivosValidos.map((archivo, idx) => (
-                                          <div key={idx} className="flex items-center gap-2">
-                                            <a
-                                              href={archivo.url}
-                                              download={archivo.nombre}
-                                              onClick={(e) => e.stopPropagation()}
-                                              className="flex-1"
-                                            >
-                                              <Button
-                                                size="sm"
-                                                className={`w-full text-xs ${
-                                                  isPendienteAprobacion ? "bg-emerald-600 hover:bg-emerald-700" :
-                                                  isPendienteFirma ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
-                                                }`}
-                                              >
-                                                <Download className="w-3 h-3 mr-1" />
-                                                {archivo.nombre}
-                                              </Button>
-                                            </a>
-                                            {suministro.informe_final?.notas_admin && (
-                                              <Popover>
-                                                <PopoverTrigger asChild>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="px-2"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    <StickyNote className="w-3 h-3 text-blue-600" />
-                                                  </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-80" onClick={(e) => e.stopPropagation()}>
-                                                  <div className="space-y-2">
-                                                    <h4 className="font-semibold text-sm text-blue-800">Nota del administrador</h4>
-                                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{suministro.informe_final.notas_admin}</p>
-                                                  </div>
-                                                </PopoverContent>
-                                              </Popover>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <Badge variant="outline" className="text-red-600 border-red-300 text-xs">
-                                      Sin informe
-                                    </Badge>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Cambiar estado */}
-                        {puedoActualizar && (
-                          <div className="mt-4 pt-4 border-t" onClick={(e) => e.stopPropagation()}>
-                            <p className="text-xs md:text-sm font-semibold text-gray-600 mb-2">Cambiar estado:</p>
-                            <Select
-                              value={cliente.estado}
-                              onValueChange={(value) => handleCambiarEstado(cliente, value)}
-                              disabled={isPendienteAprobacion && !isAdmin}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Informe listo">✓ Informe listo</SelectItem>
-                                <SelectItem value="Pendiente de firma">⏳ Pendiente de firma</SelectItem>
-                                <SelectItem value="Pendiente de aprobación">🎉 Firmado con éxito</SelectItem>
-                                <SelectItem value="Rechazado">❌ Rechazado</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            
-                            {isPendienteFirma && (
-                              <p className="text-xs text-orange-600 mt-2">
-                                💡 Esperando firma del cliente
-                              </p>
-                            )}
-                            
-                            {isPendienteAprobacion && (
-                              <p className="text-xs text-emerald-600 mt-2">
-                                ⏳ Esperando aprobación del admin
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+                  {tipoMax && (
+                    <Badge className={`${tipoColors[tipoMax]} text-xs`}>{tipoMax}</Badge>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ))}
     </>
   );
 }
