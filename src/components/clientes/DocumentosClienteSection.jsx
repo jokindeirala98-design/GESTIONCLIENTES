@@ -210,20 +210,14 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
             {/* CIF archivo */}
             <div>
               <Label className="text-sm font-medium text-gray-700">Archivo CIF</Label>
-              {form.cif_archivo_url ? (
-                <div className="flex items-center gap-2 bg-white border border-purple-200 p-2 rounded text-sm mt-1">
-                  <span className="flex-1 text-purple-700">Archivo adjunto</span>
-                  <a href={form.cif_archivo_url} download className="text-purple-600"><Download className="w-4 h-4" /></a>
-                  <button onClick={() => setForm(prev => ({ ...prev, cif_archivo_url: "" }))} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
-                </div>
-              ) : (
-                <>
-                  <input type="file" id="upload-cif" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => { if (e.target.files[0]) handleUploadArchivo("cif", e.target.files[0]); e.target.value = ""; }} />
-                  <Button size="sm" variant="outline" disabled={uploading.cif} onClick={() => document.getElementById("upload-cif").click()} className="border-purple-300 text-purple-700 w-full text-xs mt-1">
-                    <Upload className="w-3.5 h-3.5 mr-1" /> {uploading.cif ? "Subiendo..." : "Adjuntar CIF"}
-                  </Button>
-                </>
-              )}
+              <DropZone
+                label="CIF"
+                fileUrl={form.cif_archivo_url}
+                uploading={uploading.cif}
+                onFile={f => handleUploadArchivo("cif", f)}
+                onRemove={() => setForm(prev => ({ ...prev, cif_archivo_url: "" }))}
+                inputId="upload-cif"
+              />
             </div>
 
             {/* DNI archivos */}
@@ -239,12 +233,14 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
                   </div>
                 ))}
                 {(form.dni_archivos || []).length < 2 && (
-                  <>
-                    <input type="file" id="upload-dni" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => { if (e.target.files[0]) handleUploadArchivo("dni", e.target.files[0]); e.target.value = ""; }} />
-                    <Button size="sm" variant="outline" disabled={uploading.dni} onClick={() => document.getElementById("upload-dni").click()} className="border-purple-300 text-purple-700 w-full text-xs">
-                      <Upload className="w-3.5 h-3.5 mr-1" /> {uploading.dni ? "Subiendo..." : "Adjuntar DNI"}
-                    </Button>
-                  </>
+                  <DropZone
+                    label="DNI"
+                    fileUrl={null}
+                    uploading={uploading.dni}
+                    onFile={f => handleUploadArchivo("dni", f)}
+                    onRemove={() => {}}
+                    inputId="upload-dni"
+                  />
                 )}
               </div>
             </div>
@@ -252,20 +248,14 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
             {/* IBAN archivo */}
             <div>
               <Label className="text-sm font-medium text-gray-700">Archivo IBAN</Label>
-              {form.iban_archivo_url ? (
-                <div className="flex items-center gap-2 bg-white border border-purple-200 p-2 rounded text-sm mt-1">
-                  <span className="flex-1 text-purple-700">Archivo adjunto</span>
-                  <a href={form.iban_archivo_url} download className="text-purple-600"><Download className="w-4 h-4" /></a>
-                  <button onClick={() => setForm(prev => ({ ...prev, iban_archivo_url: "" }))} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
-                </div>
-              ) : (
-                <>
-                  <input type="file" id="upload-iban" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e => { if (e.target.files[0]) handleUploadArchivo("iban", e.target.files[0]); e.target.value = ""; }} />
-                  <Button size="sm" variant="outline" disabled={uploading.iban} onClick={() => document.getElementById("upload-iban").click()} className="border-purple-300 text-purple-700 w-full text-xs mt-1">
-                    <Upload className="w-3.5 h-3.5 mr-1" /> {uploading.iban ? "Subiendo..." : "Adjuntar IBAN"}
-                  </Button>
-                </>
-              )}
+              <DropZone
+                label="IBAN"
+                fileUrl={form.iban_archivo_url}
+                uploading={uploading.iban}
+                onFile={f => handleUploadArchivo("iban", f)}
+                onRemove={() => setForm(prev => ({ ...prev, iban_archivo_url: "" }))}
+                inputId="upload-iban"
+              />
             </div>
 
             <div className="flex gap-2 pt-2">
