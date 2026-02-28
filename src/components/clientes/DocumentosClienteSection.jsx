@@ -74,11 +74,13 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
     setForm({
       cups: docs?.cups || "",
       cif: docs?.cif || "",
+      cif_archivo_url: docs?.cif_archivo_url || "",
       nombre_empresa: docs?.nombre_empresa || "",
       consumo_anual: docs?.consumo_anual || "",
       direccion_fiscal: docs?.direccion_fiscal || "",
       telefono: docs?.telefono || "",
       iban: docs?.iban || "",
+      iban_archivo_url: docs?.iban_archivo_url || "",
       email: docs?.email || "",
       dni_texto: docs?.dni_texto || "",
       dni_archivos: docs?.dni_archivos || [],
