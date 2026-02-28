@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Building2, Download, ChevronDown, ChevronUp, CheckCircle2, Upload, X, Save, GripVertical, Search } from "lucide-react";
+import { FileText, Building2, Download, ChevronDown, ChevronUp, CheckCircle2, Upload, X, Save, GripVertical, Search, SkipForward } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -395,6 +395,44 @@ export default function InformesPorPresentar() {
     } catch (error) {
       console.error("Error:", error);
       toast.error("Error al ignorar cliente");
+    }
+  };
+
+  const handleIgnorarPotenciasSuply = async (cliente, suministroId) => {
+    const suministro = cliente.suministros.find(s => s.id === suministroId);
+    
+    if (!suministro) return;
+
+    // Si ya está ignorado, cambiar estado del cliente a "Ignorado con mucho éxito"
+    if (suministro.potencias_ignorado) {
+      if (!window.confirm("¿Cambiar el estado del cliente a 'Ignorado con mucho éxito'?")) {
+        return;
+      }
+      try {
+        await updateClienteMutation.mutateAsync({
+          id: cliente.id,
+          data: { estado: "Ignorado con mucho éxito" }
+        });
+        toast.success("Cliente ignorado con mucho éxito");
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("Error al ignorar cliente");
+      }
+    } else {
+      // Si no está ignorado, ignorar potencias
+      try {
+        const nuevosSuministros = cliente.suministros.map(s =>
+          s.id === suministroId ? { ...s, potencias_ignorado: true } : s
+        );
+        await updateClienteMutation.mutateAsync({
+          id: cliente.id,
+          data: { suministros: nuevosSuministros }
+        });
+        toast.success("Informe de potencias omitido. Puedes subir el informe final.");
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("Error al omitir informe de potencias");
+      }
     }
   };
 
@@ -996,8 +1034,18 @@ export default function InformesPorPresentar() {
                                   </div>
 
                                   {!tienePotencias ? (
-                                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 text-center">
-                                      <p className="text-sm text-gray-500">Esperando a que José suba el informe de potencias para poder subir el informe final</p>
+                                    <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <p className="text-sm text-gray-500">Esperando a que José suba el informe de potencias</p>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => handleIgnorarPotenciasSuply(cliente, suministro.id)}
+                                          className="h-7 text-xs text-gray-600 hover:bg-gray-200"
+                                        >
+                                          <SkipForward className="w-3 h-3 mr-1" /> Ignorar
+                                        </Button>
+                                      </div>
                                     </div>
                                   ) : suministro.informe_final ? (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
