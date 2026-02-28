@@ -20,20 +20,21 @@ Deno.serve(async (req) => {
         const esLuz20 = !esGas && suministro_tipo_factura === "2.0";
 
         // 1. Extract CUPS from the invoice using AI
-        // For image files, download and re-upload so the LLM can process them correctly
+        // For image files, download and convert to base64 data URI so LLM can process them
         let processableUrl = file_url;
-        const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i) || 
-                        file_url.toLowerCase().includes('image/');
+        const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i);
         
         if (isImage) {
-            // Download the image and re-upload it through Base44's upload to ensure correct MIME type
             const imgResponse = await fetch(file_url);
-            const imgBlob = await imgResponse.blob();
-            // Determine file extension
+            const imgBuffer = await imgResponse.arrayBuffer();
+            const bytes = new Uint8Array(imgBuffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
             const ext = file_url.toLowerCase().includes('.png') ? 'png' : 'jpeg';
-            const file = new File([imgBlob], `invoice.${ext}`, { type: `image/${ext}` });
-            const uploadResult = await base44.integrations.Core.UploadFile({ file });
-            processableUrl = uploadResult.file_url;
+            processableUrl = `data:image/${ext};base64,${base64}`;
         }
 
         const extractionResult = await base44.integrations.Core.InvokeLLM({
