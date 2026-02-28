@@ -15,7 +15,9 @@ Deno.serve(async (req) => {
         const fileBlob = await fileResponse.blob();
 
         // Lo subimos usando la integración de Base44
-        const result = await base44.integrations.Core.UploadFile({ file: fileBlob });
+        const formData = new FormData();
+        formData.append('file', fileBlob, 'factura.pdf');
+        const result = await base44.integrations.Core.UploadFile({ file: formData.get('file') });
 
         return Response.json({ uploaded_url: result.file_url });
     } catch (error) {
