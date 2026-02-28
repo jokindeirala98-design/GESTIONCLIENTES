@@ -106,14 +106,19 @@ Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve 
                 });
                 console.log("PrescoringGALP creado para CUPS:", extractedCups);
 
-                // Crear tarea en el corcho de Iranzu para solicitar prescoring
+                // Crear tarea en el corcho de Iranzu para solicitar prescoring (urgente, primera)
                 const IRANZU_EMAIL = 'iranzu@voltisenergia.com';
+                // Desplazar todas las tareas existentes de Iranzu para que la nueva quede primera
+                const tareasIranzu = await base44.asServiceRole.entities.TareaCorcho.filter({ propietario_email: IRANZU_EMAIL });
+                for (const tarea of tareasIranzu) {
+                    await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
+                }
                 await base44.asServiceRole.entities.TareaCorcho.create({
                     descripcion: `Solicitar prescoring CUPS: ${extractedCups}`,
                     notas: `Cliente: ${clienteData.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
                     completada: false,
-                    prioridad: 'amarillo',
-                    orden: Date.now(),
+                    prioridad: 'rojo',
+                    orden: 0,
                     creador_email: IRANZU_EMAIL,
                     propietario_email: IRANZU_EMAIL,
                 });
