@@ -408,13 +408,20 @@ export default function InformesPorPresentar() {
     }
 
     try {
-      const nuevosSuministros = cliente.suministros.map(s =>
-        s.id === suministroId ? { ...s, potencias_ignorado: true } : s
-      );
+      const nuevosSuministros = cliente.suministros.map(s => {
+        if (s.id === suministroId) {
+          // Solo marcar como ignorado, sin cambiar estado del cliente
+          return { ...s, potencias_ignorado: true };
+        }
+        return s;
+      });
+
+      // NO cambiar el estado del cliente, mantenerlo igual
       await updateClienteMutation.mutateAsync({
         id: cliente.id,
         data: { suministros: nuevosSuministros }
       });
+
       toast.success("Informe de potencias omitido. Puedes subir el informe final.");
     } catch (error) {
       console.error("Error:", error);
