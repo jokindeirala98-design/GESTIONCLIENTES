@@ -96,7 +96,7 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
         try {
           await base44.entities.TareaCorcho.create({
             descripcion: `Generar contrato ${cliente.nombre_negocio}`,
-            notas: `Cliente: ${cliente.nombre_negocio}. CIF: ${data.cif || "pendiente"}. DNI: ${data.dni_texto || "adjunto"}`,
+            notas: `Cliente ID: ${cliente.id} | CIF: ${data.cif || "pendiente"} | DNI: ${data.dni_texto || "adjunto"}`,
             completada: false,
             prioridad: "rojo",
             orden: 0,
