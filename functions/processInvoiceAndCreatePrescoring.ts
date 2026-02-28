@@ -20,21 +20,28 @@ Deno.serve(async (req) => {
         const esLuz20 = !esGas && suministro_tipo_factura === "2.0";
 
         // 1. Extract CUPS from the invoice using AI
-        // For image files, download and convert to base64 data URI so LLM can process them
+        // For image files, upload to get a public URL first
         let processableUrl = file_url;
         const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i);
         
         if (isImage) {
+            // Download the image as blob and re-upload to get a fresh public URL
             const imgResponse = await fetch(file_url);
-            const imgBuffer = await imgResponse.arrayBuffer();
-            const bytes = new Uint8Array(imgBuffer);
-            let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            const base64 = btoa(binary);
+            const imgArrayBuffer = await imgResponse.arrayBuffer();
+            const imgUint8 = new Uint8Array(imgArrayBuffer);
             const ext = file_url.toLowerCase().includes('.png') ? 'png' : 'jpeg';
-            processableUrl = `data:image/${ext};base64,${base64}`;
+            // Convert to base64 for uploading
+            let binary = '';
+            for (let i = 0; i < imgUint8.byteLength; i++) {
+                binary += String.fromCharCode(imgUint8[i]);
+            }
+            const base64Data = btoa(binary);
+            const base64File = `data:image/${ext};base64,${base64Data}`;
+            const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: base64File });
+            if (uploadResult?.file_url) {
+                processableUrl = uploadResult.file_url;
+                console.log("Imagen re-subida a URL pública:", processableUrl);
+            }
         }
 
         const extractionResult = await base44.integrations.Core.InvokeLLM({
