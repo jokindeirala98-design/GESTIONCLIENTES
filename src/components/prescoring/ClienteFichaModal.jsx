@@ -43,7 +43,7 @@ export default function ClienteFichaModal({ cups, onClose }) {
   };
 
   return (
-    <Dialog open={!!cups} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[#004D9D] flex items-center gap-2">
