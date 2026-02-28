@@ -311,18 +311,96 @@ export default function ReadyToGo() {
           </TabsTrigger>
         </TabsList>
 
-      {zonasOrdenadas.length === 0 ? (
-        <Card className="border-none shadow-md">
-          <CardContent className="p-12 text-center">
-            <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-[#666666] text-lg">No hay clientes listos</p>
-            <p className="text-gray-400 text-sm mt-2">
-              Los clientes aparecerán aquí cuando tengan informes listos para presentar
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        zonasOrdenadas.map(zonaNombre => {
+        {/* SECCIÓN 1: CLIENTES PARA VISITAR */}
+        <TabsContent value="visitar" className="space-y-4">
+          {clientesParaVisitar.length === 0 ? (
+            <Card className="border-none shadow-md">
+              <CardContent className="p-12 text-center">
+                <Eye className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-[#666666] text-lg">No hay clientes para visitar</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Los clientes con estudios listos aparecerán aquí
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <ClientesParaVisitarSection
+              clientes={clientesParaVisitar}
+              zonas={zonas}
+              user={user}
+              isAdmin={isAdmin}
+              navigate={navigate}
+              getArchivosValidos={getArchivosValidos}
+              tipoColors={tipoColors}
+            />
+          )}
+        </TabsContent>
+
+        {/* SECCIÓN 2: CLIENTES PENDIENTES DE ESTUDIO */}
+        <TabsContent value="pendientes-estudio" className="space-y-4">
+          {clientesPendientesEstudio.length === 0 ? (
+            <Card className="border-none shadow-md">
+              <CardContent className="p-12 text-center">
+                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-[#666666] text-lg">No hay clientes pendientes</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Los clientes con facturas pero sin estudios aparecerán aquí
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <ClientesPendientesEstudioSection
+              clientes={clientesPendientesEstudio}
+              zonas={zonas}
+              user={user}
+              navigate={navigate}
+              tipoColors={tipoColors}
+            />
+          )}
+        </TabsContent>
+
+        {/* SECCIÓN 3: CONTRATOS PENDIENTES DE FIRMA */}
+        <TabsContent value="contratos" className="space-y-4">
+          {contractosPendienteFirma.length === 0 ? (
+            <Card className="border-none shadow-md">
+              <CardContent className="p-12 text-center">
+                <FileCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-[#666666] text-lg">No hay contratos pendientes</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Los contratos listos para firmar aparecerán aquí
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <ContratosParaFirmarSection
+              clientes={contractosPendienteFirma}
+              zonas={zonas}
+              user={user}
+              isAdmin={isAdmin}
+              navigate={navigate}
+              handleCambiarEstado={handleCambiarEstado}
+              tipoColors={tipoColors}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// COMPONENTE: Clientes para visitar (con estudios listos)
+function ClientesParaVisitarSection({ clientes, zonas, user, isAdmin, navigate, getArchivosValidos, tipoColors }) {
+  const clientesPorZona = clientes.reduce((acc, cliente) => {
+    const zona = zonas.find(z => z.id === cliente.zona_id);
+    const zonaNombre = zona?.nombre || "Sin zona";
+    if (!acc[zonaNombre]) acc[zonaNombre] = [];
+    acc[zonaNombre].push(cliente);
+    return acc;
+  }, {});
+
+  return (
+    <>
+      {Object.keys(clientesPorZona).map(zonaNombre => (
           const zona = zonas.find(z => z.nombre === zonaNombre);
           const otrosComerciales = zona ? clientes.filter(c => 
             c.zona_id === zona.id && 
