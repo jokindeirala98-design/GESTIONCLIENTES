@@ -25,22 +25,27 @@ Deno.serve(async (req) => {
         const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i);
         
         if (isImage) {
-            // Download the image as blob and re-upload to get a fresh public URL
+            // Download and re-upload the image using FormData/Blob
             const imgResponse = await fetch(file_url);
-            const imgArrayBuffer = await imgResponse.arrayBuffer();
-            const imgUint8 = new Uint8Array(imgArrayBuffer);
+            const imgBlob = await imgResponse.blob();
             const ext = file_url.toLowerCase().includes('.png') ? 'png' : 'jpeg';
-            // Convert to base64 for uploading
-            let binary = '';
-            for (let i = 0; i < imgUint8.byteLength; i++) {
-                binary += String.fromCharCode(imgUint8[i]);
-            }
-            const base64Data = btoa(binary);
-            const base64File = `data:image/${ext};base64,${base64Data}`;
-            const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: base64File });
-            if (uploadResult?.file_url) {
-                processableUrl = uploadResult.file_url;
-                console.log("Imagen re-subida a URL pública:", processableUrl);
+            const mimeType = `image/${ext}`;
+            
+            // Upload via raw fetch to the Base44 upload endpoint
+            const formData = new FormData();
+            formData.append('file', new Blob([imgBlob], { type: mimeType }), `invoice.${ext}`);
+            
+            const uploadResp = await fetch(`https://base44.app/api/apps/${Deno.env.get('BASE44_APP_ID')}/integrations/core/upload-file`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': req.headers.get('Authorization') || '',
+                },
+                body: formData,
+            });
+            if (uploadResp.ok) {
+                const uploadData = await uploadResp.json();
+                processableUrl = uploadData.file_url;
+                console.log("Imagen re-subida:", processableUrl);
             }
         }
 
