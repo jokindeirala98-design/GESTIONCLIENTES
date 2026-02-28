@@ -20,15 +20,20 @@ Deno.serve(async (req) => {
         const esLuz20 = !esGas && suministro_tipo_factura === "2.0";
 
         // 1. Extract CUPS from the invoice using AI
-        // Ensure the file_url has a proper image extension if it's an image
+        // For image files, download and re-upload so the LLM can process them correctly
         let processableUrl = file_url;
-        // Check if url contains image filenames without extension in the URL path
-        const isJpegImage = file_url.toLowerCase().includes('.jpeg') || file_url.toLowerCase().includes('.jpg') || file_url.toLowerCase().includes('_img_') || file_url.toLowerCase().includes('IMG_');
-        const isPngImage = file_url.toLowerCase().includes('.png');
+        const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i) || 
+                        file_url.toLowerCase().includes('image/');
         
-        // If the URL doesn't have an extension but we know it's an image type, append it
-        if ((isJpegImage || isPngImage) && !file_url.match(/\.(jpeg|jpg|png|gif|webp)(\?|$)/i)) {
-            processableUrl = file_url + (isPngImage ? '.png' : '.jpeg');
+        if (isImage) {
+            // Download the image and re-upload it through Base44's upload to ensure correct MIME type
+            const imgResponse = await fetch(file_url);
+            const imgBlob = await imgResponse.blob();
+            // Determine file extension
+            const ext = file_url.toLowerCase().includes('.png') ? 'png' : 'jpeg';
+            const file = new File([imgBlob], `invoice.${ext}`, { type: `image/${ext}` });
+            const uploadResult = await base44.integrations.Core.UploadFile({ file });
+            processableUrl = uploadResult.file_url;
         }
 
         const extractionResult = await base44.integrations.Core.InvokeLLM({
