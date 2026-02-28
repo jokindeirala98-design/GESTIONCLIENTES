@@ -222,7 +222,7 @@ export default function ReadyToGo() {
     if (!isAdmin && c.propietario_email !== user.email) return false;
     
     const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
-    return suministrosNoLuz20.every(s => s.informe_potencias?.url && tieneInformeFinal(s));
+    return suministrosNoLuz20.every(s => tieneInformeFinal(s));
   });
 
   // SECCIÓN 1B: Clientes para visitar SOLO CON POTENCIAS (amarillo)
@@ -231,7 +231,7 @@ export default function ReadyToGo() {
     if (!isAdmin && c.propietario_email !== user.email) return false;
     
     const suministrosNoLuz20 = c.suministros?.filter(s => s.tipo_factura !== "2.0") || [];
-    return suministrosNoLuz20.some(s => s.informe_potencias?.url && !tieneInformeFinal(s));
+    return suministrosNoLuz20.some(s => (s.informe_potencias?.url || s.potencias_ignorado) && !tieneInformeFinal(s));
   });
 
   const clientesParaVisitar = [...clientesParaVisitarCompletos, ...clientesParaVisitarPotencias];
