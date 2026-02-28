@@ -1091,7 +1091,10 @@ export default function Calendario() {
                                            <Button
                                              size="sm"
                                              variant="outline"
-                                             onClick={() => setEditingTareaCorcho(tarea)}
+                                             onClick={(e) => {
+                                               e.stopPropagation();
+                                               setEditingTareaCorcho(tarea);
+                                             }}
                                            >
                                              ✏️ Editar
                                            </Button>
