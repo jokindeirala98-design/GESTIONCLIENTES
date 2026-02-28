@@ -249,12 +249,6 @@ export default function InformesPorPresentar() {
           // NO marcar como cerrado aquí - solo cuando se firma el cliente
           return {
             ...s,
-            informe_comparativo: {
-              nombre: informeSubido.files[0].fileName,
-              url: informeSubido.files[0].fileUrl,
-              fecha_subida: new Date().toISOString(),
-              subido_por_email: user.email
-            },
             informe_final: {
                 archivos: archivos,
                 fecha_subida: new Date().toISOString(),
