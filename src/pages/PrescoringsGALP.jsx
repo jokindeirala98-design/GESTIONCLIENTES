@@ -308,7 +308,7 @@ export default function PrescoringsGALP() {
               </th>
               <th className="px-3 py-3 text-left font-semibold text-xs w-8">#</th>
               <th className="px-3 py-3 text-center font-semibold text-xs w-16">ENVIADO</th>
-              <th className="px-2 py-3 w-8"></th>
+              <th className="px-2 py-3 w-10"></th>
               {COLUMNS.map(col => (
                 <th
                   key={col.key}
