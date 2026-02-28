@@ -393,7 +393,7 @@ export default function PrescoringsGALP() {
                         </span>
                         <button
                           onClick={() => setFichaModalCups(row.cups || row.nombre_razon_social || row.id)}
-                          className="bg-yellow-100 hover:bg-[#004D9D] text-[#004D9D] hover:text-white transition-colors p-1.5 rounded-lg border border-yellow-300 hover:border-[#004D9D] flex-shrink-0"
+                          className="hover:bg-gray-100 text-black hover:text-black transition-colors p-1.5 rounded-lg flex-shrink-0"
                           title="Ver ficha del cliente"
                         >
                           <Eye className="w-4 h-4" />
