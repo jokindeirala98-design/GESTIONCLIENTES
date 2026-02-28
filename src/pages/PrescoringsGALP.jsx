@@ -118,16 +118,28 @@ export default function PrescoringsGALP() {
     deleteMutation.mutate(id);
   };
 
-  const handleToggleEnviado = (row) => {
+  const handleToggleEnviado = async (row) => {
     if (row.denegado) {
-      // denegado -> reset (sin x ni tick)
+      // denegado -> reset
       updateMutation.mutate({ id: row.id, data: { enviado: false, denegado: false } });
     } else if (row.enviado) {
       // tick verde -> denegado
       updateMutation.mutate({ id: row.id, data: { enviado: false, denegado: true } });
     } else {
-      // x -> tick verde
+      // x -> tick verde: crear tarea en el corcho del usuario que hace click
       updateMutation.mutate({ id: row.id, data: { enviado: true, denegado: false } });
+
+      // Crear tarea automática en el corcho (como completada)
+      const nombre = row.nombre_razon_social || row.cups || "cliente";
+      await base44.entities.TareaCorcho.create({
+        descripcion: `Prescoring de ${nombre} realizado`,
+        completada: true,
+        fecha_completada: new Date().toISOString().split('T')[0],
+        prioridad: "verde",
+        orden: 9999,
+        creador_email: user?.email || "",
+        propietario_email: user?.email || "",
+      });
     }
   };
 
