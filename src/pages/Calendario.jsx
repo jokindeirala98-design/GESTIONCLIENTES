@@ -980,8 +980,8 @@ export default function Calendario() {
                               {(provided, snapshot) => {
                                 const clienteIdMatch = tarea.notas?.match(/Cliente ID:\s*([a-f0-9]+)/i);
                                 const clienteId = clienteIdMatch?.[1];
-                                const handleClick = () => {
-                                  if (clienteId) {
+                                const handleCardClick = (e) => {
+                                  if (clienteId && e.target === e.currentTarget) {
                                     navigate(createPageUrl(`DetalleCliente?id=${clienteId}`));
                                   }
                                 };
@@ -991,7 +991,7 @@ export default function Calendario() {
                                    ref={provided.innerRef}
                                    {...provided.draggableProps}
                                    {...provided.dragHandleProps}
-                                   onClick={handleClick}
+                                   onClick={handleCardClick}
                                    className={`${
                                      tarea.tiene_alerta ? 'border-2 border-red-500 bg-red-50' : 'hover:shadow-lg'
                                    } transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''} border-l-4 ${
@@ -999,7 +999,7 @@ export default function Calendario() {
                                      tarea.prioridad === 'amarillo' ? 'border-l-yellow-500' : 
                                      'border-l-green-500'
                                    } ${clienteId ? 'cursor-pointer' : ''}`}
-                                 >
+                                  >
                                    <CardContent className="p-4">
                                     {editingTareaCorcho?.id === tarea.id ? (
                                       <div className="space-y-3">
