@@ -1059,15 +1059,8 @@ export default function Calendario() {
                                             tarea.prioridad === 'amarillo' ? 'bg-yellow-500' : 
                                             'bg-green-500'
                                           }`} />
-                                          <div className="flex-1 cursor-pointer" onClick={() => {
-                                            // Extraer cliente_id de las notas (formato: "Cliente ID: xxxxx")
-                                            const clienteIdMatch = tarea.notas?.match(/Cliente ID:\s*([a-f0-9]+)/i);
-                                            const clienteId = clienteIdMatch?.[1];
-                                            if (clienteId) {
-                                              navigate(createPageUrl(`DetalleCliente?id=${clienteId}`));
-                                            }
-                                          }}>
-                                            <p className="font-semibold text-gray-800 mb-1 hover:text-[#004D9D] hover:underline">{tarea.descripcion}</p>
+                                          <div className="flex-1">
+                                            <p className="font-semibold text-gray-800 mb-1">{tarea.descripcion}</p>
                                             {tarea.notas && (
                                               <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{tarea.notas}</p>
                                             )}
