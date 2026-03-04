@@ -977,6 +977,7 @@ export default function InformesPorPresentar() {
                          const informeSubido = informesSubidos[suministro.id];
                          const estaGuardando = guardando[suministro.id];
                          const tienePotencias = !!(suministro.informe_potencias || suministro.potencias_ignorado);
+                         const esGas = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
 
                          return (
                             <Card key={suministro.id} className={`${tienePotencias ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 opacity-75'}`}>
