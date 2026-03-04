@@ -802,22 +802,30 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
                       </a>
 
                       {!cliente.contrato_firmado_url ? (
-                        <label className="w-full block cursor-pointer">
+                        <>
                           <input
                             type="file"
+                            id={`firmado-${cliente.id}`}
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            onChange={(e) => handleUploadContratoFirmado(cliente.id, e)}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadContratoFirmado(cliente.id, file);
+                              e.target.value = "";
+                            }}
                             className="hidden"
                             disabled={uploadContratoFirmadoMutation.isPending}
                           />
-                          <div className={`w-full text-center border rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                            uploadContratoFirmadoMutation.isPending 
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                              : "border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          }`}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            disabled={uploadContratoFirmadoMutation.isPending}
+                            onClick={() => document.getElementById(`firmado-${cliente.id}`).click()}
+                          >
                             {uploadContratoFirmadoMutation.isPending ? "Subiendo..." : "📤 Adjuntar contrato firmado"}
-                          </div>
-                        </label>
+                          </Button>
+                        </>
+
                       ) : (
                         <Button
                           size="sm"
