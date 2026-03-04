@@ -1050,7 +1050,7 @@ export default function InformesPorPresentar() {
                                   ) : suministro.informe_final ? (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                                       <div className="flex items-center justify-between mb-2">
-                                        <p className="text-sm text-green-700 font-semibold">✓ Informe(s) subido(s)</p>
+                                        <p className="text-sm text-green-700 font-semibold">✓ Informe(s) económico(s) subido(s)</p>
                                         <div className="flex gap-2">
                                           <Button
                                            size="sm"
