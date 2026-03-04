@@ -47,23 +47,8 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     setShowCreateDialog(false);
     toast.success(estadoCerrado ? "Suministro añadido - Cliente reactivado" : "Suministro añadido");
 
-    // Si es gas, crear tarea de prescoring para Iranzu
-    if (esGasSuministro) {
-      try {
-        await base44.entities.TareaCorcho.create({
-          descripcion: `Hacer prescoring ${cliente.nombre_negocio} - ${nuevoSuministro.nombre} (${nuevoSuministro.tipo_factura})`,
-          notas: `Cliente ID: ${cliente.id} | Suministro gas: ${nuevoSuministro.nombre}`,
-          completada: false,
-          prioridad: "amarillo",
-          orden: 0,
-          propietario_email: "iranzu@voltisenergia.com",
-          creador_email: "sistema",
-        });
-        toast.info("Tarea de prescoring creada para Iranzu");
-      } catch (e) {
-        console.warn("Error creando tarea prescoring:", e);
-      }
-    }
+    // La tarea de prescoring y el PrescoringGALP se crean automáticamente al subir la factura
+    // (función processInvoiceAndCreatePrescoring extrae el CUPS y crea la entrada)
   };
 
   const handleDeleteSuministro = (suministroId) => {
