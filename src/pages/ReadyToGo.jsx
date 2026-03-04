@@ -746,14 +746,10 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
     },
   });
 
-  const handleUploadContratoFirmado = (clienteId, event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const cliente = todosLosClientes.find(c => c.id === clienteId);
-      uploadContratoFirmadoMutation.mutate({ clienteId, file, cliente });
-    }
-    // Reset input para permitir subir el mismo archivo de nuevo
-    event.target.value = "";
+  const handleUploadContratoFirmado = (clienteId, file) => {
+    if (!file) return;
+    const cliente = todosLosClientes.find(c => c.id === clienteId);
+    uploadContratoFirmadoMutation.mutate({ clienteId, file, cliente });
   };
 
   const renderContratos = (clientes, tieneArchivo) => {
