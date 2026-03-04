@@ -355,7 +355,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                       )}
                       {suministro.informe_final && (
                         <div className="space-y-1">
-                          <p className="text-xs text-green-700 font-semibold">📄 Informe(s) final(es):</p>
+                          <p className="text-xs text-green-700 font-semibold">📄 Informe(s) económico(s):</p>
                           {suministro.informe_final.archivos?.filter(a => a?.url).map((archivo, idx) => (
                             <div key={idx} className="flex items-center justify-between bg-white border border-green-300 p-2 rounded">
                               <span className="text-sm text-green-800 truncate">{archivo.nombre}</span>
