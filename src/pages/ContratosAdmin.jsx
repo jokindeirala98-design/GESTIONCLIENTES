@@ -42,7 +42,7 @@ export default function ContratosAdmin() {
   // Clientes con DNI o CIF pero sin contrato original aún
   const clientesPendientesContrato = clientes.filter(c => {
     const doc = docs.find(d => d.cliente_id === c.id);
-    return (doc?.cif || doc?.dni_texto || doc?.dni_archivos?.length > 0) && !c.contrato_original_url;
+    return (doc?.cif || doc?.dni_texto || doc?.dni_archivos?.length > 0 || doc?.iban || doc?.iban_archivo_url) && !c.contrato_original_url;
   });
 
   // Clientes con contrato original, esperando contrato firmado del comercial
