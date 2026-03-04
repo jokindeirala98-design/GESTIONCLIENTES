@@ -991,14 +991,14 @@ export default function InformesPorPresentar() {
                                         <Badge className={tipoFacturaColors[suministro.tipo_factura]}>
                                           {suministro.tipo_factura}
                                         </Badge>
-                                        {!tienePotencias && !esGas(suministro.tipo_factura) && (
+                                        {!tienePotencias && !esGasSuministro && (
                                           <Badge className="bg-gray-400 text-white text-xs">⏳ Esperando informe de potencias</Badge>
                                         )}
-                                        {(tienePotencias || esGas(suministro.tipo_factura)) && !esGas(suministro.tipo_factura) && (
+                                        {tienePotencias && !esGasSuministro && (
                                           <Badge className="bg-blue-600 text-white text-xs">⚡ Potencias listas</Badge>
                                         )}
-                                        {esGas(suministro.tipo_factura) && (
-                                          <Badge className="bg-green-600 text-white text-xs">🔥 Gas - Sin potencias</Badge>
+                                        {esGasSuministro && (
+                                          <Badge className="bg-green-600 text-white text-xs">🔥 Gas - Informe económico directo</Badge>
                                         )}
                                       </div>
 
