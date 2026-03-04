@@ -701,14 +701,11 @@ function ClientesPendientesFirmaSection({ clientes, zonas, user, navigate, tipoC
 // COMPONENTE: Contratos para firmar
 function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zonas, user, isAdmin, navigate, tipoColors }) {
   const queryClient = useQueryClient();
+  const todosLosClientes = [...clientesConArchivo, ...clientesSinArchivo];
 
   const uploadContratoFirmadoMutation = useMutation({
-    mutationFn: async ({ clienteId, file }) => {
+    mutationFn: async ({ clienteId, file, cliente }) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
-      // Obtener cliente actual para calcular comisión
-      const cliente = clientes.find(c => c.id === clienteId);
-      if (!cliente) throw new Error("Cliente no encontrado");
       
       // Calcular comisión total de todos los suministros
       let comisionTotal = 0;
@@ -719,29 +716,44 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
       
-      // Actualizar cliente: contrato firmado, estado "Firmado con éxito", comisión y fecha de cierre
+      // Actualizar cliente: contrato firmado, estado "Pendiente de aprobación", comisión y fecha de cierre
       await base44.entities.Cliente.update(clienteId, { 
         contrato_firmado_url: file_url,
-        estado: "Firmado con éxito",
+        estado: "Pendiente de aprobación",
         comision: comisionTotal,
         fecha_cierre: fechaCierre,
         mes_comision: mesComision,
         aprobado_admin: false
+      });
+
+      // Crear tarea de tramitar contrato para Iranzu
+      await base44.entities.TareaCorcho.create({
+        descripcion: `Tramitar contrato ${cliente.nombre_negocio}`,
+        notas: `Cliente ID: ${cliente.id}`,
+        completada: false,
+        prioridad: "rojo",
+        orden: 0,
+        propietario_email: "iranzu@voltisenergia.com",
+        creador_email: "sistema",
       });
       
       return { clienteId, file_url };
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['clientes']);
-      toast.success("Contrato firmado adjuntado y cliente marcado como firmado con éxito");
+      queryClient.invalidateQueries(['tareasCorcho']);
+      toast.success("Contrato firmado adjuntado correctamente");
     },
   });
 
   const handleUploadContratoFirmado = (clienteId, event) => {
     const file = event.target.files?.[0];
     if (file) {
-      uploadContratoFirmadoMutation.mutate({ clienteId, file });
+      const cliente = todosLosClientes.find(c => c.id === clienteId);
+      uploadContratoFirmadoMutation.mutate({ clienteId, file, cliente });
     }
+    // Reset input para permitir subir el mismo archivo de nuevo
+    event.target.value = "";
   };
 
   const renderContratos = (clientes, tieneArchivo) => {
