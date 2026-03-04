@@ -1121,7 +1121,7 @@ export default function InformesPorPresentar() {
                                   ) : (
                                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                       <div className="flex items-center justify-between mb-3">
-                                        <p className="text-sm font-semibold text-purple-900">📤 Subir informe comparativo (PDF) para este suministro</p>
+                                        <p className="text-sm font-semibold text-purple-900">📤 Subir informe económico (PDF) para este suministro</p>
                                         <Button
                                           size="sm"
                                           onClick={() => openYaEsClienteDialog(cliente, suministro.id)}
