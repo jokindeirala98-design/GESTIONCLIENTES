@@ -243,66 +243,71 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                               <h4 className="text-sm font-semibold text-yellow-800">Informes</h4>
                             </div>
 
-                            {/* Informe de Potencias */}
-                             <div className="rounded-lg border p-2 bg-yellow-50 border-yellow-200">
-                               <div className="flex items-center justify-between mb-1">
-                                 <p className="text-xs font-semibold text-yellow-800">⚡ Informe de Potencias</p>
-                               </div>
-                               {suministro.potencias_ignorado ? (
-                                 <div className="flex items-center justify-between">
-                                   <p className="text-xs text-gray-500 italic">Omitido</p>
-                                   {isOwnerOrAdmin && (
-                                     <Button size="sm" variant="ghost" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-0 text-xs text-amber-600 hover:text-amber-800">
-                                       <SkipForward className="w-3.5 h-3.5" />
-                                     </Button>
-                                   )}
-                                 </div>
-                               ) : suministro.informe_potencias ? (
-                                 <div className="flex items-center justify-between bg-white border border-yellow-300 p-1.5 rounded">
-                                   <span className="text-xs text-yellow-700 truncate flex-1">{suministro.informe_potencias.nombre}</span>
-                                   <div className="flex items-center gap-1">
-                                     <a href={suministro.informe_potencias.url} download={suministro.informe_potencias.nombre} className="text-yellow-600 hover:text-yellow-800">
-                                       <Download className="w-3.5 h-3.5" />
-                                     </a>
-                                     {isOwnerOrAdmin && (
-                                       <Button size="sm" variant="ghost" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-0 text-xs text-yellow-600 hover:text-yellow-800">
-                                         <X className="w-3.5 h-3.5" />
-                                       </Button>
-                                     )}
-                                   </div>
-                                 </div>
-                               ) : (
-                                 <div className="flex items-center justify-between">
-                                   <p className="text-xs text-gray-400 italic">Pendiente (José lo adjuntará)</p>
-                                   {isOwnerOrAdmin && (
-                                     <Button size="sm" variant="outline" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-1 text-xs text-gray-600 hover:bg-yellow-100">
-                                       <SkipForward className="w-3 h-3 mr-0.5" /> Omitir
-                                     </Button>
-                                   )}
-                                 </div>
-                               )}
-                             </div>
+                            {/* Informe de Potencias - solo para luz */}
+                            {!esGas(suministro.tipo_factura) && (
+                              <div className="rounded-lg border p-2 bg-yellow-50 border-yellow-200">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-xs font-semibold text-yellow-800">⚡ Informe de Potencias</p>
+                                </div>
+                                {suministro.potencias_ignorado ? (
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs text-gray-500 italic">Omitido</p>
+                                    {isOwnerOrAdmin && (
+                                      <Button size="sm" variant="ghost" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-0 text-xs text-amber-600 hover:text-amber-800">
+                                        <SkipForward className="w-3.5 h-3.5" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ) : suministro.informe_potencias ? (
+                                  <a href={suministro.informe_potencias.url} download={suministro.informe_potencias.nombre} className="flex items-center gap-2 bg-white border border-yellow-300 p-2 rounded hover:bg-yellow-50 transition-colors">
+                                    <Download className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+                                    <span className="text-xs text-yellow-700 truncate flex-1">{suministro.informe_potencias.nombre}</span>
+                                    {isOwnerOrAdmin && (
+                                      <button onClick={(e) => { e.preventDefault(); handleIgnorarPotencias(suministro.id); }} className="text-red-400 hover:text-red-600 ml-1">
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </a>
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs text-gray-400 italic">Pendiente (José lo adjuntará)</p>
+                                    {isOwnerOrAdmin && (
+                                      <Button size="sm" variant="outline" onClick={() => handleIgnorarPotencias(suministro.id)} className="h-6 p-1 text-xs text-gray-600 hover:bg-yellow-100">
+                                        <SkipForward className="w-3 h-3 mr-0.5" /> Omitir
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
-                            {/* Informe Final */}
+                            {/* Informe Económico */}
                             <div className="rounded-lg border p-2 bg-green-50 border-green-200">
-                              <p className="text-xs font-semibold text-green-800 mb-1">📄 Informe Final</p>
+                              <p className="text-xs font-semibold text-green-800 mb-2">📄 Informe Económico</p>
                               {tieneInformeFinal ? (
-                                <div className="space-y-1">
+                                <div className="space-y-1.5">
                                   {suministro.informe_final?.archivos?.filter(a => a?.url && a.url !== 'null').map((archivo, idx) => (
-                                    <div key={idx} className="flex items-center justify-between bg-white border border-green-300 p-1.5 rounded">
-                                      <span className="text-xs text-green-700 truncate flex-1">{archivo.nombre}</span>
-                                      <a href={archivo.url} download={archivo.nombre} className="text-green-600 hover:text-green-800 ml-2">
-                                        <Download className="w-3.5 h-3.5" />
-                                      </a>
-                                    </div>
+                                    <a
+                                      key={idx}
+                                      href={archivo.url}
+                                      download={archivo.nombre}
+                                      className="flex items-center gap-2 bg-white border border-green-300 p-2 rounded hover:bg-green-100 transition-colors active:bg-green-200"
+                                    >
+                                      <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                      <span className="text-xs text-green-700 truncate flex-1 min-w-0">{archivo.nombre}</span>
+                                      <Download className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    </a>
                                   ))}
                                   {suministro.informe_final?.url && suministro.informe_final.url !== 'null' && !suministro.informe_final?.archivos?.length && (
-                                    <div className="flex items-center justify-between bg-white border border-green-300 p-1.5 rounded">
-                                      <span className="text-xs text-green-700 truncate flex-1">{suministro.informe_final.nombre || 'Informe final'}</span>
-                                      <a href={suministro.informe_final.url} download={suministro.informe_final.nombre} className="text-green-600 hover:text-green-800 ml-2">
-                                        <Download className="w-3.5 h-3.5" />
-                                      </a>
-                                    </div>
+                                    <a
+                                      href={suministro.informe_final.url}
+                                      download={suministro.informe_final.nombre}
+                                      className="flex items-center gap-2 bg-white border border-green-300 p-2 rounded hover:bg-green-100 transition-colors active:bg-green-200"
+                                    >
+                                      <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                      <span className="text-xs text-green-700 truncate flex-1 min-w-0">{suministro.informe_final.nombre || 'Informe económico'}</span>
+                                      <Download className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    </a>
                                   )}
                                   {suministro.informe_final?.notas_admin && (
                                     <div className="bg-blue-50 border border-blue-200 rounded p-1.5 mt-1">
@@ -312,7 +317,11 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                                   )}
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-400 italic">{tienePotencias ? "Pendiente (Nicolás lo adjuntará)" : "Esperando informe de potencias"}</p>
+                                <p className="text-xs text-gray-400 italic">
+                                  {esGas(suministro.tipo_factura)
+                                    ? "Pendiente (admin lo adjuntará)"
+                                    : tienePotencias ? "Pendiente (Nicolás lo adjuntará)" : "Esperando informe de potencias"}
+                                </p>
                               )}
                             </div>
                           </div>
