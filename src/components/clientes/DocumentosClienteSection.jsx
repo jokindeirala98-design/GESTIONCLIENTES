@@ -84,28 +84,26 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
       setEditando(false);
       toast.success("Documentos guardados");
 
-      // Si se acaba de guardar DNI o CIF y no había tarea ya creada → crear tarea en Iranzu
+      // Si se acaba de guardar IBAN (texto o archivo) y no había tarea ya creada → crear tarea en Iranzu
       const docActual = docs;
-      const teniaDni = docActual?.dni_texto || docActual?.dni_archivos?.length > 0;
-      const teniaCif = docActual?.cif;
       const tarea_ya_creada = docActual?.tarea_contrato_creada;
-      const ahoraTieneDni = data.dni_texto || (data.dni_archivos && data.dni_archivos.length > 0);
-      const ahoraTieneCif = data.cif;
+      const ahoraTieneIban = data.iban || data.iban_archivo_url;
 
-      if (!tarea_ya_creada && (ahoraTieneDni || ahoraTieneCif) && (!teniaDni && !teniaCif)) {
+      if (!tarea_ya_creada && ahoraTieneIban) {
         try {
           await base44.entities.TareaCorcho.create({
             descripcion: `Generar contrato ${cliente.nombre_negocio}`,
-            notas: `Cliente ID: ${cliente.id} | CIF: ${data.cif || "pendiente"} | DNI: ${data.dni_texto || "adjunto"}`,
+            notas: `Cliente ID: ${cliente.id}`,
             completada: false,
             prioridad: "rojo",
             orden: 0,
             propietario_email: "iranzu@voltisenergia.com",
             creador_email: "sistema",
           });
-          // Marcar tarea creada
-          if (savedDoc?.id) {
-            await base44.entities.DocumentosCliente.update(savedDoc.id, { tarea_contrato_creada: true });
+          // Marcar tarea creada para no duplicar
+          const docIdToUpdate = savedDoc?.id || docs?.id;
+          if (docIdToUpdate) {
+            await base44.entities.DocumentosCliente.update(docIdToUpdate, { tarea_contrato_creada: true });
           }
           toast.info("Tarea de contrato creada para Iranzu");
         } catch (e) {
