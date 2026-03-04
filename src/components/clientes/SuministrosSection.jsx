@@ -24,17 +24,46 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   const tarifasLuz = ["2.0", "3.0", "6.1", "6.2"];
   const tarifasGas = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
 
-  const handleCreateSuministro = () => {
+  const esGas = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
+
+  const handleCreateSuministro = async () => {
     if (!nuevoSuministro.nombre.trim()) { toast.error("El nombre del suministro es obligatorio"); return; }
     if (!nuevoSuministro.tipo_factura) { toast.error("Selecciona el tipo de tarifa"); return; }
 
     const nuevoId = Date.now().toString();
-    const nuevosSuministros = [...suministros, { id: nuevoId, nombre: nuevoSuministro.nombre, tipo_factura: nuevoSuministro.tipo_factura, facturas: [], cerrado: false }];
+    const esGasSuministro = esGas(nuevoSuministro.tipo_factura);
+    const nuevosSuministros = [...suministros, {
+      id: nuevoId,
+      nombre: nuevoSuministro.nombre,
+      tipo_factura: nuevoSuministro.tipo_factura,
+      facturas: [],
+      cerrado: false,
+      // Gas: potencias siempre omitidas
+      ...(esGasSuministro ? { potencias_ignorado: true } : {})
+    }];
     const estadoCerrado = cliente.estado === "Firmado con éxito";
     setSuministros(nuevosSuministros);
     onUpdate(estadoCerrado ? { suministros: nuevosSuministros, estado: "Esperando facturas" } : { suministros: nuevosSuministros });
     setShowCreateDialog(false);
     toast.success(estadoCerrado ? "Suministro añadido - Cliente reactivado" : "Suministro añadido");
+
+    // Si es gas, crear tarea de prescoring para Iranzu
+    if (esGasSuministro) {
+      try {
+        await base44.entities.TareaCorcho.create({
+          descripcion: `Hacer prescoring ${cliente.nombre_negocio} - ${nuevoSuministro.nombre} (${nuevoSuministro.tipo_factura})`,
+          notas: `Cliente ID: ${cliente.id} | Suministro gas: ${nuevoSuministro.nombre}`,
+          completada: false,
+          prioridad: "amarillo",
+          orden: 0,
+          propietario_email: "iranzu@voltisenergia.com",
+          creador_email: "sistema",
+        });
+        toast.info("Tarea de prescoring creada para Iranzu");
+      } catch (e) {
+        console.warn("Error creando tarea prescoring:", e);
+      }
+    }
   };
 
   const handleDeleteSuministro = (suministroId) => {
