@@ -1036,7 +1036,7 @@ export default function InformesPorPresentar() {
                                     </div>
                                   </div>
 
-                                  {!tienePotencias ? (
+                                  {!tienePotencias && !esGas(suministro.tipo_factura) ? (
                                     <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
                                       <div className="flex items-center justify-between gap-2">
                                         <p className="text-sm text-gray-500">Esperando a que José suba el informe de potencias</p>
