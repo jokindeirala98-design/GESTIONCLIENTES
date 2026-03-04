@@ -981,7 +981,7 @@ export default function InformesPorPresentar() {
                          const esGas = (tipo) => ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(tipo);
 
                          return (
-                            <Card key={suministro.id} className={`${tienePotencias ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 opacity-75'}`}>
+                            <Card key={suministro.id} className={`${(tienePotencias || esGasSuministro) ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 opacity-75'}`}>
                               <CardContent className="p-4">
                                 <div className="flex flex-col gap-4">
                                   <div className="flex items-start justify-between">
