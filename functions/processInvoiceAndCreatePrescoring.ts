@@ -116,7 +116,7 @@ Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve 
                     }
                     await base44.asServiceRole.entities.TareaCorcho.create({
                         descripcion: `Solicitar prescoring CUPS: ${extractedCups} - ${clienteData.nombre_negocio}`,
-                        notas: `Cliente ID: ${cliente_id} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
+                        notas: `Cliente: ${clienteData.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
                         completada: false,
                         prioridad: 'rojo',
                         orden: 0,
