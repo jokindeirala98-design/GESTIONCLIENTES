@@ -974,6 +974,7 @@ export default function InformesPorPresentar() {
                     <CardContent className="pt-0">
                       <div className="space-y-4">
                        {cliente.suministros?.filter(s => !s.cerrado && s.facturas && s.facturas.length > 0 && !s.informe_final).map((suministro) => {
+                         const esGasSuministro = ["RL1","RL2","RL3","RL4","RL5","RL6"].includes(suministro.tipo_factura);
                          const informeSubido = informesSubidos[suministro.id];
                          const estaGuardando = guardando[suministro.id];
                          const tienePotencias = !!(suministro.informe_potencias || suministro.potencias_ignorado);
