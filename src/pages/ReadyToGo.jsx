@@ -806,25 +806,21 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
                       </a>
 
                       {!cliente.contrato_firmado_url ? (
-                        <label>
+                        <label className="w-full block cursor-pointer">
                           <input
                             type="file"
-                            accept=".pdf,.doc,.docx"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                             onChange={(e) => handleUploadContratoFirmado(cliente.id, e)}
                             className="hidden"
                             disabled={uploadContratoFirmadoMutation.isPending}
                           />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full cursor-pointer"
-                            asChild
-                            disabled={uploadContratoFirmadoMutation.isPending}
-                          >
-                            <span>
-                              {uploadContratoFirmadoMutation.isPending ? "Subiendo..." : "📤 Adjuntar contrato firmado"}
-                            </span>
-                          </Button>
+                          <div className={`w-full text-center border rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                            uploadContratoFirmadoMutation.isPending 
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                              : "border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                          }`}>
+                            {uploadContratoFirmadoMutation.isPending ? "Subiendo..." : "📤 Adjuntar contrato firmado"}
+                          </div>
                         </label>
                       ) : (
                         <Button
