@@ -208,6 +208,39 @@ export default function PlanPagoSection({ cliente, canEdit }) {
         </div>
       )}
 
+      {/* Historial de planes finalizados/cancelados */}
+      {planesHistorial.length > 0 && (
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-2">Historial de planes</p>
+          <div className="space-y-2">
+            {planesHistorial.map((plan) => (
+              <div key={plan.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-xs font-semibold text-gray-700">{TIPO_LABEL[plan.tipo_plan]} · {FRECUENCIA_LABEL[plan.frecuencia_pago]}</p>
+                  <p className="text-xs text-gray-400">
+                    {plan.importe_total?.toFixed(2)} € · Activado {plan.fecha_activacion ? format(new Date(plan.fecha_activacion), "dd MMM yyyy", { locale: es }) : "—"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${plan.estado === "finalizado" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    {plan.estado}
+                  </span>
+                  {canEdit && (
+                    <button
+                      onClick={() => handleEliminarPlanHistorial(plan)}
+                      className="text-red-400 hover:text-red-600 transition-colors"
+                      title="Eliminar del historial"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ActivarPlanDialog
         open={showDialog}
         onClose={() => setShowDialog(false)}
