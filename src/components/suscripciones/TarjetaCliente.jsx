@@ -1,8 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, FileText, Clock } from "lucide-react";
+import { CheckCircle, FileText, ExternalLink } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const TIPO_PLAN_LABEL = {
   ahorro_25: "25% del ahorro",
