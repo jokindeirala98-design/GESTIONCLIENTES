@@ -173,9 +173,9 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                           <div className="flex items-center gap-2 flex-1">
                             {editingId === suministro.id ? (
                               <div className="flex items-center gap-2 flex-1">
-                                <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="h-8 text-sm" />
+                                <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="h-8 text-sm" onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(suministro.id); if (e.key === 'Escape') { isEditingRef.current = false; setEditingId(null); } }} />
                                 <Button size="sm" onClick={() => handleSaveName(suministro.id)} className="h-8 bg-green-600 hover:bg-green-700"><Check className="w-4 h-4" /></Button>
-                                <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="h-8"><X className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="outline" onClick={() => { isEditingRef.current = false; setEditingId(null); }} className="h-8"><X className="w-4 h-4" /></Button>
                               </div>
                             ) : (
                               <div className="flex-1 min-w-0">
