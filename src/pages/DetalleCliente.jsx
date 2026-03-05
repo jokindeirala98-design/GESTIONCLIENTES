@@ -896,6 +896,12 @@ export default function DetalleCliente() {
           onUpdate={handleUpdate}
           isOwnerOrAdmin={canEdit}
         />
+
+        <ClientesVinculadosSection
+          cliente={cliente}
+          isOwnerOrAdmin={canEdit}
+          user={user}
+        />
       </div>
 
       {showEditDialog && (
