@@ -16,7 +16,8 @@ import {
   X,
   LogOut,
   UserCircle2,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  CreditCard
 } from "lucide-react";
 import {
   Sidebar,
