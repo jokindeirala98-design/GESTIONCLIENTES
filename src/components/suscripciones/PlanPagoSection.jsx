@@ -25,6 +25,7 @@ export default function PlanPagoSection({ cliente, canEdit }) {
   });
 
   const planActivo = planes.find((p) => p.estado === "activo");
+  const planesHistorial = planes.filter((p) => p.estado !== "activo");
 
   const { data: cuotas = [] } = useQuery({
     queryKey: ["cuotas_pago", planActivo?.id],
@@ -33,6 +34,16 @@ export default function PlanPagoSection({ cliente, canEdit }) {
   });
 
   const proximaCuota = cuotas.sort((a, b) => a.fecha_vencimiento?.localeCompare(b.fecha_vencimiento))[0];
+
+  const handleEliminarPlanHistorial = async (plan) => {
+    const todasCuotas = await base44.entities.CuotaPago.filter({ plan_pago_id: plan.id });
+    await Promise.all(todasCuotas.map(c => base44.entities.CuotaPago.delete(c.id)));
+    await base44.entities.PlanPago.delete(plan.id);
+    queryClient.invalidateQueries({ queryKey: ["planes_pago", cliente.id] });
+    queryClient.invalidateQueries({ queryKey: ["planes_pago"] });
+    queryClient.invalidateQueries({ queryKey: ["cuotas_pago"] });
+    toast.success("Plan eliminado del historial");
+  };
 
   const handleVerEnSuscripciones = () => {
     window.location.href = createPageUrl(`Suscripciones?cliente_id=${cliente.id}`);
