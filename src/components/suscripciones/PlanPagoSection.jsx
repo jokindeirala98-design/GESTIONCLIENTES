@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Plus, Calendar, FileText, ExternalLink } from "lucide-react";
+import { CreditCard, Plus, Calendar, FileText, ExternalLink, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import ActivarPlanDialog from "./ActivarPlanDialog";
