@@ -18,13 +18,14 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   const [suministros, setSuministros] = useState(cliente.suministros || []);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const isEditingRef = React.useRef(false);
 
   // Sync local state when cliente.suministros changes, but NOT while editing a name
   useEffect(() => {
-    if (!editingId) {
+    if (!isEditingRef.current) {
       setSuministros(cliente.suministros || []);
     }
-  }, [cliente.suministros, editingId]);
+  }, [cliente.suministros]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [nuevoSuministro, setNuevoSuministro] = useState({ nombre: "", energia: "", tipo_factura: "" });
 
