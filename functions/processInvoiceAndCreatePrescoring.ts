@@ -19,6 +19,14 @@ Deno.serve(async (req) => {
         const esGas = GAS_TARIFAS.includes(suministro_tipo_factura);
         const esLuz20 = !esGas && suministro_tipo_factura === "2.0";
 
+        // 0. Si el suministro ya tiene CUPS, no hacer nada (factura duplicada/página adicional)
+        const clienteDataPre = await base44.asServiceRole.entities.Cliente.get(cliente_id);
+        const suministroPre = (clienteDataPre.suministros || []).find(s => s.id === suministro_id);
+        if (suministroPre?.cups) {
+            console.log(`Suministro ${suministro_id} ya tiene CUPS (${suministroPre.cups}), ignorando esta factura.`);
+            return Response.json({ success: true, extractedCups: suministroPre.cups, skipped: true });
+        }
+
         // 1. Extract CUPS from the invoice using AI
         const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i);
 
