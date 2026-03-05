@@ -16,6 +16,11 @@ import {
 
 export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }) {
   const [suministros, setSuministros] = useState(cliente.suministros || []);
+
+  // Sync local state when cliente.suministros changes (e.g. data added via WhatsApp bot)
+  React.useEffect(() => {
+    setSuministros(cliente.suministros || []);
+  }, [cliente.suministros]);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
