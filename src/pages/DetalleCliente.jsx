@@ -898,6 +898,11 @@ export default function DetalleCliente() {
           isOwnerOrAdmin={canEdit}
         />
 
+        <PlanPagoSection
+          cliente={cliente}
+          canEdit={canEdit}
+        />
+
         <ClientesVinculadosSection
           cliente={cliente}
           isOwnerOrAdmin={canEdit}
