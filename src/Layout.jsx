@@ -128,6 +128,11 @@ export default function Layout({ children }) {
       icon: UsersIcon,
     },
     {
+      title: "Suscripciones",
+      url: createPageUrl("Suscripciones"),
+      icon: CreditCard,
+    },
+    {
       title: "Calendario",
       url: createPageUrl("Calendario"),
       icon: CalendarIcon,
