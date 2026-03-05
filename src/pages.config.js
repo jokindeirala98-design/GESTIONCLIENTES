@@ -67,8 +67,8 @@ import InformesPorPresentar from './pages/InformesPorPresentar';
 import InformesPotencias from './pages/InformesPotencias';
 import PrescoringsGALP from './pages/PrescoringsGALP';
 import ReadyToGo from './pages/ReadyToGo';
-import Zonas from './pages/Zonas';
 import Suscripciones from './pages/Suscripciones';
+import Zonas from './pages/Zonas';
 import __Layout from './Layout.jsx';
 
 
@@ -93,8 +93,8 @@ export const PAGES = {
     "InformesPotencias": InformesPotencias,
     "PrescoringsGALP": PrescoringsGALP,
     "ReadyToGo": ReadyToGo,
-    "Zonas": Zonas,
     "Suscripciones": Suscripciones,
+    "Zonas": Zonas,
 }
 
 export const pagesConfig = {

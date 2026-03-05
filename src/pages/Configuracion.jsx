@@ -245,6 +245,35 @@ export default function Configuracion() {
           </CardContent>
         </Card>
 
+        <Card className="border-none shadow-md">
+          <CardHeader className="border-b bg-gradient-to-r from-green-600 to-green-700">
+            <CardTitle className="text-white flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Bot de Gestión de Clientes (WhatsApp)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <p className="text-[#666666]">
+                Conecta tu WhatsApp para gestionar clientes, consultar estados y recibir avisos directamente por WhatsApp.
+              </p>
+              <a 
+                href={base44.agents.getWhatsAppConnectURL('gestor_clientes_whatsapp')} 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="bg-green-700 hover:bg-green-800 w-full md:w-auto">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  💬 Conectar WhatsApp
+                </Button>
+              </a>
+              <p className="text-xs text-gray-500">
+                Podrás consultar y actualizar clientes desde WhatsApp
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {isAdmin && (
           <Card className="border-none shadow-md">
             <CardHeader className="border-b bg-gradient-to-r from-orange-500 to-orange-600">
