@@ -160,7 +160,6 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
   };
 
   const campos = [
-    { key: "cups", label: "CUPS", tipo: "texto" },
     { key: "cif", label: "CIF", tipo: "texto" },
     { key: "nombre_empresa", label: "Nombre empresa", tipo: "texto" },
     { key: "consumo_anual", label: "Consumo anual (kWh)", tipo: "numero" },
