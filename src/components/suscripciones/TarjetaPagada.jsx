@@ -21,10 +21,10 @@ export default function TarjetaPagada({ plan, cuota }) {
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
             <h3 className="font-semibold text-gray-800 truncate text-sm">{plan.cliente_nombre}</h3>
-            {plan.frecuencia_pago === "trimestral" && (
-              <Badge className="bg-blue-50 text-blue-600 border-0 text-xs font-normal">
-                Cuota #{cuota.numero_cuota}
-              </Badge>
+            {plan.frecuencia_pago === "trimestral" && cuota?.numero_cuota && (
+              <span className="flex-shrink-0 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5">
+                Pagado {cuota.numero_cuota}/4
+              </span>
             )}
           </div>
 
