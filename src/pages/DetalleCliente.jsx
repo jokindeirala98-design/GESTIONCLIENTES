@@ -16,6 +16,7 @@ import SuministrosSection from "../components/clientes/SuministrosSection.jsx";
 import EventosSection from "../components/clientes/EventosSection.jsx";
 import DocumentosClienteSection from "../components/clientes/DocumentosClienteSection.jsx";
 import ContratoClienteSection from "../components/clientes/ContratoClienteSection.jsx";
+import ClientesVinculadosSection from "../components/clientes/ClientesVinculadosSection.jsx";
 import {
   Select,
   SelectContent,
