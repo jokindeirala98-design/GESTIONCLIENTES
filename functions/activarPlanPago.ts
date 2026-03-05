@@ -1,46 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-// Los pagos trimestrales caen siempre el día 27 de los meses de cierre de trimestre:
-// Q1 → 27 marzo, Q2 → 27 junio, Q3 → 27 septiembre, Q4 → 27 diciembre
-// El primer pago es el día 27 del SIGUIENTE trimestre después de la activación.
-function calcularFechaVencimientoTrimestral(fechaActivacion, numeroCuota) {
+// Primer vencimiento: fecha_activacion + 3 meses - 5 días
+function calcularPrimerVencimiento(fechaActivacion) {
   const fecha = new Date(fechaActivacion + 'T12:00:00');
-  const mesActivacion = fecha.getMonth(); // 0-11
-  const anioActivacion = fecha.getFullYear();
-
-  // Meses de cierre de trimestre (0-indexed): marzo=2, junio=5, septiembre=8, diciembre=11
-  const mesesCierre = [2, 5, 8, 11];
-
-  // Encontrar el próximo mes de cierre DESPUÉS de la fecha de activación
-  // Si la activación cae exactamente en el mes de cierre, también va al siguiente
-  let mesProximoCierre = null;
-  let anioProximoCierre = anioActivacion;
-
-  for (const mes of mesesCierre) {
-    const fechaCierre = new Date(anioActivacion, mes, 27);
-    if (fechaCierre > fecha) {
-      mesProximoCierre = mes;
-      anioProximoCierre = anioActivacion;
-      break;
-    }
-  }
-
-  // Si no encontramos cierre este año, el primero del año siguiente
-  if (mesProximoCierre === null) {
-    mesProximoCierre = 2; // marzo
-    anioProximoCierre = anioActivacion + 1;
-  }
-
-  // Avanzar (numeroCuota - 1) trimestres desde ese punto
-  const indicePrimero = mesesCierre.indexOf(mesProximoCierre);
-  const indiceObjetivo = indicePrimero + (numeroCuota - 1);
-  const aniosExtra = Math.floor(indiceObjetivo / 4);
-  const indiceReal = indiceObjetivo % 4;
-
-  const mesObjetivo = mesesCierre[indiceReal];
-  const anioObjetivo = anioProximoCierre + aniosExtra;
-
-  return `${anioObjetivo}-${String(mesObjetivo + 1).padStart(2, '0')}-27`;
+  fecha.setMonth(fecha.getMonth() + 3);
+  fecha.setDate(fecha.getDate() - 5);
+  return fecha.toISOString().split('T')[0];
 }
 
 Deno.serve(async (req) => {
@@ -81,7 +46,8 @@ Deno.serve(async (req) => {
   if (frecuencia_pago === 'adelantado') {
     fecha_proximo_pago = fecha_activacion;
   } else {
-    fecha_proximo_pago = calcularFechaVencimientoTrimestral(fecha_activacion, 1);
+    // Trimestral: activacion + 3 meses - 5 días
+    fecha_proximo_pago = calcularPrimerVencimiento(fecha_activacion);
   }
 
   // Crear el PlanPago

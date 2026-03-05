@@ -1,20 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-// Los pagos trimestrales caen siempre el día 27 de los meses de cierre:
-// Q1 → 27 marzo, Q2 → 27 junio, Q3 → 27 septiembre, Q4 → 27 diciembre
-function calcularSiguienteVencimientoTrimestral(fechaVencimientoActual) {
-  const mesesCierre = [2, 5, 8, 11]; // marzo, junio, septiembre, diciembre (0-indexed)
-
+// Siguiente vencimiento: vencimiento_anterior + 3 meses
+// (el vencimiento ya tiene los -5 días incorporados, simplemente avanzamos 3 meses)
+function calcularSiguienteVencimiento(fechaVencimientoActual) {
   const fecha = new Date(fechaVencimientoActual + 'T12:00:00');
-  const mesActual = fecha.getMonth();
-  const anioActual = fecha.getFullYear();
-
-  const indiceActual = mesesCierre.indexOf(mesActual);
-  const indiceSiguiente = (indiceActual + 1) % 4;
-  const aniosSiguiente = indiceActual === 3 ? anioActual + 1 : anioActual;
-
-  const mesSiguiente = mesesCierre[indiceSiguiente];
-  return `${aniosSiguiente}-${String(mesSiguiente + 1).padStart(2, '0')}-27`;
+  fecha.setMonth(fecha.getMonth() + 3);
+  return fecha.toISOString().split('T')[0];
 }
 
 Deno.serve(async (req) => {
@@ -42,7 +33,8 @@ Deno.serve(async (req) => {
   const plan = await base44.asServiceRole.entities.PlanPago.get(cuota.plan_pago_id);
 
   if (plan.frecuencia_pago === 'trimestral' && plan.estado === 'activo') {
-    const siguienteVencimiento = calcularSiguienteVencimientoTrimestral(cuota.fecha_vencimiento);
+    // Siguiente vencimiento: vencimiento actual + 3 meses
+    const siguienteVencimiento = calcularSiguienteVencimiento(cuota.fecha_vencimiento);
     const numeroCuotaSiguiente = cuota.numero_cuota + 1;
 
     await base44.asServiceRole.entities.CuotaPago.create({
