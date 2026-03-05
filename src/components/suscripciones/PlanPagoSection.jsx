@@ -15,6 +15,8 @@ const FRECUENCIA_LABEL = { adelantado: "Pago adelantado", trimestral: "Trimestra
 
 export default function PlanPagoSection({ cliente, canEdit }) {
   const [showDialog, setShowDialog] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: planes = [] } = useQuery({
