@@ -181,7 +181,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <h3 className="font-semibold text-[#004D9D]">{suministro.nombre}</h3>
-                                  {isOwnerOrAdmin && <Button size="sm" variant="ghost" onClick={() => { setEditingId(suministro.id); setEditingName(suministro.nombre); }} className="h-6 w-6 p-0"><Edit2 className="w-3 h-3" /></Button>}
+                                  {isOwnerOrAdmin && <Button size="sm" variant="ghost" onClick={() => { isEditingRef.current = true; setEditingId(suministro.id); setEditingName(suministro.nombre); }} className="h-6 w-6 p-0"><Edit2 className="w-3 h-3" /></Button>}
                                 </div>
                                 {suministro.cups && (
                                   <p className="text-xs text-gray-400 font-mono mt-0.5">{suministro.cups}</p>
