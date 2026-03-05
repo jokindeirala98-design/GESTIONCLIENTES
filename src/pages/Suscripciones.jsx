@@ -125,18 +125,19 @@ export default function Suscripciones() {
     <div className="min-h-screen bg-[#F5F5F5] p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-[#004D9D]">Suscripciones</h1>
-            <p className="text-sm text-gray-500 mt-1">Cola de pagos ordenada por vencimiento</p>
+            <Button
+              onClick={() => setShowActivarDialog(true)}
+              className="bg-[#004D9D] hover:bg-[#003d7a] gap-2"
+              size="sm"
+            >
+              <Plus className="w-4 h-4" />
+              Activar plan
+            </Button>
           </div>
-          <Button
-            onClick={() => setShowActivarDialog(true)}
-            className="bg-[#004D9D] hover:bg-[#003d7a] gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Activar plan
-          </Button>
+          <p className="text-sm text-gray-500 mt-1">Cola de pagos ordenada por vencimiento</p>
         </div>
 
         {/* Stats rápidas */}
