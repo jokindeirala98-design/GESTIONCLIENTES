@@ -18,7 +18,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   const [suministros, setSuministros] = useState(cliente.suministros || []);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
-  const isEditingRef = React.useRef(false);
+  const isEditingRef = useRef(false);
 
   // Sync local state when cliente.suministros changes, but NOT while editing a name
   useEffect(() => {
