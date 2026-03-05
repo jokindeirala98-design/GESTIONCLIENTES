@@ -716,10 +716,10 @@ function ContratosParaFirmarSection({ clientesConArchivo, clientesSinArchivo, zo
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
       
-      // Actualizar cliente: contrato firmado, estado "Pendiente de aprobación", comisión y fecha de cierre
+      // Actualizar cliente: contrato firmado, estado "Firmado con éxito", comisión y fecha de cierre
       await base44.entities.Cliente.update(clienteId, { 
         contrato_firmado_url: file_url,
-        estado: "Pendiente de aprobación",
+        estado: "Firmado con éxito",
         comision: comisionTotal,
         fecha_cierre: fechaCierre,
         mes_comision: mesComision,
