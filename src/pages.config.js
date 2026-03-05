@@ -68,6 +68,7 @@ import InformesPotencias from './pages/InformesPotencias';
 import PrescoringsGALP from './pages/PrescoringsGALP';
 import ReadyToGo from './pages/ReadyToGo';
 import Zonas from './pages/Zonas';
+import Suscripciones from './pages/Suscripciones';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "PrescoringsGALP": PrescoringsGALP,
     "ReadyToGo": ReadyToGo,
     "Zonas": Zonas,
+    "Suscripciones": Suscripciones,
 }
 
 export const pagesConfig = {
