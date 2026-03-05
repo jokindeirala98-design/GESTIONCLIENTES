@@ -70,6 +70,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   const handleSaveName = async (suministroId) => {
     if (!editingName.trim()) { toast.error("El nombre no puede estar vacío"); return; }
     const nuevosSuministros = suministros.map(s => s.id === suministroId ? { ...s, nombre: editingName.trim() } : s);
+    isEditingRef.current = false;
     setSuministros(nuevosSuministros);
     setEditingId(null);
     try {
@@ -77,7 +78,6 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
       toast.success("Nombre actualizado");
     } catch (e) {
       toast.error("Error al guardar el nombre");
-      setSuministros(suministros); // revert
     }
   };
 
