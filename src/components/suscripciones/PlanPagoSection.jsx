@@ -42,6 +42,22 @@ export default function PlanPagoSection({ cliente, canEdit }) {
     toast.info("La generación de facturas estará disponible cuando se añadan las plantillas.");
   };
 
+  const handleEliminarPlan = async () => {
+    if (!planActivo) return;
+    setDeleting(true);
+    // Eliminar todas las cuotas del plan
+    const todasCuotas = await base44.entities.CuotaPago.filter({ plan_pago_id: planActivo.id });
+    await Promise.all(todasCuotas.map(c => base44.entities.CuotaPago.delete(c.id)));
+    // Eliminar el plan
+    await base44.entities.PlanPago.delete(planActivo.id);
+    queryClient.invalidateQueries({ queryKey: ["planes_pago", cliente.id] });
+    queryClient.invalidateQueries({ queryKey: ["planes_pago"] });
+    queryClient.invalidateQueries({ queryKey: ["cuotas_pago"] });
+    setConfirmDelete(false);
+    setDeleting(false);
+    toast.success("Plan de pago eliminado correctamente");
+  };
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
