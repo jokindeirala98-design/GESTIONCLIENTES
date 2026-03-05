@@ -76,15 +76,49 @@ export default function PlanPagoSection({ cliente, canEdit }) {
           </Button>
         )}
         {planActivo && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleVerEnSuscripciones}
-            className="gap-1.5 text-xs border-gray-200 text-gray-600"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Ver en Suscripciones
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleVerEnSuscripciones}
+              className="gap-1.5 text-xs border-gray-200 text-gray-600"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              Ver en Suscripciones
+            </Button>
+            {canEdit && !confirmDelete && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setConfirmDelete(true)}
+                className="gap-1.5 text-xs border-red-200 text-red-500 hover:bg-red-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Eliminar
+              </Button>
+            )}
+            {canEdit && confirmDelete && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-red-500 font-medium">¿Seguro?</span>
+                <Button
+                  size="sm"
+                  onClick={handleEliminarPlan}
+                  disabled={deleting}
+                  className="text-xs bg-red-600 hover:bg-red-700 text-white h-7 px-2"
+                >
+                  {deleting ? "Eliminando..." : "Sí, eliminar"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs h-7 px-2"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
