@@ -16,13 +16,15 @@ import {
 
 export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }) {
   const [suministros, setSuministros] = useState(cliente.suministros || []);
-
-  // Sync local state when cliente.suministros changes (e.g. data added via WhatsApp bot)
-  React.useEffect(() => {
-    setSuministros(cliente.suministros || []);
-  }, [cliente.suministros]);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
+
+  // Sync local state when cliente.suministros changes, but NOT while editing a name
+  useEffect(() => {
+    if (!editingId) {
+      setSuministros(cliente.suministros || []);
+    }
+  }, [cliente.suministros, editingId]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [nuevoSuministro, setNuevoSuministro] = useState({ nombre: "", energia: "", tipo_factura: "" });
 
