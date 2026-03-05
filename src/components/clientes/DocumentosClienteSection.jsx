@@ -115,7 +115,6 @@ export default function DocumentosClienteSection({ cliente, isOwnerOrAdmin, isAd
 
   const handleEditar = () => {
     setForm({
-      cups: docs?.cups || "",
       cif: docs?.cif || "",
       cif_archivo_url: docs?.cif_archivo_url || "",
       nombre_empresa: docs?.nombre_empresa || "",
