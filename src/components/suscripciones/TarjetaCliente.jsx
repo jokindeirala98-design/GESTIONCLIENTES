@@ -17,6 +17,7 @@ const FRECUENCIA_LABEL = {
 };
 
 export default function TarjetaCliente({ plan, cuota, onMarcarPagado, onGenerarFactura, destacado }) {
+  const navigate = useNavigate();
   const diasRestantes = cuota ? differenceInDays(new Date(cuota.fecha_vencimiento), new Date()) : null;
   const urgente = diasRestantes !== null && diasRestantes <= 2;
 
