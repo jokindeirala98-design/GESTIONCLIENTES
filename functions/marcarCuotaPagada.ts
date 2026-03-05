@@ -1,14 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
+// Los pagos trimestrales caen siempre el día 27 de los meses de cierre:
+// Q1 → 27 marzo, Q2 → 27 junio, Q3 → 27 septiembre, Q4 → 27 diciembre
 function calcularSiguienteVencimientoTrimestral(fechaVencimientoActual) {
-  const fecha = new Date(fechaVencimientoActual);
-  // Añadir 5 días para llegar al fin del trimestre
-  fecha.setDate(fecha.getDate() + 5);
-  // Avanzar 3 meses al siguiente trimestre
-  fecha.setMonth(fecha.getMonth() + 3);
-  // Retroceder 5 días (5 antes del fin del siguiente trimestre)
-  fecha.setDate(fecha.getDate() - 5);
-  return fecha.toISOString().split('T')[0];
+  const mesesCierre = [2, 5, 8, 11]; // marzo, junio, septiembre, diciembre (0-indexed)
+
+  const fecha = new Date(fechaVencimientoActual + 'T12:00:00');
+  const mesActual = fecha.getMonth();
+  const anioActual = fecha.getFullYear();
+
+  const indiceActual = mesesCierre.indexOf(mesActual);
+  const indiceSiguiente = (indiceActual + 1) % 4;
+  const aniosSiguiente = indiceActual === 3 ? anioActual + 1 : anioActual;
+
+  const mesSiguiente = mesesCierre[indiceSiguiente];
+  return `${aniosSiguiente}-${String(mesSiguiente + 1).padStart(2, '0')}-27`;
 }
 
 Deno.serve(async (req) => {
@@ -27,22 +33,18 @@ Deno.serve(async (req) => {
 
   const hoy = new Date().toISOString().split('T')[0];
 
-  // Marcar cuota como pagada
   const cuota = await base44.asServiceRole.entities.CuotaPago.get(cuota_id);
   await base44.asServiceRole.entities.CuotaPago.update(cuota_id, {
     estado: 'pagado',
     fecha_pago_real: hoy
   });
 
-  // Obtener el plan
   const plan = await base44.asServiceRole.entities.PlanPago.get(cuota.plan_pago_id);
 
   if (plan.frecuencia_pago === 'trimestral' && plan.estado === 'activo') {
-    // Calcular siguiente vencimiento
     const siguienteVencimiento = calcularSiguienteVencimientoTrimestral(cuota.fecha_vencimiento);
     const numeroCuotaSiguiente = cuota.numero_cuota + 1;
 
-    // Crear la siguiente cuota
     await base44.asServiceRole.entities.CuotaPago.create({
       plan_pago_id: plan.id,
       cliente_id: plan.cliente_id,
@@ -55,12 +57,10 @@ Deno.serve(async (req) => {
       tarea_creada: false
     });
 
-    // Actualizar fecha_proximo_pago en el plan
     await base44.asServiceRole.entities.PlanPago.update(plan.id, {
       fecha_proximo_pago: siguienteVencimiento
     });
   } else if (plan.frecuencia_pago === 'adelantado') {
-    // Plan adelantado: una sola cuota, marcar plan como finalizado
     await base44.asServiceRole.entities.PlanPago.update(plan.id, {
       estado: 'finalizado'
     });
