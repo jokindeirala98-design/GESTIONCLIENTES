@@ -32,7 +32,16 @@ export default function TarjetaCliente({ plan, cuota, onMarcarPagado, onGenerarF
             {destacado && (
               <span className="w-2 h-2 rounded-full bg-[#004D9D] animate-pulse flex-shrink-0" />
             )}
-            <h3 className="font-semibold text-gray-900 truncate text-sm">{plan.cliente_nombre}</h3>
+            <h3
+              className="font-semibold text-gray-900 truncate text-sm cursor-pointer hover:text-[#004D9D] hover:underline"
+              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${plan.cliente_id}`))}
+            >
+              {plan.cliente_nombre}
+            </h3>
+            <ExternalLink
+              className="w-3.5 h-3.5 text-gray-400 hover:text-[#004D9D] cursor-pointer flex-shrink-0"
+              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${plan.cliente_id}`))}
+            />
             {plan.frecuencia_pago === "trimestral" && cuota?.numero_cuota && (
               <span className="flex-shrink-0 text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200 rounded-full px-2 py-0.5">
                 {cuota.numero_cuota}/4
