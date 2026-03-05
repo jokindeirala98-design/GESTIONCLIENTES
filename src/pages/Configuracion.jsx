@@ -217,35 +217,6 @@ export default function Configuracion() {
         </Card>
 
         <Card className="border-none shadow-md">
-          <CardHeader className="border-b bg-gradient-to-r from-green-500 to-green-600">
-            <CardTitle className="text-white flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              Bot de WhatsApp
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <p className="text-[#666666]">
-                Conecta tu WhatsApp para procesar facturas de Naturgy automáticamente.
-              </p>
-              <a 
-                href={base44.agents.getWhatsAppConnectURL('procesar_facturas_whatsapp')} 
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="bg-green-600 hover:bg-green-700 w-full md:w-auto">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  💬 Conectar WhatsApp
-                </Button>
-              </a>
-              <p className="text-xs text-gray-500">
-                Envía fotos de facturas de Naturgy y el bot extraerá los datos automáticamente
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-md">
           <CardHeader className="border-b bg-gradient-to-r from-green-600 to-green-700">
             <CardTitle className="text-white flex items-center gap-2">
               <MessageCircle className="w-5 h-5" />
