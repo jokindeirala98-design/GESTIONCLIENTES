@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
     try {
@@ -24,7 +24,6 @@ Deno.serve(async (req) => {
 
         let extractionResult;
         if (isImage) {
-            // For images: use ExtractDataFromUploadedFile which handles images better
             extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
                 file_url: file_url,
                 json_schema: {
@@ -34,7 +33,6 @@ Deno.serve(async (req) => {
                     }
                 }
             });
-            // ExtractDataFromUploadedFile returns { status, output } 
             if (extractionResult?.status === 'success' && extractionResult?.output) {
                 extractionResult = extractionResult.output;
             } else {
@@ -63,67 +61,75 @@ Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve 
             });
         }
 
-        // Clean up: if LLM returns string "null" or empty, treat as null
+        // Clean up
         let extractedCups = extractionResult?.cups || null;
         if (extractedCups === "null" || extractedCups === "" || extractedCups === "undefined") {
             extractedCups = null;
         }
         console.log("CUPS extraído:", extractedCups);
 
-        // 2. Update DocumentosCliente with extracted CUPS
-        const allDocs = await base44.asServiceRole.entities.DocumentosCliente.filter({ cliente_id: cliente_id });
-        let documentosCliente = allDocs[0];
-
-        const clienteData = await base44.asServiceRole.entities.Cliente.get(cliente_id);
-
-        if (!documentosCliente) {
-            documentosCliente = await base44.asServiceRole.entities.DocumentosCliente.create({
-                cliente_id: cliente_id,
-                cliente_nombre: clienteData.nombre_negocio,
-                cups: extractedCups || undefined,
+        // 2. Update the CUPS field directly in the suministro within Cliente
+        if (extractedCups) {
+            const clienteData = await base44.asServiceRole.entities.Cliente.get(cliente_id);
+            const suministrosActualizados = (clienteData.suministros || []).map(s => {
+                // Only update if this suministro doesn't have a CUPS yet
+                if (s.id === suministro_id && !s.cups) {
+                    return { ...s, cups: extractedCups };
+                }
+                return s;
             });
-        } else if (extractedCups && !documentosCliente.cups_manual) {
-            // Only update CUPS if it hasn't been set manually
-            await base44.asServiceRole.entities.DocumentosCliente.update(documentosCliente.id, { cups: extractedCups });
-        }
+            await base44.asServiceRole.entities.Cliente.update(cliente_id, { suministros: suministrosActualizados });
+            console.log(`CUPS ${extractedCups} guardado en suministro ${suministro_id}`);
 
-        // 3. Create PrescoringGALP entry if NOT Luz 2.0 and CUPS was found
-        if (!esLuz20 && extractedCups) {
-            // Check if a prescoring with this CUPS already exists to avoid duplicates
-            const existingPrescorings = await base44.asServiceRole.entities.PrescoringGALP.filter({ cups: extractedCups });
-            if (existingPrescorings.length === 0) {
-                const producto = esGas ? "Gas" : "Energía";
-                await base44.asServiceRole.entities.PrescoringGALP.create({
-                    cups: extractedCups,
-                    nombre_razon_social: clienteData.nombre_negocio,
-                    cif: documentosCliente?.cif || "",
-                    producto: producto,
-                    tarifa: suministro_tipo_factura,
-                    telefono: documentosCliente?.telefono || clienteData.telefono || "",
-                    direccion_fiscal: documentosCliente?.direccion_fiscal || "",
-                    enviado: false,
-                    denegado: false,
+            // 3. Also ensure DocumentosCliente exists (for other docs like CIF, IBAN, DNI)
+            const clienteDataFresh = clienteData;
+            const allDocs = await base44.asServiceRole.entities.DocumentosCliente.filter({ cliente_id: cliente_id });
+            if (allDocs.length === 0) {
+                await base44.asServiceRole.entities.DocumentosCliente.create({
+                    cliente_id: cliente_id,
+                    cliente_nombre: clienteDataFresh.nombre_negocio,
                 });
-                console.log("PrescoringGALP creado para CUPS:", extractedCups);
+                console.log("DocumentosCliente creado (sin CUPS, ya está en suministro)");
+            }
 
-                // Crear tarea en el corcho para Iranzu y José
-                const PROPIETARIOS = ['iranzu@voltisenergia.com', 'jose@voltisenergia.com'];
-                for (const propietarioEmail of PROPIETARIOS) {
-                    // Desplazar todas las tareas existentes para que la nueva quede primera
-                    const tareasExistentes = await base44.asServiceRole.entities.TareaCorcho.filter({ propietario_email: propietarioEmail });
-                    for (const tarea of tareasExistentes) {
-                        await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
-                    }
-                    await base44.asServiceRole.entities.TareaCorcho.create({
-                        descripcion: `Solicitar prescoring CUPS: ${extractedCups} - ${clienteData.nombre_negocio}`,
-                        notas: `Cliente: ${clienteData.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
-                        completada: false,
-                        prioridad: 'rojo',
-                        orden: 0,
-                        creador_email: propietarioEmail,
-                        propietario_email: propietarioEmail,
+            // 4. Create PrescoringGALP if NOT Luz 2.0
+            if (!esLuz20) {
+                const existingPrescorings = await base44.asServiceRole.entities.PrescoringGALP.filter({ cups: extractedCups });
+                if (existingPrescorings.length === 0) {
+                    const producto = esGas ? "Gas" : "Energía";
+                    const allDocs2 = await base44.asServiceRole.entities.DocumentosCliente.filter({ cliente_id: cliente_id });
+                    const documentosCliente = allDocs2[0];
+                    await base44.asServiceRole.entities.PrescoringGALP.create({
+                        cups: extractedCups,
+                        nombre_razon_social: clienteDataFresh.nombre_negocio,
+                        cif: documentosCliente?.cif || "",
+                        producto: producto,
+                        tarifa: suministro_tipo_factura,
+                        telefono: documentosCliente?.telefono || clienteDataFresh.telefono || "",
+                        direccion_fiscal: documentosCliente?.direccion_fiscal || "",
+                        enviado: false,
+                        denegado: false,
                     });
-                    console.log(`TareaCorcho creada para ${propietarioEmail}, CUPS: ${extractedCups}`);
+                    console.log("PrescoringGALP creado para CUPS:", extractedCups);
+
+                    // Crear tarea en el corcho para Iranzu y José
+                    const PROPIETARIOS = ['iranzu@voltisenergia.com', 'jose@voltisenergia.com'];
+                    for (const propietarioEmail of PROPIETARIOS) {
+                        const tareasExistentes = await base44.asServiceRole.entities.TareaCorcho.filter({ propietario_email: propietarioEmail });
+                        for (const tarea of tareasExistentes) {
+                            await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
+                        }
+                        await base44.asServiceRole.entities.TareaCorcho.create({
+                            descripcion: `Solicitar prescoring CUPS: ${extractedCups} - ${clienteDataFresh.nombre_negocio}`,
+                            notas: `Cliente: ${clienteDataFresh.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura}`,
+                            completada: false,
+                            prioridad: 'rojo',
+                            orden: 0,
+                            creador_email: propietarioEmail,
+                            propietario_email: propietarioEmail,
+                        });
+                        console.log(`TareaCorcho creada para ${propietarioEmail}, CUPS: ${extractedCups}`);
+                    }
                 }
             }
         }
