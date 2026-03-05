@@ -177,6 +177,11 @@ export default function Layout({ children }) {
       icon: CalendarIcon,
     },
     {
+      title: "Suscripciones",
+      url: createPageUrl("Suscripciones"),
+      icon: CreditCard,
+    },
+    {
       title: "Citas",
       url: createPageUrl("Citas"),
       icon: CalendarIcon,
