@@ -64,12 +64,18 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     toast.success("Suministro eliminado");
   };
 
-  const handleSaveName = (suministroId) => {
-    const nuevosSuministros = suministros.map(s => s.id === suministroId ? { ...s, nombre: editingName } : s);
+  const handleSaveName = async (suministroId) => {
+    if (!editingName.trim()) { toast.error("El nombre no puede estar vacío"); return; }
+    const nuevosSuministros = suministros.map(s => s.id === suministroId ? { ...s, nombre: editingName.trim() } : s);
     setSuministros(nuevosSuministros);
-    onUpdate({ suministros: nuevosSuministros });
     setEditingId(null);
-    toast.success("Nombre actualizado");
+    try {
+      await base44.entities.Cliente.update(cliente.id, { suministros: nuevosSuministros });
+      toast.success("Nombre actualizado");
+    } catch (e) {
+      toast.error("Error al guardar el nombre");
+      setSuministros(suministros); // revert
+    }
   };
 
   const handleIgnorarPotencias = (suministroId) => {
