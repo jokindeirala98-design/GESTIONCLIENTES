@@ -73,11 +73,6 @@ export default function Layout({ children }) {
   // Menú para comerciales
   const menuComercial = [
     {
-      title: "Zonas",
-      url: createPageUrl("Zonas"),
-      icon: MapPin,
-    },
-    {
       title: "Clientes",
       url: createPageUrl("Clientes"),
       icon: UsersIcon,
