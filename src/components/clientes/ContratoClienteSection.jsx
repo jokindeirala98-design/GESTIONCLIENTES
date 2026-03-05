@@ -40,8 +40,18 @@ export default function ContratoClienteSection({ cliente, isAdmin, isOwner }) {
     setUploadingFirmado(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      updateMutation.mutate({ contrato_firmado_url: file_url });
-      toast.success("Contrato firmado subido. El admin lo revisará.");
+      const fechaCierre = new Date().toISOString().split("T")[0];
+      const mesComision = fechaCierre.substring(0, 7);
+      const comisionTotal = (cliente.suministros || []).reduce((sum, s) => sum + (s.comision || 0), 0);
+      updateMutation.mutate({ 
+        contrato_firmado_url: file_url,
+        estado: "Firmado con éxito",
+        fecha_cierre: fechaCierre,
+        mes_comision: mesComision,
+        comision: comisionTotal,
+        aprobado_admin: false
+      });
+      toast.success("Contrato firmado adjuntado. ¡Cliente marcado como Firmado con éxito!");
     } catch (e) {
       toast.error("Error al subir el contrato");
     } finally {
