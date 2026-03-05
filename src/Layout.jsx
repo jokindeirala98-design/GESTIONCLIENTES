@@ -186,11 +186,6 @@ export default function Layout({ children }) {
       icon: FileText,
     },
     {
-      title: "Zonas",
-      url: createPageUrl("Zonas"),
-      icon: MapPin,
-    },
-    {
       title: "Clientes",
       url: createPageUrl("Clientes"),
       icon: UsersIcon,
