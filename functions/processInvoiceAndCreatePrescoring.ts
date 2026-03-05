@@ -30,44 +30,28 @@ Deno.serve(async (req) => {
         // 1. Extract CUPS from the invoice using AI
         const isImage = file_url.toLowerCase().match(/\.(jpeg|jpg|png|gif|webp)/i);
 
-        let extractionResult;
-        if (isImage) {
-            extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
-                file_url: file_url,
-                json_schema: {
-                    type: "object",
-                    properties: {
-                        cups: { type: "string", description: "El código CUPS completo de la factura. Empieza siempre por ES seguido de 18-20 caracteres alfanuméricos. Ej: ES0021000006726872YJ" }
-                    }
+        const CUPS_PROMPT = `Eres un extractor de datos de facturas de energía española.
+
+Tu ÚNICA tarea es encontrar el código CUPS en el documento adjunto.
+
+REGLAS ESTRICTAS:
+1. El CUPS aparece SIEMPRE junto a la etiqueta "CUPS" en la factura. Busca específicamente la línea o campo que diga exactamente "CUPS" y extrae el valor que aparece a su derecha o debajo.
+2. El CUPS empieza siempre por "ES" seguido de dígitos y letras mayúsculas. Tiene entre 20 y 22 caracteres en total.
+3. Ejemplos válidos: ES0021000006726872YJ, ES0031405775423001WF, ES0021000017072361EX0F
+4. Copia el CUPS EXACTAMENTE como aparece, sin modificarlo ni inventarlo.
+5. Si no ves la etiqueta "CUPS" claramente en esta página, devuelve null. NO inventes un código.
+6. Solo puede haber UN CUPS por suministro. Si ves varios códigos que empiecen por ES, elige SOLO el que está junto a la etiqueta "CUPS".`;
+
+        let extractionResult = await base44.integrations.Core.InvokeLLM({
+            prompt: CUPS_PROMPT,
+            file_urls: [file_url],
+            response_json_schema: {
+                type: "object",
+                properties: {
+                    cups: { type: "string", description: "El código CUPS extraído del campo 'CUPS' de la factura. Null si no aparece la etiqueta CUPS en esta página." }
                 }
-            });
-            if (extractionResult?.status === 'success' && extractionResult?.output) {
-                extractionResult = extractionResult.output;
-            } else {
-                extractionResult = { cups: null };
             }
-        } else {
-            extractionResult = await base44.integrations.Core.InvokeLLM({
-                prompt: `Eres un extractor de datos de facturas de energía española. 
-Analiza el documento adjunto (factura de electricidad o gas) y extrae el código CUPS.
-
-El CUPS (Código Universal de Punto de Suministro) es un identificador único de 20 a 22 caracteres alfanuméricos que:
-- Siempre empieza por "ES" 
-- Seguido de números y letras mayúsculas
-- Ejemplos reales: ES0021000006726872YJ, ES0031405775423001WF, ES0226060000307987ES, ES0021000017072361EX0F
-- Suele aparecer en la factura como "CUPS", "Código CUPS", "Punto de suministro" o similar
-
-Extrae el CUPS tal cual aparece en la factura, sin modificarlo. 
-Si no encuentras ningún código que empiece por "ES" con ese formato, devuelve null en el campo cups.`,
-                file_urls: [file_url],
-                response_json_schema: {
-                    type: "object",
-                    properties: {
-                        cups: { type: "string", description: "El código CUPS completo extraído de la factura. Null si no se encuentra." }
-                    }
-                }
-            });
-        }
+        });
 
         // Clean up
         let extractedCups = extractionResult?.cups || null;
