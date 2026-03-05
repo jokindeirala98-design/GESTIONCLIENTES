@@ -30,6 +30,11 @@ export default function TarjetaCliente({ plan, cuota, onMarcarPagado, onGenerarF
               <span className="w-2 h-2 rounded-full bg-[#004D9D] animate-pulse flex-shrink-0" />
             )}
             <h3 className="font-semibold text-gray-900 truncate text-sm">{plan.cliente_nombre}</h3>
+            {plan.frecuencia_pago === "trimestral" && cuota?.numero_cuota && (
+              <span className="flex-shrink-0 text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200 rounded-full px-2 py-0.5">
+                {cuota.numero_cuota}/4
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2 mt-2">
