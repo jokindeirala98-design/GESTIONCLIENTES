@@ -367,11 +367,17 @@ export default function Calendario() {
         return fechaCompletada < tresSemanasAtras;
       });
 
+      let eliminadas = 0;
       for (const tarea of tareasAEliminar) {
-        await base44.entities.TareaCorcho.delete(tarea.id);
+        try {
+          await base44.entities.TareaCorcho.delete(tarea.id);
+          eliminadas++;
+        } catch (e) {
+          // La tarea ya no existe, ignorar
+        }
       }
 
-      if (tareasAEliminar.length > 0) {
+      if (eliminadas > 0) {
         queryClient.invalidateQueries(['tareasCorcho']);
       }
     };
