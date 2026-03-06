@@ -100,15 +100,28 @@ Deno.serve(async (req) => {
 
     // También notificar vía agente WhatsApp
     try {
-      for (const mensaje of mensajes) {
-        const conversation = await base44.asServiceRole.agents.createConversation({
+      // Buscar conversación existente del comercial con el agente
+      const conversations = await base44.asServiceRole.agents.listConversations({
+        agent_name: 'gestor_clientes_whatsapp',
+        user_email: comercialEmail,
+      });
+
+      // Reutilizar la más reciente, o crear una nueva si no existe ninguna
+      let conversation;
+      if (conversations && conversations.length > 0) {
+        conversation = conversations[0];
+      } else {
+        conversation = await base44.asServiceRole.agents.createConversation({
           agent_name: 'gestor_clientes_whatsapp',
           user_email: comercialEmail,
           metadata: { source: 'notificacion_automatica' }
         });
+      }
+
+      for (const mensaje of mensajes) {
         await base44.asServiceRole.agents.addMessage(conversation, {
-          role: 'user',
-          content: `[MENSAJE AUTOMÁTICO PARA ${comercialEmail}]: ${mensaje}`
+          role: 'assistant',
+          content: mensaje
         });
       }
     } catch (waError) {
