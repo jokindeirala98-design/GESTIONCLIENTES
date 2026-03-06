@@ -22,7 +22,7 @@ function DropZone({ label, fileUrl, uploading, onFile, onRemove, accept = ".pdf,
     return (
       <div className="flex items-center gap-2 bg-white border border-purple-200 p-2 rounded text-sm mt-1">
         <span className="flex-1 text-purple-700 truncate">Archivo adjunto</span>
-        <a href={fileUrl} download className="text-purple-600"><Download className="w-4 h-4" /></a>
+        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-purple-600"><Download className="w-4 h-4" /></a>
         <button onClick={onRemove} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
       </div>
     );
