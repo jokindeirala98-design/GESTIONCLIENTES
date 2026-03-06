@@ -89,13 +89,12 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, skipped: 'no relevant changes detected' });
     }
 
-    // Enviar notificaciones vía agente de WhatsApp al comercial
+    // Enviar notificaciones vía email al comercial
     for (const mensaje of mensajes) {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: comercialEmail,
         subject: `Voltis - Novedad en ${nombreCliente}`,
-        body: mensaje.replace(/\*/g, '').replace(/_/g, '') + 
-          (archivosAdjuntos.length > 0 ? `\n\nDocumentos disponibles:\n${archivosAdjuntos.join('\n')}` : '')
+        body: mensaje.replace(/\*/g, '').replace(/_/g, '')
       });
     }
 
