@@ -210,11 +210,6 @@ export default function Layout({ children }) {
       icon: DollarSign,
     },
     {
-      title: "Incidencias",
-      url: createPageUrl("Incidencias"),
-      icon: AlertTriangle,
-    },
-    {
       title: "Gestión de Usuarios",
       url: createPageUrl("GestionUsuarios"),
       icon: UserCircle2,
