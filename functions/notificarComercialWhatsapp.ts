@@ -102,8 +102,9 @@ Deno.serve(async (req) => {
     try {
       // Buscar conversación existente del comercial con el agente
       const conversations = await base44.asServiceRole.agents.listConversations({
-        agent_name: 'gestor_clientes_whatsapp',
-        user_email: comercialEmail,
+        q: { agent_name: 'gestor_clientes_whatsapp', user_email: comercialEmail },
+        sort: '-created_date',
+        limit: 1,
       });
 
       // Reutilizar la más reciente, o crear una nueva si no existe ninguna
