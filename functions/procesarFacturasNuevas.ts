@@ -37,34 +37,43 @@ Deno.serve(async (req) => {
             console.log(`Procesando suministro ${suministro.id} (${suministro.nombre}) - factura: ${factura.url}`);
 
             try {
-                // Extract CUPS using LLM vision
+                // Extract CUPS and titular using LLM vision
                 const extractionResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
                     prompt: `Eres un extractor de datos de facturas de energía española.
 
-Tu ÚNICA tarea es encontrar el código CUPS en el documento adjunto.
+Tu tarea es encontrar DOS datos en el documento adjunto:
 
-REGLAS ESTRICTAS:
+DATO 1 - CUPS:
 1. El CUPS aparece SIEMPRE junto a la etiqueta "CUPS" en la factura. Busca específicamente la línea o campo que diga exactamente "CUPS" y extrae el valor que aparece a su derecha o debajo.
 2. El CUPS empieza siempre por "ES" seguido de dígitos y letras mayúsculas. Tiene entre 20 y 22 caracteres en total.
 3. Ejemplos válidos: ES0021000006726872YJ, ES0031405775423001WF, ES0021000017072361EX0F
 4. Copia el CUPS EXACTAMENTE como aparece, sin modificarlo ni inventarlo.
 5. Si no ves la etiqueta "CUPS" claramente en esta página, devuelve null. NO inventes un código.
-6. Solo puede haber UN CUPS por suministro. Si ves varios códigos que empiecen por ES, elige SOLO el que está junto a la etiqueta "CUPS".`,
+6. Solo puede haber UN CUPS por suministro. Si ves varios códigos que empiecen por ES, elige SOLO el que está junto a la etiqueta "CUPS".
+
+DATO 2 - TITULAR:
+1. Busca el nombre del titular o razón social del suministro. Suele aparecer junto a etiquetas como "Titular", "Razón Social", "Nombre del titular", "Cliente" o similar.
+2. Es el nombre de la persona o empresa que figura como titular del contrato de energía (NO la empresa distribuidora ni comercializadora).
+3. Devuelve el nombre exactamente como aparece en la factura.
+4. Si no lo encuentras, devuelve null.`,
                     file_urls: [factura.url],
                     response_json_schema: {
                         type: "object",
                         properties: {
-                            cups: { type: "string", description: "El código CUPS extraído del campo 'CUPS' de la factura. Null si no aparece la etiqueta CUPS en esta página." }
+                            cups: { type: "string", description: "El código CUPS extraído del campo 'CUPS' de la factura. Null si no aparece." },
+                            titular: { type: "string", description: "Nombre del titular o razón social del suministro. Null si no aparece." }
                         }
                     }
                 });
 
                 let extractedCups = extractionResult?.cups || null;
-                if (extractedCups === "null" || extractedCups === "" || extractedCups === "undefined") {
-                    extractedCups = null;
-                }
+                if (extractedCups === "null" || extractedCups === "" || extractedCups === "undefined") extractedCups = null;
+
+                let extractedTitular = extractionResult?.titular || null;
+                if (extractedTitular === "null" || extractedTitular === "" || extractedTitular === "undefined") extractedTitular = null;
 
                 console.log(`CUPS extraído para suministro ${suministro.id}: ${extractedCups}`);
+                console.log(`Titular extraído para suministro ${suministro.id}: ${extractedTitular}`);
 
                 if (!extractedCups) continue;
 
@@ -77,6 +86,24 @@ REGLAS ESTRICTAS:
                 });
                 await base44.asServiceRole.entities.Cliente.update(clienteId, { suministros: suministrosActualizados });
                 console.log(`CUPS ${extractedCups} guardado en suministro ${suministro.id}`);
+
+                // Update DocumentosCliente with titular if extracted
+                if (extractedTitular) {
+                    const allDocs = await base44.asServiceRole.entities.DocumentosCliente.filter({ cliente_id: clienteId });
+                    if (allDocs.length === 0) {
+                        await base44.asServiceRole.entities.DocumentosCliente.create({
+                            cliente_id: clienteId,
+                            cliente_nombre: cliente.nombre_negocio,
+                            nombre_empresa: extractedTitular,
+                        });
+                        console.log("DocumentosCliente creado con titular:", extractedTitular);
+                    } else if (!allDocs[0].nombre_empresa) {
+                        await base44.asServiceRole.entities.DocumentosCliente.update(allDocs[0].id, {
+                            nombre_empresa: extractedTitular,
+                        });
+                        console.log("DocumentosCliente actualizado con titular:", extractedTitular);
+                    }
+                }
 
                 // Create PrescoringGALP (skip for tarifa 2.0)
                 const esLuz20 = suministro.tipo_factura === "2.0";
@@ -92,7 +119,7 @@ REGLAS ESTRICTAS:
 
                         await base44.asServiceRole.entities.PrescoringGALP.create({
                             cups: extractedCups,
-                            nombre_razon_social: cliente.nombre_negocio,
+                            nombre_razon_social: extractedTitular || cliente.nombre_negocio,
                             cif: documentosCliente?.cif || "",
                             producto: producto,
                             tarifa: suministro.tipo_factura,
@@ -112,7 +139,7 @@ REGLAS ESTRICTAS:
                             }
                             await base44.asServiceRole.entities.TareaCorcho.create({
                                 descripcion: `Solicitar prescoring CUPS: ${extractedCups} - ${cliente.nombre_negocio}`,
-                                notas: `Cliente: ${cliente.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro.tipo_factura}`,
+                                notas: `Titular: ${extractedTitular || "No extraído"} | Cliente: ${cliente.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro.tipo_factura}`,
                                 completada: false,
                                 prioridad: 'rojo',
                                 orden: 0,
