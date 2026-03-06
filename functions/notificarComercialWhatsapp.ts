@@ -45,17 +45,26 @@ Deno.serve(async (req) => {
         );
 
         if (tieneInformeNuevo && !teniainformeAntes) {
-          const nombreSuministro = suministro.nombre || suministro.cups || 'suministro';
-          mensajes.push(`📊 *${nombreCliente}* tiene el informe económico listo para el suministro *${nombreSuministro}*`);
-          
-          // Adjuntar archivos del informe
+          // Construir mensaje con enlaces
+          let msg = `✅ *¡Ya están listos los informes de ${nombreCliente}!*\n`;
+
+          // Enlace informe de potencias (si existe en este suministro)
+          if (suministro.informe_potencias?.url) {
+            msg += `\n📈 Informe de potencias: ${suministro.informe_potencias.url}`;
+          }
+
+          // Enlace(s) informe económico/final
           if (suministro.informe_final.archivos?.length > 0) {
             for (const archivo of suministro.informe_final.archivos) {
-              if (archivo.url) archivosAdjuntos.push(archivo.url);
+              if (archivo.url) {
+                msg += `\n📊 Informe económico: ${archivo.url}`;
+              }
             }
           } else if (suministro.informe_final.url) {
-            archivosAdjuntos.push(suministro.informe_final.url);
+            msg += `\n📊 Informe económico: ${suministro.informe_final.url}`;
           }
+
+          mensajes.push(msg);
         }
       }
     }
