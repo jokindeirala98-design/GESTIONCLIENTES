@@ -74,8 +74,7 @@ Deno.serve(async (req) => {
       cliente.contrato_original_url &&
       (!old_data?.contrato_original_url || old_data.contrato_original_url !== cliente.contrato_original_url)
     ) {
-      mensajes.push(`📑 *${nombreCliente}* tiene el contrato listo para firmar`);
-      archivosAdjuntos.push(cliente.contrato_original_url);
+      mensajes.push(`📑 *¡El contrato de ${nombreCliente} está listo para firmar!*\n\n📎 Contrato: ${cliente.contrato_original_url}`);
     }
 
     // 3. CONTRATO TRAMITADO: admin rellena contrato_presentado_texto (código de verificación)
