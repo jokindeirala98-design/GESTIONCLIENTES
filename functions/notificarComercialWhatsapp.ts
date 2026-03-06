@@ -98,24 +98,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // También intentar notificar vía agente WhatsApp (conversación proactiva)
+    // También notificar vía agente WhatsApp
     try {
-      // Buscar el usuario comercial para obtener su número de WhatsApp
-      const usuarios = await base44.asServiceRole.entities.User.list();
-      const comercialUser = usuarios.find(u => u.email === comercialEmail);
-
-      if (comercialUser) {
-        for (const mensaje of mensajes) {
-          await base44.asServiceRole.agents.sendProactiveMessage({
-            agent_name: 'gestor_clientes_whatsapp',
-            user_email: comercialEmail,
-            message: mensaje
-          });
-        }
+      for (const mensaje of mensajes) {
+        const conversation = await base44.asServiceRole.agents.createConversation({
+          agent_name: 'gestor_clientes_whatsapp',
+          user_email: comercialEmail,
+          metadata: { source: 'notificacion_automatica' }
+        });
+        await base44.asServiceRole.agents.addMessage(conversation, {
+          role: 'user',
+          content: `[MENSAJE AUTOMÁTICO PARA ${comercialEmail}]: ${mensaje}`
+        });
       }
     } catch (waError) {
-      // Si falla WhatsApp, el email ya fue enviado, no es crítico
-      console.log('WhatsApp proactive failed (email sent as fallback):', waError.message);
+      console.log('WhatsApp notification failed (email sent as fallback):', waError.message);
     }
 
     return Response.json({ ok: true, notificaciones: mensajes.length });
