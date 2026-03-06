@@ -105,14 +105,11 @@ Deno.serve(async (req) => {
       const comercialUser = usuarios.find(u => u.email === comercialEmail);
 
       if (comercialUser) {
-        for (let i = 0; i < mensajes.length; i++) {
-          const mensaje = mensajes[i];
-          const adjunto = archivosAdjuntos[i] ? `\n\n📎 ${archivosAdjuntos[i]}` : '';
-          
+        for (const mensaje of mensajes) {
           await base44.asServiceRole.agents.sendProactiveMessage({
-            agent_name: 'comerciales_whatsapp',
+            agent_name: 'gestor_clientes_whatsapp',
             user_email: comercialEmail,
-            message: mensaje + adjunto
+            message: mensaje
           });
         }
       }
