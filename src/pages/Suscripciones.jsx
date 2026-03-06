@@ -79,7 +79,13 @@ export default function Suscripciones() {
     : planesConCuota;
 
   const planesTrimestrales = planesOrdenados.filter((p) => p.frecuencia_pago === "trimestral");
-  const planesAdelantados = planesOrdenados.filter((p) => p.frecuencia_pago === "adelantado");
+
+  // Planes adelantados: los que tienen cuota pendiente + los activos sin ninguna cuota aún
+  const planesAdelanteConCuota = planesOrdenados.filter((p) => p.frecuencia_pago === "adelantado");
+  const planesAdelantesinCuota = planesActivos
+    .filter((p) => p.frecuencia_pago === "adelantado" && !cuotaPorPlan[p.id] && !cuotas.find(c => c.plan_pago_id === p.id))
+    .filter(isAdmin ? () => true : (p) => p.comercial_email === user?.email);
+  const planesAdelantados = [...planesAdelanteConCuota, ...planesAdelantesinCuota];
 
   // Historial: cuotas pagadas agrupadas
   const cuotasPagadasOrdenadas = cuotasPagadas
