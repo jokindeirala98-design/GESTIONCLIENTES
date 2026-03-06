@@ -120,6 +120,11 @@ Deno.serve(async (req) => {
       }
 
       for (const mensaje of mensajes) {
+        // El agente requiere un mensaje de usuario antes de poder añadir uno de asistente
+        await base44.asServiceRole.agents.addMessage(conversation, {
+          role: 'user',
+          content: '(notificación automática)'
+        });
         await base44.asServiceRole.agents.addMessage(conversation, {
           role: 'assistant',
           content: mensaje
