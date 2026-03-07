@@ -88,8 +88,8 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <button className="text-left">
-                    <Badge className={`${estadoColors[cliente.estado]} text-white text-xs hover:opacity-80 cursor-pointer`}>
-                      {cliente.estado} ▼
+                    <Badge className={`${estadoColors[estadoVisible]} text-white text-xs hover:opacity-80 cursor-pointer`}>
+                      {estadoVisible} ▼
                     </Badge>
                   </button>
                 </DropdownMenuTrigger>
@@ -120,8 +120,8 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Badge className={`${estadoColors[cliente.estado]} text-white text-xs`}>
-                {cliente.estado}
+              <Badge className={`${estadoColors[estadoVisible]} text-white text-xs`}>
+                {estadoVisible}
               </Badge>
             )}
           </div>
