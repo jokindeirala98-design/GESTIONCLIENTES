@@ -47,7 +47,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+// Bottom Tab Bar items for mobile
+const BOTTOM_TABS = [
+  { title: "Clientes", url: "Clientes", icon: UsersIcon },
+  { title: "Calendario", url: "Calendario", icon: CalendarIcon },
+  { title: "Suscripciones", url: "Suscripciones", icon: CreditCard },
+  { title: "Config.", url: "Configuracion", icon: Settings },
+];
+
 export default function Layout({ children }) {
+  useSystemTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
