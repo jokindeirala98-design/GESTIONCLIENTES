@@ -614,7 +614,7 @@ export default function DetalleCliente() {
         Volver
       </Button>
 
-      <Card className="border-l-4 mb-6" style={{ borderLeftColor: estadoColors[cliente.estado] }}>
+      <Card className="border-l-4 mb-6" style={{ borderLeftColor: estadoColors[estadoVisible] }}>
         <CardHeader className="bg-gradient-to-r from-[#004D9D] to-[#00AEEF]">
           <div className="flex items-start justify-between">
             <div>
@@ -625,11 +625,11 @@ export default function DetalleCliente() {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
                   <Badge
-                    className={`${estadoColors[cliente.estado] || 'bg-gray-500'} text-white cursor-pointer hover:opacity-80 transition-opacity select-none`}
+                    className={`${estadoColors[estadoVisible] || 'bg-gray-500'} text-white cursor-pointer hover:opacity-80 transition-opacity select-none`}
                     onClick={() => canEdit && setShowEstadoSelector(prev => !prev)}
                     title={canEdit ? "Haz clic para cambiar el estado" : ""}
                   >
-                    {cliente.estado} {canEdit && "▾"}
+                    {estadoVisible} {canEdit && "▾"}
                   </Badge>
                   {showEstadoSelector && canEdit && (
                     <div className="absolute top-8 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
