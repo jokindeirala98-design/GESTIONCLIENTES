@@ -56,14 +56,15 @@ export default function Clientes() {
     staleTime: 120_000,
   });
 
-  if (!user) return null;
-
   // Filtrar: cada usuario ve solo sus clientes (admin ve todos)
-  const misClientes = isAdmin 
-    ? clientes 
-    : clientes.filter(c => c.propietario_email === user.email);
+  const misClientes = useMemo(() => 
+    isAdmin 
+      ? clientes 
+      : clientes.filter(c => c.propietario_email === user?.email),
+    [isAdmin, clientes, user?.email]
+  );
 
-  const filteredClientes = misClientes.filter(cliente => {
+  const filteredClientes = useMemo(() => misClientes.filter(cliente => {
     const matchSearch = 
       cliente.nombre_negocio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cliente.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,7 +75,7 @@ export default function Clientes() {
     const matchUsuario = filterUsuario === "all" || cliente.propietario_email === filterUsuario;
     
     return matchSearch && matchEstado && matchZona && matchUsuario;
-  });
+  }), [misClientes, searchTerm, filterEstado, filterZona, filterUsuario]);
 
   const sortedClientes = useMemo(() => 
     [...filteredClientes].sort((a, b) => 
@@ -82,6 +83,8 @@ export default function Clientes() {
     ),
     [filteredClientes]
   );
+
+  if (!user) return null;
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
