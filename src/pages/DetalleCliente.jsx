@@ -116,6 +116,11 @@ export default function DetalleCliente() {
       queryClient.invalidateQueries(['cliente', clienteId]);
       queryClient.invalidateQueries(['clientes']);
       toast.success("Cliente actualizado");
+      setOptimisticEstado(null);
+    },
+    onError: () => {
+      setOptimisticEstado(null);
+      toast.error("Error al actualizar");
     },
   });
 
