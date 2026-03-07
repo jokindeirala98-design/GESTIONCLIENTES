@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,15 +10,22 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ClienteCard from "../components/clientes/ClienteCard.jsx";
 import CreateClienteDialog from "../components/clientes/CreateClienteDialog.jsx";
+import PullToRefresh from "../components/shared/PullToRefresh.jsx";
 
 export default function Clientes() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("all");
   const [filterZona, setFilterZona] = useState("all");
   const [filterUsuario, setFilterUsuario] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries(['clientes']);
+    await queryClient.invalidateQueries(['zonas']);
+  }, [queryClient]);
 
   useEffect(() => {
     const loadUser = async () => {
