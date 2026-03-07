@@ -566,6 +566,7 @@ export default function DetalleCliente() {
   const isAdmin = user.role === "admin";
   const canViewFull = isOwner || isAdmin;
   const canEdit = isOwner || isAdmin;
+  const estadoVisible = optimisticEstado ?? cliente.estado;
 
   if (!canViewFull) {
     return (
