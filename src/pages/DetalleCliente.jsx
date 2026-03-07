@@ -510,6 +510,7 @@ export default function DetalleCliente() {
   const handleCambiarEstado = async (nuevoEstado) => {
     setShowEstadoSelector(false);
     if (nuevoEstado === cliente.estado) return;
+    setOptimisticEstado(nuevoEstado);
 
     const estaVolviendo = ESTADOS_SIN_INFORMES.includes(nuevoEstado) && ESTADOS_CON_INFORMES.includes(cliente.estado);
 
