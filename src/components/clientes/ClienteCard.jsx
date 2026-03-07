@@ -23,7 +23,7 @@ const estadoColors = {
   "Rechazado": "bg-red-500",
 };
 
-export default function ClienteCard({ cliente, user, zonas, onClick }) {
+const ClienteCard = memo(function ClienteCard({ cliente, user, zonas, onClick }) {
   const queryClient = useQueryClient();
   const [optimisticEstado, setOptimisticEstado] = useState(null);
 
