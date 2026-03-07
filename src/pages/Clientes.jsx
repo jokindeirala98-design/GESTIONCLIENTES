@@ -202,5 +202,6 @@ export default function Clientes() {
         zonas={zonas}
       />
     </div>
+    </PullToRefresh>
   );
 }
