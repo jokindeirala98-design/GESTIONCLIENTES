@@ -25,14 +25,14 @@ const estadoColors = {
 
 export default function ClienteCard({ cliente, user, zonas, onClick }) {
   const queryClient = useQueryClient();
-  const [isChangingState, setIsChangingState] = useState(false);
+  const [optimisticEstado, setOptimisticEstado] = useState(null);
 
   const isOwner = cliente.propietario_email === user.email;
   const isAdmin = user.role === "admin";
   const canViewFull = isOwner || isAdmin;
-  const canViewBasic = true; // Todos pueden ver info básica
 
   const zona = zonas.find(z => z.id === cliente.zona_id);
+  const estadoVisible = optimisticEstado ?? cliente.estado;
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
@@ -40,32 +40,25 @@ export default function ClienteCard({ cliente, user, zonas, onClick }) {
       queryClient.invalidateQueries(['clientes']);
       queryClient.invalidateQueries(['cliente', cliente.id]);
       toast.success("Estado actualizado");
-      setIsChangingState(false);
+      setOptimisticEstado(null);
+    },
+    onError: () => {
+      setOptimisticEstado(null);
+      toast.error("Error al actualizar el estado");
     },
   });
 
   const handleEstadoChange = (e, nuevoEstado) => {
     e.stopPropagation();
-    setIsChangingState(true);
-    
-    // Si se cambia a "Firmado con éxito", agregar fecha_cierre y mes_comision
+    // Optimistic update: refleja el cambio de inmediato
+    setOptimisticEstado(nuevoEstado);
+
     if (nuevoEstado === "Firmado con éxito") {
       const fechaCierre = new Date().toISOString().split('T')[0];
       const mesComision = fechaCierre.substring(0, 7);
-      
-      updateMutation.mutate({
-        id: cliente.id,
-        data: { 
-          estado: nuevoEstado,
-          fecha_cierre: fechaCierre,
-          mes_comision: mesComision
-        }
-      });
+      updateMutation.mutate({ id: cliente.id, data: { estado: nuevoEstado, fecha_cierre: fechaCierre, mes_comision: mesComision } });
     } else {
-      updateMutation.mutate({
-        id: cliente.id,
-        data: { estado: nuevoEstado }
-      });
+      updateMutation.mutate({ id: cliente.id, data: { estado: nuevoEstado } });
     }
   };
 
