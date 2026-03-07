@@ -142,7 +142,7 @@ DATO 3 - DIRECCIÓN FISCAL:
                             producto: producto,
                             tarifa: suministro.tipo_factura,
                             telefono: documentosCliente?.telefono || cliente.telefono || "",
-                            direccion_fiscal: documentosCliente?.direccion_fiscal || "",
+                            direccion_fiscal: extractedDireccionFiscal || documentosCliente?.direccion_fiscal || "",
                             enviado: false,
                             denegado: false,
                         });
