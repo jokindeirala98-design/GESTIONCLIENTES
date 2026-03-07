@@ -76,8 +76,11 @@ export default function Clientes() {
     return matchSearch && matchEstado && matchZona && matchUsuario;
   });
 
-  const sortedClientes = [...filteredClientes].sort((a, b) => 
-    (a.nombre_negocio || "").localeCompare(b.nombre_negocio || "")
+  const sortedClientes = useMemo(() => 
+    [...filteredClientes].sort((a, b) => 
+      (a.nombre_negocio || "").localeCompare(b.nombre_negocio || "")
+    ),
+    [filteredClientes]
   );
 
   return (
