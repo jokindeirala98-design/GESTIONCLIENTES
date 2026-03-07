@@ -445,17 +445,26 @@ export default function Layout({ children }) {
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           {BOTTOM_TABS.map((tab) => {
-            const isActive = location.pathname === createPageUrl(tab.url);
+            const tabUrl = createPageUrl(tab.url);
+            const isActive = location.pathname === tabUrl;
             return (
               <Link
                 key={tab.title}
-                to={createPageUrl(tab.url)}
+                to={tabUrl}
+                replace={isActive}
+                onClick={() => {
+                  if (isActive) {
+                    // Reset to root: navigate to tab root without query params
+                    window.history.pushState({}, '', tabUrl);
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                }}
                 className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
                   isActive ? 'text-[#004D9D]' : 'text-[#999999]'
                 }`}
                 style={{ minHeight: '56px' }}
               >
-                <tab.icon className="w-5 h-5" />
+                <tab.icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : 'scale-100'}`} />
                 <span className="text-[10px] font-medium">{tab.title}</span>
               </Link>
             );
