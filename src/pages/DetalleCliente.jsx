@@ -86,20 +86,33 @@ export default function DetalleCliente() {
   const { data: cliente, isLoading } = useQuery({
     queryKey: ['cliente', clienteId],
     queryFn: async () => {
-      const clientes = await base44.entities.Cliente.list();
-      return clientes.find(c => c.id === clienteId);
+      // Intentar obtener del caché de la lista primero
+      const cached = queryClient.getQueryData(['clientes']);
+      if (cached) {
+        const found = cached.find(c => c.id === clienteId);
+        if (found) return found;
+      }
+      const results = await base44.entities.Cliente.filter({ id: clienteId });
+      return results[0] ?? null;
     },
     enabled: !!clienteId,
+    staleTime: 30_000,
   });
 
   const { data: zona } = useQuery({
     queryKey: ['zona', cliente?.zona_id],
     queryFn: async () => {
       if (!cliente?.zona_id) return null;
-      const zonas = await base44.entities.Zona.list();
-      return zonas.find(z => z.id === cliente.zona_id);
+      const cached = queryClient.getQueryData(['zonas']);
+      if (cached) {
+        const found = cached.find(z => z.id === cliente.zona_id);
+        if (found) return found;
+      }
+      const results = await base44.entities.Zona.filter({ id: cliente.zona_id });
+      return results[0] ?? null;
     },
     enabled: !!cliente?.zona_id,
+    staleTime: 60_000,
   });
 
   const { data: usuarios = [] } = useQuery({
