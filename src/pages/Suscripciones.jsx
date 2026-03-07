@@ -25,19 +25,22 @@ export default function Suscripciones() {
   const { data: planes = [], isLoading: loadingPlanes } = useQuery({
     queryKey: ["planes_pago"],
     queryFn: () => base44.entities.PlanPago.list(),
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 30_000,
   });
 
   const { data: cuotas = [], isLoading: loadingCuotas } = useQuery({
     queryKey: ["cuotas_pago"],
     queryFn: () => base44.entities.CuotaPago.list(),
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 30_000,
   });
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes"],
     queryFn: () => base44.entities.Cliente.list(),
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 30_000,
   });
 
   const isAdmin = user?.role === "admin";
