@@ -81,21 +81,25 @@ export default function Calendario() {
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
+    staleTime: 30_000,
   });
 
   const { data: tareas = [] } = useQuery({
     queryKey: ['tareas'],
     queryFn: () => base44.entities.Tarea.list(),
+    staleTime: 30_000,
   });
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
+    staleTime: 120_000,
   });
 
   const { data: tareasCorcho = [] } = useQuery({
     queryKey: ['tareasCorcho'],
     queryFn: () => base44.entities.TareaCorcho.list(),
+    staleTime: 20_000,
   });
 
   const createEventMutation = useMutation({
