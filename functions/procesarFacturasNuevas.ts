@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
                 const extractionResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
                     prompt: `Eres un extractor de datos de facturas de energía española.
 
-Tu tarea es encontrar DOS datos en el documento adjunto:
+Tu tarea es encontrar TRES datos en el documento adjunto:
 
 DATO 1 - CUPS:
 1. El CUPS aparece SIEMPRE junto a la etiqueta "CUPS" en la factura. Busca específicamente la línea o campo que diga exactamente "CUPS" y extrae el valor que aparece a su derecha o debajo.
@@ -55,13 +55,21 @@ DATO 2 - TITULAR:
 1. Busca el nombre del titular o razón social del suministro. Suele aparecer junto a etiquetas como "Titular", "Razón Social", "Nombre del titular", "Cliente" o similar.
 2. Es el nombre de la persona o empresa que figura como titular del contrato de energía (NO la empresa distribuidora ni comercializadora).
 3. Devuelve el nombre exactamente como aparece en la factura.
-4. Si no lo encuentras, devuelve null.`,
+4. Si no lo encuentras, devuelve null.
+
+DATO 3 - DIRECCIÓN FISCAL:
+1. Busca la dirección FISCAL o de FACTURACIÓN del titular. Esta es DISTINTA a la dirección del punto de suministro (donde está el contador).
+2. Suele aparecer junto a etiquetas como "Dirección fiscal", "Dirección de facturación", "Domicilio fiscal", "Datos del titular", o en la cabecera de la factura junto al nombre del titular.
+3. NO confundas con la "Dirección de suministro", "Dirección del punto de suministro" o "Dirección del contador".
+4. Incluye toda la dirección completa: calle, número, piso, código postal, ciudad y provincia si aparecen.
+5. Si no puedes distinguir con claridad cuál es la fiscal (por ejemplo si solo aparece una dirección), devuelve null. Solo devuelve si es claramente identificable como fiscal/facturación.`,
                     file_urls: [factura.url],
                     response_json_schema: {
                         type: "object",
                         properties: {
                             cups: { type: "string", description: "El código CUPS extraído del campo 'CUPS' de la factura. Null si no aparece." },
-                            titular: { type: "string", description: "Nombre del titular o razón social del suministro. Null si no aparece." }
+                            titular: { type: "string", description: "Nombre del titular o razón social del suministro. Null si no aparece." },
+                            direccion_fiscal: { type: "string", description: "Dirección fiscal o de facturación del titular. Solo si es claramente distinguible de la dirección de suministro. Null si no se puede determinar con certeza." }
                         }
                     }
                 });
