@@ -38,11 +38,13 @@ export default function Clientes() {
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list('-created_date'),
+    staleTime: 30_000,
   });
 
   const { data: zonas = [] } = useQuery({
     queryKey: ['zonas'],
     queryFn: () => base44.entities.Zona.list(),
+    staleTime: 120_000,
   });
 
   const isAdmin = user?.role === "admin";
@@ -51,6 +53,7 @@ export default function Clientes() {
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
     enabled: isAdmin,
+    staleTime: 120_000,
   });
 
   if (!user) return null;
