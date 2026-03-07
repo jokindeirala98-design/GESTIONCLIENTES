@@ -80,8 +80,12 @@ DATO 3 - DIRECCIÓN FISCAL:
                 let extractedTitular = extractionResult?.titular || null;
                 if (extractedTitular === "null" || extractedTitular === "" || extractedTitular === "undefined") extractedTitular = null;
 
+                let extractedDireccionFiscal = extractionResult?.direccion_fiscal || null;
+                if (extractedDireccionFiscal === "null" || extractedDireccionFiscal === "" || extractedDireccionFiscal === "undefined") extractedDireccionFiscal = null;
+
                 console.log(`CUPS extraído para suministro ${suministro.id}: ${extractedCups}`);
                 console.log(`Titular extraído para suministro ${suministro.id}: ${extractedTitular}`);
+                console.log(`Dirección fiscal extraída para suministro ${suministro.id}: ${extractedDireccionFiscal}`);
 
                 if (!extractedCups) continue;
 
