@@ -79,6 +79,8 @@ export default function Layout({ children }) {
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list(),
     enabled: !!user && user.role === 'admin',
+    staleTime: 30_000,
+    select: (data) => data.filter(c => c.estado === "Pendiente de aprobación"),
   });
 
   if (!user) {
