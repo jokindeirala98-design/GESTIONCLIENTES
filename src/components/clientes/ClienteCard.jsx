@@ -182,4 +182,6 @@ const ClienteCard = memo(function ClienteCard({ cliente, user, zonas, onClick })
       </CardContent>
     </Card>
   );
-}
+});
+
+export default ClienteCard;
