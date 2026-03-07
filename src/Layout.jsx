@@ -435,9 +435,32 @@ export default function Layout({ children }) {
         </header>
 
         {/* Mobile Content */}
-        <main className="pb-4">
+        <main className="pb-20">
           {children}
         </main>
+
+        {/* Bottom Tab Bar */}
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
+          {BOTTOM_TABS.map((tab) => {
+            const isActive = location.pathname === createPageUrl(tab.url);
+            return (
+              <Link
+                key={tab.title}
+                to={createPageUrl(tab.url)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
+                  isActive ? 'text-[#004D9D]' : 'text-[#999999]'
+                }`}
+                style={{ minHeight: '56px' }}
+              >
+                <tab.icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium">{tab.title}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       <style>{`

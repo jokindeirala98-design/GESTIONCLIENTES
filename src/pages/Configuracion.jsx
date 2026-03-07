@@ -345,6 +345,45 @@ export default function Configuracion() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="border-none shadow-md border-l-4 border-red-500">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-red-600 mb-1">Zona de peligro</h3>
+                <p className="text-sm text-[#666666]">Eliminar tu cuenta de forma permanente</p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="flex items-center gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar cuenta
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Eliminar cuenta?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción es permanente e irreversible. Se eliminarán todos tus datos. Para continuar, contacta con el administrador del sistema.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={() => {
+                        // Placeholder: contactar con soporte para eliminación real
+                        toast.info("Solicitud enviada. El administrador procesará la eliminación de tu cuenta.");
+                      }}
+                    >
+                      Confirmar eliminación
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
