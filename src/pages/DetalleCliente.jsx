@@ -68,6 +68,7 @@ export default function DetalleCliente() {
    const [showEditDialog, setShowEditDialog] = useState(false);
    const [showPropietarioPopover, setShowPropietarioPopover] = useState(false);
    const [showEstadoSelector, setShowEstadoSelector] = useState(false);
+   const [optimisticEstado, setOptimisticEstado] = useState(null);
 
    const urlParams = new URLSearchParams(window.location.search);
    const clienteId = urlParams.get('id');
