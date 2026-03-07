@@ -347,7 +347,7 @@ export default function Layout({ children }) {
       {/* Mobile Layout */}
       <div className="md:hidden">
         {/* Mobile Header */}
-        <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
+        <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

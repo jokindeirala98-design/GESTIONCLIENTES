@@ -600,7 +600,7 @@ export default function DetalleCliente() {
       <Button
         variant="outline"
         onClick={() => window.history.back()}
-        className="mb-6"
+        className="mb-6 min-h-[44px] min-w-[44px]"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Volver
