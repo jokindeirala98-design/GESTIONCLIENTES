@@ -79,7 +79,7 @@ export default function Clientes() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#004D9D] mb-2">
@@ -201,7 +201,7 @@ export default function Clientes() {
         user={user}
         zonas={zonas}
       />
-    </div>
+      </div>
     </PullToRefresh>
   );
 }
