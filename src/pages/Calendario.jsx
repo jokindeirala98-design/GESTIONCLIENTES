@@ -1190,6 +1190,7 @@ export default function Calendario() {
                             if (!b.fecha_completada) return -1;
                             return new Date(b.fecha_completada) - new Date(a.fecha_completada);
                           })
+                          .slice(0, 10)
                           .map((tarea, index) => (
                             <Draggable key={tarea.id} draggableId={tarea.id} index={index}>
                               {(provided, snapshot) => (
