@@ -225,9 +225,7 @@ export default function Layout({ children }) {
       title: "Cierres Verificados",
       url: createPageUrl("CierresVerificados"),
       icon: CheckCircle2,
-      badge: clientes.filter(c => c.estado === "Pendiente de aprobación").length > 0 
-        ? clientes.filter(c => c.estado === "Pendiente de aprobación").length 
-        : null
+      badge: clientes.length > 0 ? clientes.length : null
     },
     {
       title: "Comisiones",
