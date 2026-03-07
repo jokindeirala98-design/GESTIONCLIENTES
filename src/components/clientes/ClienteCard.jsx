@@ -182,6 +182,6 @@ function ClienteCard({ cliente, user, zonas, onClick }) {
       </CardContent>
     </Card>
   );
-});
+}
 
-export default ClienteCard;
+export default memo(ClienteCard);
