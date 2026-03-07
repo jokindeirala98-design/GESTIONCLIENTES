@@ -99,21 +99,27 @@ DATO 3 - DIRECCIÓN FISCAL:
                 await base44.asServiceRole.entities.Cliente.update(clienteId, { suministros: suministrosActualizados });
                 console.log(`CUPS ${extractedCups} guardado en suministro ${suministro.id}`);
 
-                // Update DocumentosCliente with titular if extracted
-                if (extractedTitular) {
+                // Update DocumentosCliente with titular and/or dirección fiscal if extracted
+                if (extractedTitular || extractedDireccionFiscal) {
                     const allDocs = await base44.asServiceRole.entities.DocumentosCliente.filter({ cliente_id: clienteId });
                     if (allDocs.length === 0) {
-                        await base44.asServiceRole.entities.DocumentosCliente.create({
+                        const newDoc = {
                             cliente_id: clienteId,
                             cliente_nombre: cliente.nombre_negocio,
-                            nombre_empresa: extractedTitular,
-                        });
-                        console.log("DocumentosCliente creado con titular:", extractedTitular);
-                    } else if (!allDocs[0].nombre_empresa) {
-                        await base44.asServiceRole.entities.DocumentosCliente.update(allDocs[0].id, {
-                            nombre_empresa: extractedTitular,
-                        });
-                        console.log("DocumentosCliente actualizado con titular:", extractedTitular);
+                        };
+                        if (extractedTitular) newDoc.nombre_empresa = extractedTitular;
+                        if (extractedDireccionFiscal) newDoc.direccion_fiscal = extractedDireccionFiscal;
+                        await base44.asServiceRole.entities.DocumentosCliente.create(newDoc);
+                        console.log("DocumentosCliente creado con titular:", extractedTitular, "y dirección fiscal:", extractedDireccionFiscal);
+                    } else {
+                        const doc = allDocs[0];
+                        const updates = {};
+                        if (extractedTitular && !doc.nombre_empresa) updates.nombre_empresa = extractedTitular;
+                        if (extractedDireccionFiscal && !doc.direccion_fiscal) updates.direccion_fiscal = extractedDireccionFiscal;
+                        if (Object.keys(updates).length > 0) {
+                            await base44.asServiceRole.entities.DocumentosCliente.update(doc.id, updates);
+                            console.log("DocumentosCliente actualizado:", updates);
+                        }
                     }
                 }
 
