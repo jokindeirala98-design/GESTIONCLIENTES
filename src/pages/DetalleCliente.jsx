@@ -119,6 +119,7 @@ export default function DetalleCliente() {
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
     enabled: user?.role === 'admin',
+    staleTime: 120_000,
   });
 
   const comerciales = usuarios.filter(u => u.role === 'user' || u.role === 'admin');
