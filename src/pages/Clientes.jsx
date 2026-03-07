@@ -195,7 +195,7 @@ export default function Clientes() {
               cliente={cliente}
               user={user}
               zonas={zonas}
-              onClick={() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))}
+              onClick={useCallback ? (() => navigate(createPageUrl(`DetalleCliente?id=${cliente.id}`))) : undefined}
             />
           ))
         )}
