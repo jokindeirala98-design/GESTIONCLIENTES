@@ -435,9 +435,19 @@ export default function Layout({ children }) {
           </div>
         </header>
 
-        {/* Mobile Content */}
-        <main className="pb-20">
-          {children}
+        {/* Mobile Content with slide transition */}
+        <main className="pb-20 overflow-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname + location.search}
+              initial={{ x: 30, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -30, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         {/* Bottom Tab Bar */}
