@@ -46,7 +46,9 @@ const BOTTOM_TABS = [
 ];
 
 export default function Layout({ children }) {
-  useSystemTheme();
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+  }, []);
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
