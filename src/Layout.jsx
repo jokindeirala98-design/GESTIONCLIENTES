@@ -21,7 +21,18 @@ import {
   CreditCard
 } from "lucide-react";
 
-
+// ThemeProvider: aplica clase 'dark' automáticamente según preferencia del sistema
+function useSystemTheme() {
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = (e) => {
+      document.documentElement.classList.toggle('dark', e.matches);
+    };
+    apply(mq);
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+}
 import {
   Sidebar,
   SidebarContent,
@@ -46,10 +57,7 @@ const BOTTOM_TABS = [
 ];
 
 export default function Layout({ children }) {
-  // Forzar siempre modo claro
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
-  }, []);
+  useSystemTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
