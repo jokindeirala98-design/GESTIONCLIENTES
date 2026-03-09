@@ -442,13 +442,9 @@ const sidebarMenuButtonVariants = cva(
 )
 
 const SidebarMenuButton = React.forwardRef(function SidebarMenuButton(
-  { asChild, isActive, variant, size, tooltip, className, ...props },
+  { asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, ...props },
   ref
 ) {
-  asChild = asChild ?? false;
-  isActive = isActive ?? false;
-  variant = variant ?? "default";
-  size = size ?? "default";
   const Comp = asChild ? Slot : "button"
   const { isMobile, state } = useSidebar()
 
