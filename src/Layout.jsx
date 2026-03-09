@@ -21,10 +21,19 @@ import {
   CreditCard
 } from "lucide-react";
 
-// Forzar siempre modo claro
+// Forzar siempre modo claro - nunca modo oscuro
 function useSystemTheme() {
   useEffect(() => {
     document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+    // Observer para evitar que nada externo vuelva a poner dark
+    const observer = new MutationObserver(() => {
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
   }, []);
 }
 import {
