@@ -21,16 +21,10 @@ import {
   CreditCard
 } from "lucide-react";
 
-// ThemeProvider: aplica clase 'dark' automáticamente según preferencia del sistema
+// Forzar siempre modo claro
 function useSystemTheme() {
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = (e) => {
-      document.documentElement.classList.toggle('dark', e.matches);
-    };
-    apply(mq);
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
+    document.documentElement.classList.remove('dark');
   }, []);
 }
 import {
