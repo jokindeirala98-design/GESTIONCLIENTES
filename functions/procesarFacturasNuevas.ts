@@ -165,7 +165,7 @@ DATO 3 - DIRECCIÓN FISCAL:
                                 await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
                             }
                             await base44.asServiceRole.entities.TareaCorcho.create({
-                                descripcion: `Solicitar prescoring CUPS: ${extractedCups} - ${cliente.nombre_negocio}`,
+                                descripcion: `Solicitar prescoring ${extractedCups ? `CUPS: ${extractedCups}` : `cliente: ${cliente.nombre_negocio}`} - ${cliente.nombre_negocio}`,
                                 notas: `Titular: ${extractedTitular || "No extraído"} | Cliente: ${cliente.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro.tipo_factura}`,
                                 completada: false,
                                 prioridad: 'rojo',
