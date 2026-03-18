@@ -103,6 +103,31 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     toast.success("Factura eliminada");
   };
 
+  const isZip = (file) => file.type === 'application/zip' || file.type === 'application/x-zip-compressed' || file.name.endsWith('.zip');
+
+  const handleFileSelected = (suministro, files) => {
+    const fileArray = Array.from(files);
+    const tieneZip = fileArray.some(isZip);
+    const tienePdf = fileArray.some(f => !isZip(f));
+    const yaTieneCups = !!suministro.cups;
+
+    // Si hay ZIP y no hay PDF/imagen y no tiene CUPS ya → mostrar aviso
+    if (tieneZip && !tienePdf && !yaTieneCups) {
+      setFacturaExtra(null);
+      setZipWarning({ suministro, files: fileArray });
+      return;
+    }
+    handleUploadFacturas(suministro, fileArray);
+  };
+
+  const handleConfirmZipUpload = async (conFacturaExtra) => {
+    const { suministro, files } = zipWarning;
+    const allFiles = conFacturaExtra && facturaExtra ? [...files, facturaExtra] : files;
+    setZipWarning(null);
+    setFacturaExtra(null);
+    await handleUploadFacturas(suministro, allFiles);
+  };
+
   const handleUploadFacturas = async (suministro, files) => {
     const remaining = 3 - (suministro.facturas || []).length;
     const filesToUpload = Array.from(files).slice(0, remaining);
