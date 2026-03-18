@@ -260,7 +260,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
 
                             {isOwnerOrAdmin && (suministro.facturas || []).length < 3 && (
                               <>
-                                <input type="file" id={`upload-${suministro.id}`} className="hidden" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple onChange={async (e) => { await handleUploadFacturas(suministro, e.target.files); e.target.value = ""; }} />
+                                <input type="file" id={`upload-${suministro.id}`} className="hidden" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple onChange={async (e) => { await handleFileSelected(suministro, e.target.files); e.target.value = ""; }} />
                                 <Button size="sm" variant="outline" onClick={() => document.getElementById(`upload-${suministro.id}`).click()} className="w-full text-xs h-7 border-blue-300 text-blue-700">
                                   <Upload className="w-3.5 h-3.5 mr-1" /> Añadir factura(s)
                                 </Button>
