@@ -416,6 +416,49 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
         )}
       </CardContent>
 
+      {/* Diálogo aviso ZIP sin CUPS */}
+      <Dialog open={!!zipWarning} onOpenChange={() => { setZipWarning(null); setFacturaExtra(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-[#004D9D]">📦 Archivo ZIP detectado</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-gray-700">
+            <p>Has adjuntado un archivo ZIP. Los ZIPs <strong>no permiten extraer el CUPS</strong> automáticamente, por lo que no se creará el prescoring ni la tarea de Iranzu.</p>
+            <p>¿Quieres adjuntar también una factura en <strong>PDF o imagen</strong> para extraer el CUPS?</p>
+            <div>
+              <input
+                type="file"
+                id="factura-extra-zip"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setFacturaExtra(e.target.files[0] || null)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-blue-300 text-blue-700"
+                onClick={() => document.getElementById('factura-extra-zip').click()}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {facturaExtra ? `✅ ${facturaExtra.name}` : "Seleccionar factura PDF/imagen"}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button variant="outline" onClick={() => handleConfirmZipUpload(false)} className="text-gray-500">
+              Subir solo el ZIP
+            </Button>
+            <Button
+              onClick={() => handleConfirmZipUpload(true)}
+              disabled={!facturaExtra}
+              className="bg-[#004D9D] hover:bg-[#00AEEF]"
+            >
+              Subir ZIP + factura
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
