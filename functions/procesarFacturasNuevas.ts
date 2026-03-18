@@ -129,8 +129,14 @@ DATO 3 - DIRECCIÓN FISCAL:
                 // Create PrescoringGALP (skip for tarifa 2.0)
                 const esLuz20 = suministro.tipo_factura === "2.0";
                 if (!esLuz20) {
-                    const existingPrescorings = await base44.asServiceRole.entities.PrescoringGALP.filter({ cups: extractedCups });
-                    if (existingPrescorings.length === 0) {
+                    // For ZIPs without CUPS, check by nombre_negocio to avoid duplicates
+                    const prescoringKey = extractedCups || null;
+                    const existingPrescorings = prescoringKey
+                        ? await base44.asServiceRole.entities.PrescoringGALP.filter({ cups: prescoringKey })
+                        : [];
+                    // For ZIP without CUPS, also check if already created for this cliente (cups empty)
+                    const yaExiste = existingPrescorings.length > 0 || (!extractedCups && (await base44.asServiceRole.entities.PrescoringGALP.filter({ nombre_razon_social: cliente.nombre_negocio })).some(p => !p.cups || p.cups === ""));
+                    if (!yaExiste) {
                         const GAS_TARIFAS = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
                         const esGas = GAS_TARIFAS.includes(suministro.tipo_factura);
                         const producto = esGas ? "Gas" : "Energía";
