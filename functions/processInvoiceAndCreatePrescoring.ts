@@ -68,6 +68,9 @@ DATO 2 - TITULAR:
         console.log("CUPS extraído:", extractedCups);
         console.log("Titular extraído:", extractedTitular);
 
+        // Check if this is a ZIP file (can't extract CUPS from ZIP)
+        const esZip = file_url?.toLowerCase().includes('.zip') || file_url?.includes('zip');
+
         // 2. Update the CUPS field directly in the suministro within Cliente
         if (extractedCups) {
             const clienteData = await base44.asServiceRole.entities.Cliente.get(cliente_id);
