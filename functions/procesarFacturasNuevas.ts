@@ -145,7 +145,7 @@ DATO 3 - DIRECCIÓN FISCAL:
                         const documentosCliente = allDocs[0];
 
                         await base44.asServiceRole.entities.PrescoringGALP.create({
-                            cups: extractedCups,
+                            cups: extractedCups || "",
                             nombre_razon_social: extractedTitular || cliente.nombre_negocio,
                             cif: documentosCliente?.cif || "",
                             producto: producto,
