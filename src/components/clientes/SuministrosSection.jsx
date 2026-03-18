@@ -28,6 +28,8 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   }, [cliente.suministros]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [nuevoSuministro, setNuevoSuministro] = useState({ nombre: "", energia: "", tipo_factura: "" });
+  const [zipWarning, setZipWarning] = useState(null); // { suministro, files }
+  const [facturaExtra, setFacturaExtra] = useState(null);
 
   const tarifasLuz = ["2.0", "3.0", "6.1", "6.2"];
   const tarifasGas = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
