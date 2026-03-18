@@ -28,8 +28,6 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
   }, [cliente.suministros]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [nuevoSuministro, setNuevoSuministro] = useState({ nombre: "", energia: "", tipo_factura: "" });
-  const [zipWarning, setZipWarning] = useState(null); // { suministro, files }
-  const [facturaExtra, setFacturaExtra] = useState(null);
 
   const tarifasLuz = ["2.0", "3.0", "6.1", "6.2"];
   const tarifasGas = ["RL1", "RL2", "RL3", "RL4", "RL5", "RL6"];
@@ -101,31 +99,6 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
     setSuministros(nuevosSuministros);
     onUpdate({ suministros: nuevosSuministros });
     toast.success("Factura eliminada");
-  };
-
-  const isZip = (file) => file.type === 'application/zip' || file.type === 'application/x-zip-compressed' || file.name.endsWith('.zip');
-
-  const handleFileSelected = (suministro, files) => {
-    const fileArray = Array.from(files);
-    const tieneZip = fileArray.some(isZip);
-    const tienePdf = fileArray.some(f => !isZip(f));
-    const yaTieneCups = !!suministro.cups;
-
-    // Si hay ZIP y no hay PDF/imagen y no tiene CUPS ya → mostrar aviso
-    if (tieneZip && !tienePdf && !yaTieneCups) {
-      setFacturaExtra(null);
-      setZipWarning({ suministro, files: fileArray });
-      return;
-    }
-    handleUploadFacturas(suministro, fileArray);
-  };
-
-  const handleConfirmZipUpload = async (conFacturaExtra) => {
-    const { suministro, files } = zipWarning;
-    const allFiles = conFacturaExtra && facturaExtra ? [...files, facturaExtra] : files;
-    setZipWarning(null);
-    setFacturaExtra(null);
-    await handleUploadFacturas(suministro, allFiles);
   };
 
   const handleUploadFacturas = async (suministro, files) => {
@@ -260,7 +233,7 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
 
                             {isOwnerOrAdmin && (suministro.facturas || []).length < 3 && (
                               <>
-                                <input type="file" id={`upload-${suministro.id}`} className="hidden" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple onChange={async (e) => { await handleFileSelected(suministro, e.target.files); e.target.value = ""; }} />
+                                <input type="file" id={`upload-${suministro.id}`} className="hidden" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple onChange={async (e) => { await handleUploadFacturas(suministro, e.target.files); e.target.value = ""; }} />
                                 <Button size="sm" variant="outline" onClick={() => document.getElementById(`upload-${suministro.id}`).click()} className="w-full text-xs h-7 border-blue-300 text-blue-700">
                                   <Upload className="w-3.5 h-3.5 mr-1" /> Añadir factura(s)
                                 </Button>
@@ -415,49 +388,6 @@ export default function SuministrosSection({ cliente, onUpdate, isOwnerOrAdmin }
           </Button>
         )}
       </CardContent>
-
-      {/* Diálogo aviso ZIP sin CUPS */}
-      <Dialog open={!!zipWarning} onOpenChange={() => { setZipWarning(null); setFacturaExtra(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-[#004D9D]">📦 Archivo ZIP detectado</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 text-sm text-gray-700">
-            <p>Has adjuntado un archivo ZIP. Los ZIPs <strong>no permiten extraer el CUPS</strong> automáticamente, por lo que no se creará el prescoring ni la tarea de Iranzu.</p>
-            <p>¿Quieres adjuntar también una factura en <strong>PDF o imagen</strong> para extraer el CUPS?</p>
-            <div>
-              <input
-                type="file"
-                id="factura-extra-zip"
-                className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => setFacturaExtra(e.target.files[0] || null)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-blue-300 text-blue-700"
-                onClick={() => document.getElementById('factura-extra-zip').click()}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {facturaExtra ? `✅ ${facturaExtra.name}` : "Seleccionar factura PDF/imagen"}
-              </Button>
-            </div>
-          </div>
-          <DialogFooter className="mt-4 flex gap-2">
-            <Button variant="outline" onClick={() => handleConfirmZipUpload(false)} className="text-gray-500">
-              Subir solo el ZIP
-            </Button>
-            <Button
-              onClick={() => handleConfirmZipUpload(true)}
-              disabled={!facturaExtra}
-              className="bg-[#004D9D] hover:bg-[#00AEEF]"
-            >
-              Subir ZIP + factura
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
