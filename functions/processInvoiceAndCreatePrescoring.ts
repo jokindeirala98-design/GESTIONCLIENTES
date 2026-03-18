@@ -27,6 +27,53 @@ Deno.serve(async (req) => {
             return Response.json({ success: true, extractedCups: suministroPre.cups, skipped: true });
         }
 
+        // Check if this is a ZIP file BEFORE calling LLM (LLM doesn't support ZIP)
+        const esZip = file_url?.toLowerCase().includes('.zip');
+
+        // If ZIP: skip LLM extraction entirely, go directly to prescoring creation
+        if (esZip && !esLuz20) {
+            const clienteData = await base44.asServiceRole.entities.Cliente.get(cliente_id);
+            const producto = esGas ? "Gas" : "Energía";
+
+            const existingPrescorings = await base44.asServiceRole.entities.PrescoringGALP.filter({ nombre_razon_social: clienteData.nombre_negocio });
+            const yaExisteSinCups = existingPrescorings.some(p => !p.cups || p.cups === "");
+            if (!yaExisteSinCups) {
+                const allDocs = await base44.asServiceRole.entities.DocumentosCliente.filter({ cliente_id: cliente_id });
+                const documentosCliente = allDocs[0];
+                await base44.asServiceRole.entities.PrescoringGALP.create({
+                    cups: "",
+                    nombre_razon_social: clienteData.nombre_negocio,
+                    cif: documentosCliente?.cif || "",
+                    producto: producto,
+                    tarifa: suministro_tipo_factura,
+                    telefono: documentosCliente?.telefono || clienteData.telefono || "",
+                    direccion_fiscal: documentosCliente?.direccion_fiscal || "",
+                    enviado: false,
+                    denegado: false,
+                });
+                console.log("PrescoringGALP creado (ZIP) para:", clienteData.nombre_negocio);
+
+                const PROPIETARIOS = ['iranzu@voltisenergia.com', 'jose@voltisenergia.com'];
+                for (const propietarioEmail of PROPIETARIOS) {
+                    const tareasExistentes = await base44.asServiceRole.entities.TareaCorcho.filter({ propietario_email: propietarioEmail });
+                    for (const tarea of tareasExistentes) {
+                        await base44.asServiceRole.entities.TareaCorcho.update(tarea.id, { orden: (tarea.orden || 0) + 1 });
+                    }
+                    await base44.asServiceRole.entities.TareaCorcho.create({
+                        descripcion: `Solicitar prescoring cliente: ${clienteData.nombre_negocio}`,
+                        notas: `Cliente: ${clienteData.nombre_negocio} | Producto: ${producto} | Tarifa: ${suministro_tipo_factura} | ZIP adjunto (sin CUPS extraído)`,
+                        completada: false,
+                        prioridad: 'rojo',
+                        orden: 0,
+                        creador_email: propietarioEmail,
+                        propietario_email: propietarioEmail,
+                    });
+                    console.log(`TareaCorcho (ZIP) creada para ${propietarioEmail}`);
+                }
+            }
+            return Response.json({ success: true, extractedCups: null, esZip: true });
+        }
+
         // 1. Extract CUPS and titular from the invoice using AI
         const EXTRACTION_PROMPT = `Eres un extractor de datos de facturas de energía española.
 
