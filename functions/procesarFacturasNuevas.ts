@@ -87,7 +87,10 @@ DATO 3 - DIRECCIÓN FISCAL:
                 console.log(`Titular extraído para suministro ${suministro.id}: ${extractedTitular}`);
                 console.log(`Dirección fiscal extraída para suministro ${suministro.id}: ${extractedDireccionFiscal}`);
 
-                if (!extractedCups) continue;
+                // Check if this is a ZIP file
+                const esZip = factura.tipo_archivo === 'application/zip' || factura.nombre?.toLowerCase().endsWith('.zip');
+
+                if (!extractedCups && !esZip) continue;
 
                 // Save CUPS in the suministro
                 const suministrosActualizados = suministros.map(s => {
