@@ -84,6 +84,13 @@ export default function InformesPotencias() {
       return;
     }
 
+    // Alerta obligatoria sobre la plantilla económica
+    const tienePlantilla = !!cliente.suministros.find(s => s.id === suministroId)?.plantilla_economica || !!plantillasSubidas[suministroId];
+    if (!tienePlantilla) {
+      const continuar = window.confirm("⚠️ JOSELITO CABEZA CHORLITO, ¿HAS SUBIDO LA PLANTILLA ECONÓMICA?\n\n• SÍ → el informe se enviará a Informes por Presentar\n• NO → cancela para subir la plantilla primero");
+      if (!continuar) return;
+    }
+
     setGuardando(prev => ({ ...prev, [suministroId]: true }));
 
     try {
