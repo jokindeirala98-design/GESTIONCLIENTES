@@ -1,0 +1,324 @@
+{
+  "name": "Cliente",
+  "type": "object",
+  "properties": {
+    "nombre_negocio": {
+      "type": "string",
+      "description": "Nombre del negocio"
+    },
+    "nombre_cliente": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Tel\u00e9fono del cliente"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email del cliente"
+    },
+    "zona_id": {
+      "type": "string",
+      "description": "ID de la zona a la que pertenece"
+    },
+    "propietario_email": {
+      "type": "string",
+      "description": "Email del comercial propietario"
+    },
+    "propietario_iniciales": {
+      "type": "string",
+      "description": "Iniciales del propietario"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Primer contacto",
+        "Esperando facturas",
+        "Facturas presentadas",
+        "Pendiente informe potencias",
+        "Informe listo",
+        "Pendiente de firma",
+        "Pendiente de aprobaci\u00f3n",
+        "Firmado con \u00e9xito",
+        "Rechazado",
+        "Ignorado con mucho \u00e9xito"
+      ],
+      "default": "Primer contacto",
+      "description": "Estado actual del cliente"
+    },
+    "anotaciones": {
+      "type": "string",
+      "description": "Anotaciones sobre el cliente"
+    },
+    "cliente_principal_id": {
+      "type": "string",
+      "description": "ID del cliente al que est\u00e1 vinculado este cliente"
+    },
+    "datos_factura_whatsapp": {
+      "type": "string",
+      "description": "Datos JSON extra\u00eddos de la factura procesada por WhatsApp"
+    },
+    "suministros": {
+      "type": "array",
+      "description": "Lista de suministros del cliente",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "description": "Nombre del suministro (ej: Casa, Restaurante, Local 1)"
+          },
+          "cups": {
+            "type": "string",
+            "description": "CUPS del suministro (extra\u00eddo autom\u00e1ticamente de la factura)"
+          },
+          "tipo_factura": {
+            "type": "string",
+            "enum": [
+              "2.0",
+              "3.0",
+              "6.1",
+              "6.2",
+              "RL1",
+              "RL2",
+              "RL3",
+              "RL4",
+              "RL5",
+              "RL6"
+            ],
+            "description": "Tipo de factura del suministro (Luz: 2.0/3.0/6.1/6.2, Gas: RL1-RL6)"
+          },
+          "facturas": {
+            "type": "array",
+            "description": "Facturas del suministro (m\u00e1x 3)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "fecha_subida": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "tipo_archivo": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "informe_potencias": {
+            "type": "object",
+            "description": "Informe de potencias (Excel) de este suministro",
+            "properties": {
+              "nombre": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "fecha_subida": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "subido_por_email": {
+                "type": "string"
+              }
+            }
+          },
+          "plantilla_economica": {
+            "type": "object",
+            "description": "Plantilla del estudio econ\u00f3mico (Excel) subida por Jos\u00e9",
+            "properties": {
+              "nombre": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "fecha_subida": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "subido_por_email": {
+                "type": "string"
+              }
+            }
+          },
+          "potencias_ignorado": {
+            "type": "boolean",
+            "default": false,
+            "description": "Si se ha omitido el informe de potencias para este suministro"
+          },
+          "informe_final": {
+            "type": "object",
+            "description": "Informe final (comparativo/econ\u00f3mico) de este suministro",
+            "properties": {
+              "archivos": {
+                "type": "array",
+                "description": "Array de archivos PDF del informe",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "nombre": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "nombre": {
+                "type": "string",
+                "description": "Nombre del archivo (formato legacy)"
+              },
+              "url": {
+                "type": "string",
+                "description": "URL del archivo (formato legacy)"
+              },
+              "fecha_subida": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "subido_por_email": {
+                "type": "string"
+              },
+              "notas_admin": {
+                "type": "string",
+                "description": "Notas del administrador para el comercial"
+              }
+            }
+          },
+          "comision": {
+            "type": "number",
+            "description": "Comisi\u00f3n del suministro"
+          },
+          "tipo_rappel": {
+            "type": "string",
+            "enum": [
+              "gas",
+              "luz_20"
+            ],
+            "description": "Tipo de rappel aplicable (null = comisi\u00f3n manual)"
+          },
+          "cerrado": {
+            "type": "boolean",
+            "default": false,
+            "description": "Si este suministro ya fue cerrado y comisionado"
+          },
+          "fecha_cierre_suministro": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha de cierre de este suministro"
+          },
+          "mes_comision_suministro": {
+            "type": "string",
+            "description": "Mes de comisi\u00f3n de este suministro (YYYY-MM)"
+          }
+        }
+      }
+    },
+    "eventos": {
+      "type": "array",
+      "description": "Eventos del cliente",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "verde",
+              "rojo",
+              "amarillo"
+            ]
+          },
+          "tipo_automatico": {
+            "type": "string",
+            "enum": [
+              "recordar_facturas",
+              "recordar_cierre",
+              "feedback_2meses",
+              "feedback_6meses",
+              "feedback_1a\u00f1o",
+              "cita_presentacion"
+            ]
+          }
+        }
+      }
+    },
+    "comision": {
+      "type": "number",
+      "description": "Comisi\u00f3n total del cliente (suma de todos los suministros)"
+    },
+    "fecha_cierre": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se firm\u00f3 con \u00e9xito"
+    },
+    "mes_comision": {
+      "type": "string",
+      "description": "Mes en formato YYYY-MM para agrupar comisiones"
+    },
+    "aprobado_admin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el cierre fue aprobado por el administrador"
+    },
+    "fecha_cambio_pendiente_firma": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se cambi\u00f3 a estado Pendiente de firma"
+    },
+    "cita_presentacion_visitado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si ya se visit\u00f3 al cliente para presentar el informe"
+    },
+    "fecha_visita_presentacion": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha en que se visit\u00f3 al cliente para presentaci\u00f3n"
+    },
+    "contrato_original_url": {
+      "type": "string",
+      "description": "URL del contrato subido por el admin"
+    },
+    "contrato_firmado_url": {
+      "type": "string",
+      "description": "URL del contrato firmado subido por el comercial"
+    },
+    "fecha_validacion_contrato": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de activaci\u00f3n / validaci\u00f3n del contrato"
+    },
+    "contrato_presentado_texto": {
+      "type": "string",
+      "description": "Texto de confirmaci\u00f3n del admin al presentar el contrato"
+    }
+  },
+  "required": [
+    "nombre_negocio",
+    "zona_id",
+    "propietario_email"
+  ]
+}
