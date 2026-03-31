@@ -86,17 +86,12 @@ export default function DetalleCliente() {
   const { data: cliente, isLoading } = useQuery({
     queryKey: ['cliente', clienteId],
     queryFn: async () => {
-      // Intentar obtener del caché de la lista primero
-      const cached = queryClient.getQueryData(['clientes']);
-      if (cached) {
-        const found = cached.find(c => c.id === clienteId);
-        if (found) return found;
-      }
       const results = await base44.entities.Cliente.filter({ id: clienteId });
       return results[0] ?? null;
     },
     enabled: !!clienteId,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const { data: zona } = useQuery({
