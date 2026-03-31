@@ -54,102 +54,16 @@ export default function InformesPotencias() {
 
   const handleSeleccionarInforme = async (suministroId, file) => {
     if (!file) return;
-    
     try {
-      toast.loading("Subiendo archivo...", { id: `upload-${suministroId}` });
-      
+      toast.loading("Subiendo informe...", { id: `upload-${suministroId}` });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
       setInformesSubidos(prev => ({
         ...prev,
-        [suministroId]: {
-          file: file,
-          fileUrl: file_url,
-          fileName: file.name
-        }
+        [suministroId]: { file, fileUrl: file_url, fileName: file.name }
       }));
-      
-      toast.success("Archivo subido. Haz clic en Guardar.", { id: `upload-${suministroId}` });
+      toast.success("Informe subido.", { id: `upload-${suministroId}` });
     } catch (error) {
-      console.error("Error:", error);
       toast.error("Error al subir archivo", { id: `upload-${suministroId}` });
-    }
-  };
-
-  const handleGuardarInforme = async (cliente, suministroId) => {
-    const informeSubido = informesSubidos[suministroId];
-    
-    if (!informeSubido) {
-      toast.error("Selecciona un archivo Excel");
-      return;
-    }
-
-    // Alerta obligatoria sobre la plantilla económica
-    const tienePlantilla = !!cliente.suministros.find(s => s.id === suministroId)?.plantilla_economica || !!plantillasSubidas[suministroId];
-    if (!tienePlantilla) {
-      const continuar = window.confirm("⚠️ JOSELITO CABEZA CHORLITO, ¿HAS SUBIDO LA PLANTILLA ECONÓMICA?\n\n• SÍ → el informe se enviará a Informes por Presentar\n• NO → cancela para subir la plantilla primero");
-      if (!continuar) return;
-    }
-
-    setGuardando(prev => ({ ...prev, [suministroId]: true }));
-
-    try {
-      const nuevosSuministros = cliente.suministros.map(s => {
-        if (s.id === suministroId) {
-          return {
-            ...s,
-            informe_potencias: {
-              nombre: informeSubido.fileName,
-              url: informeSubido.fileUrl,
-              fecha_subida: new Date().toISOString(),
-              subido_por_email: user.email
-            }
-          };
-        }
-        return s;
-      });
-
-      // Solo considerar suministros NO cerrados
-      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
-      
-      const todosConPotencias = suministrosActivos.every(s => s.informe_potencias);
-      const nuevoEstado = todosConPotencias ? "Pendiente informe comparativo" : "Pendiente informe potencias";
-
-      await updateClienteMutation.mutateAsync({
-        id: cliente.id,
-        data: {
-          suministros: nuevosSuministros,
-          estado: nuevoEstado
-        }
-      });
-
-      await queryClient.invalidateQueries(['clientes']);
-      
-      toast.success("Informe de potencias guardado");
-
-      setInformesSubidos(prev => {
-        const newState = { ...prev };
-        delete newState[suministroId];
-        return newState;
-      });
-
-      // Enviar email a Nicolás si todos tienen informe de potencias
-      if (todosConPotencias) {
-        try {
-          await base44.integrations.Core.SendEmail({
-            to: "nicolas@voltisenergia.com",
-            subject: `✅ Informes de potencias listos para ${cliente.nombre_negocio}`,
-            body: `Hola Nicolás,\n\nTodos los informes de potencias de "${cliente.nombre_negocio}" ya están listos.\n\nPuedes verlos en: ${window.location.origin}${createPageUrl("InformesPorPresentar")}\n\nSaludos,\nSistema Voltis`
-          });
-        } catch (emailError) {
-          console.error("Error enviando email:", emailError);
-        }
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Error al guardar el informe");
-    } finally {
-      setGuardando(prev => ({ ...prev, [suministroId]: false }));
     }
   };
 
@@ -162,40 +76,81 @@ export default function InformesPotencias() {
         ...prev,
         [suministroId]: { fileUrl: file_url, fileName: file.name }
       }));
-      toast.success("Plantilla subida. Haz clic en Guardar.", { id: `plantilla-${suministroId}` });
+      toast.success("Plantilla subida.", { id: `plantilla-${suministroId}` });
     } catch (error) {
       toast.error("Error al subir la plantilla", { id: `plantilla-${suministroId}` });
     }
   };
 
-  const handleGuardarPlantilla = async (cliente, suministroId) => {
+  // Guardar informe de potencias (y plantilla si la hay) en un solo paso
+  const handleGuardarTodo = async (cliente, suministroId) => {
+    const informeSubido = informesSubidos[suministroId];
     const plantilla = plantillasSubidas[suministroId];
-    if (!plantilla) { toast.error("Selecciona un archivo Excel"); return; }
+    const suministro = cliente.suministros.find(s => s.id === suministroId);
 
-    setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: true }));
+    if (!informeSubido && !suministro?.informe_potencias) {
+      toast.error("Selecciona el informe de potencias primero");
+      return;
+    }
+
+    // Alerta si no hay plantilla económica
+    const tienePlantilla = !!(suministro?.plantilla_economica || plantilla);
+    if (!tienePlantilla) {
+      const continuar = window.confirm("⚠️ JOSELITO CABEZA CHORLITO, ¿HAS SUBIDO LA PLANTILLA ECONÓMICA?\n\nPulsa Aceptar para guardar sin plantilla.\nPulsa Cancelar para volver y subir la plantilla primero.");
+      if (!continuar) return;
+    }
+
+    setGuardando(prev => ({ ...prev, [suministroId]: true }));
     try {
       const nuevosSuministros = cliente.suministros.map(s => {
-        if (s.id === suministroId) {
-          return {
-            ...s,
-            plantilla_economica: {
-              nombre: plantilla.fileName,
-              url: plantilla.fileUrl,
-              fecha_subida: new Date().toISOString(),
-              subido_por_email: user.email
-            }
+        if (s.id !== suministroId) return s;
+        const updated = { ...s };
+        if (informeSubido) {
+          updated.informe_potencias = {
+            nombre: informeSubido.fileName,
+            url: informeSubido.fileUrl,
+            fecha_subida: new Date().toISOString(),
+            subido_por_email: user.email
           };
         }
-        return s;
+        if (plantilla) {
+          updated.plantilla_economica = {
+            nombre: plantilla.fileName,
+            url: plantilla.fileUrl,
+            fecha_subida: new Date().toISOString(),
+            subido_por_email: user.email
+          };
+        }
+        return updated;
       });
-      await updateClienteMutation.mutateAsync({ id: cliente.id, data: { suministros: nuevosSuministros } });
+
+      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
+      const todosTratados = suministrosActivos.every(s => s.informe_potencias || s.potencias_ignorado);
+      const nuevoEstado = todosTratados ? "Pendiente informe comparativo" : "Pendiente informe potencias";
+
+      await updateClienteMutation.mutateAsync({
+        id: cliente.id,
+        data: { suministros: nuevosSuministros, estado: nuevoEstado }
+      });
       await queryClient.invalidateQueries(['clientes']);
-      toast.success("Plantilla guardada");
+
+      toast.success("Guardado correctamente");
+      setInformesSubidos(prev => { const s = { ...prev }; delete s[suministroId]; return s; });
       setPlantillasSubidas(prev => { const s = { ...prev }; delete s[suministroId]; return s; });
+
+      if (todosTratados) {
+        try {
+          await base44.integrations.Core.SendEmail({
+            to: "nicolas@voltisenergia.com",
+            subject: `✅ Informes de potencias listos para ${cliente.nombre_negocio}`,
+            body: `Hola Nicolás,\n\nTodos los informes de potencias de "${cliente.nombre_negocio}" ya están listos.\n\nPuedes verlos en: ${window.location.origin}${createPageUrl("InformesPorPresentar")}\n\nSaludos,\nSistema Voltis`
+          });
+        } catch (e) { console.error("Email error:", e); }
+      }
     } catch (error) {
-      toast.error("Error al guardar la plantilla");
+      toast.error("Error al guardar");
     } finally {
-      setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: false }));
+      setGuardando(prev => ({ ...prev, [suministroId]: false }));
     }
   };
 
@@ -204,10 +159,7 @@ export default function InformesPotencias() {
     setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: true }));
     try {
       const nuevosSuministros = cliente.suministros.map(s => {
-        if (s.id === suministroId) {
-          const { plantilla_economica, ...resto } = s;
-          return resto;
-        }
+        if (s.id === suministroId) { const { plantilla_economica, ...resto } = s; return resto; }
         return s;
       });
       await updateClienteMutation.mutateAsync({ id: cliente.id, data: { suministros: nuevosSuministros } });
@@ -217,45 +169,6 @@ export default function InformesPotencias() {
       toast.error("Error al eliminar la plantilla");
     } finally {
       setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: false }));
-    }
-  };
-
-  const handleEliminarInforme = async (cliente, suministroId) => {
-    if (!window.confirm("¿Eliminar el informe de potencias de este suministro?")) {
-      return;
-    }
-
-    setGuardando(prev => ({ ...prev, [suministroId]: true }));
-
-    try {
-      const nuevosSuministros = cliente.suministros.map(s => {
-        if (s.id === suministroId) {
-          const { informe_potencias, ...suministroLimpio } = s;
-          return suministroLimpio;
-        }
-        return s;
-      });
-
-      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
-      const todosConFacturas = suministrosActivos.every(s => s.facturas && s.facturas.length > 0);
-      const nuevoEstado = todosConFacturas ? "Pendiente informe potencias" : "Facturas presentadas";
-
-      await updateClienteMutation.mutateAsync({
-        id: cliente.id,
-        data: {
-          suministros: nuevosSuministros,
-          estado: nuevoEstado
-        }
-      });
-
-      await queryClient.invalidateQueries(['clientes']);
-      
-      toast.success("Informe eliminado");
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Error al eliminar el informe");
-    } finally {
-      setGuardando(prev => ({ ...prev, [suministroId]: false }));
     }
   };
 
@@ -272,48 +185,11 @@ export default function InformesPotencias() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error('Error al descargar:', error);
       window.open(url, '_blank');
     }
   };
 
-  const handleIgnorarSuministro = async (cliente, suministroId) => {
-    if (!window.confirm("¿Omitir el informe de potencias para este suministro? Se tratará como si estuviera listo.")) return;
-
-    setGuardando(prev => ({ ...prev, [suministroId]: true }));
-    try {
-      const nuevosSuministros = cliente.suministros.map(s =>
-        s.id === suministroId ? { ...s, potencias_ignorado: true } : s
-      );
-
-      const suministrosActivos = nuevosSuministros.filter(s => !s.cerrado);
-      const todosTratados = suministrosActivos.every(s => s.informe_potencias || s.potencias_ignorado);
-      const nuevoEstado = todosTratados ? "Pendiente informe comparativo" : "Pendiente informe potencias";
-
-      await updateClienteMutation.mutateAsync({
-        id: cliente.id,
-        data: { suministros: nuevosSuministros, estado: nuevoEstado }
-      });
-
-      if (todosTratados) {
-        try {
-          await base44.integrations.Core.SendEmail({
-            to: "nicolas@voltisenergia.com",
-            subject: `✅ Informes de potencias listos para ${cliente.nombre_negocio}`,
-            body: `Hola Nicolás,\n\nTodos los informes de potencias de "${cliente.nombre_negocio}" ya están listos (algunos omitidos).\n\nPuedes verlos en: ${window.location.origin}${createPageUrl("InformesPorPresentar")}\n\nSaludos,\nSistema Voltis`
-          });
-        } catch (e) {}
-      }
-
-      toast.success("Suministro omitido");
-    } catch (error) {
-      toast.error("Error al omitir el suministro");
-    } finally {
-      setGuardando(prev => ({ ...prev, [suministroId]: false }));
-    }
-  };
-
-  const TIPO_ORDEN_IP = { "6.2": 8, "6.1": 7, "3.0": 6, "2.0": 5, "RL6": 4, "RL5": 3, "RL4": 2, "RL3": 2, "RL2": 1, "RL1": 1 };
+  const handleIgnorarSuministro = async (cliente, suministroId) => { = { "6.2": 8, "6.1": 7, "3.0": 6, "2.0": 5, "RL6": 4, "RL5": 3, "RL4": 2, "RL3": 2, "RL2": 1, "RL1": 1 };
   const getTipoMaximoIP = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     return cliente.suministros.reduce((max, s) => {
@@ -411,190 +287,106 @@ export default function InformesPotencias() {
                       <div className="space-y-4">
                         {cliente.suministros?.filter(s => !s.cerrado && s.facturas && s.facturas.length > 0 && !s.informe_potencias && !s.potencias_ignorado).map((suministro) => {
                           const informeSubido = informesSubidos[suministro.id];
+                          const plantillaSubida = plantillasSubidas[suministro.id];
                           const estaGuardando = guardando[suministro.id];
 
                           return (
                             <Card key={suministro.id} className="bg-gray-50">
-                              <CardContent className="p-4">
-                                <div className="flex flex-col gap-4">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-3">
-                                        <h4 className="font-semibold text-[#004D9D]">{suministro.nombre}</h4>
-                                        <Badge>{suministro.tipo_factura}</Badge>
-                                      </div>
+                              <CardContent className="p-4 space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-[#004D9D]">{suministro.nombre}</h4>
+                                  <Badge>{suministro.tipo_factura}</Badge>
+                                </div>
 
-                                      <div className="space-y-2">
-                                        <p className="text-sm text-gray-600 font-medium">📄 Facturas:</p>
-                                        {suministro.facturas?.map((factura, idx) => (
-                                          <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded border">
-                                            <FileText className="w-4 h-4 text-blue-600" />
-                                            <span className="flex-1 truncate">{factura.nombre}</span>
-                                            <button
-                                              onClick={() => handleDescargarArchivo(factura.url, factura.nombre)}
-                                              className="text-blue-600 hover:underline flex items-center gap-1"
-                                            >
-                                              <Download className="w-4 h-4" />
-                                              Descargar
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
+                                {/* Facturas */}
+                                <div>
+                                  <p className="text-sm text-gray-600 font-medium mb-1">📄 Facturas:</p>
+                                  {suministro.facturas?.map((factura, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded border mb-1">
+                                      <FileText className="w-4 h-4 text-blue-600" />
+                                      <span className="flex-1 truncate">{factura.nombre}</span>
+                                      <button onClick={() => handleDescargarArchivo(factura.url, factura.nombre)} className="text-blue-600 hover:underline flex items-center gap-1">
+                                        <Download className="w-4 h-4" /> Descargar
+                                      </button>
                                     </div>
-                                  </div>
+                                  ))}
+                                </div>
 
-                                  {/* PLANTILLA ESTUDIO ECONÓMICO */}
-                                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <p className="text-sm font-semibold text-orange-800">📊 Plantilla Estudio Económico (Excel)</p>
-                                      {suministro.plantilla_economica && (
-                                        <Button size="sm" variant="outline" onClick={() => handleEliminarPlantilla(cliente, suministro.id)} disabled={guardando[`plantilla_${suministro.id}`]} className="text-red-600 hover:bg-red-50 text-xs h-7">
-                                          <X className="w-3 h-3 mr-1" /> Eliminar
-                                        </Button>
-                                      )}
-                                    </div>
-                                    {suministro.plantilla_economica ? (
-                                      <div className="flex items-center justify-between bg-white p-2 rounded border border-orange-300">
-                                        <span className="text-sm text-orange-700 truncate flex-1">{suministro.plantilla_economica.nombre}</span>
-                                        <a href={suministro.plantilla_economica.url} download={suministro.plantilla_economica.nombre} className="text-orange-600 hover:underline flex items-center gap-1 ml-2">
-                                          <Download className="w-4 h-4" /> Descargar
-                                        </a>
+                                {/* 1. Informe de potencias */}
+                                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                                  <p className="text-sm font-semibold text-purple-900 mb-2">⚡ 1. Informe de Potencias (Excel/PDF)</p>
+                                  {informeSubido ? (
+                                    <div className="flex items-center justify-between bg-white border border-green-300 rounded p-2">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-green-600" />
+                                        <span className="text-sm text-gray-700 truncate">{informeSubido.fileName}</span>
                                       </div>
-                                    ) : plantillasSubidas[suministro.id] ? (
-                                      <div className="space-y-2">
-                                        <div className="bg-white border border-green-300 rounded p-2 flex items-center justify-between">
-                                          <span className="text-sm text-gray-600 truncate">{plantillasSubidas[suministro.id].fileName}</span>
-                                          <Button size="sm" variant="ghost" onClick={() => setPlantillasSubidas(prev => { const s={...prev}; delete s[suministro.id]; return s; })} className="h-6 w-6 p-0 text-red-500">
-                                            <X className="w-4 h-4" />
-                                          </Button>
-                                        </div>
-                                        <Button size="sm" onClick={() => handleGuardarPlantilla(cliente, suministro.id)} disabled={guardando[`plantilla_${suministro.id}`]} className="w-full bg-orange-600 hover:bg-orange-700">
-                                          {guardando[`plantilla_${suministro.id}`] ? "Guardando..." : <><Save className="w-4 h-4 mr-2" /> Guardar Plantilla</>}
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <input type="file" id={`plantilla-${suministro.id}`} className="hidden" accept=".xlsx,.xls" onChange={(e) => { if (e.target.files[0]) handleSeleccionarPlantilla(suministro.id, e.target.files[0]); e.target.value=""; }} />
-                                        <Button size="sm" onClick={() => document.getElementById(`plantilla-${suministro.id}`).click()} className="bg-orange-600 hover:bg-orange-700 text-white">
-                                          <Upload className="w-4 h-4 mr-2" /> Seleccionar Excel
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
-
-                                  <div className="flex justify-end mb-2">
-                                     <Button
-                                       size="sm"
-                                       variant="outline"
-                                       onClick={() => handleIgnorarSuministro(cliente, suministro.id)}
-                                       disabled={estaGuardando}
-                                       className="text-orange-600 border-orange-300 hover:bg-orange-50 text-xs h-7"
-                                     >
-                                       <Ban className="w-3 h-3 mr-1" />
-                                       Ignorar informe de potencias
-                                     </Button>
-                                   </div>
-
-                                  {suministro.informe_potencias ? (
-                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <p className="text-sm text-green-700 font-semibold">✓ Informe de potencias subido</p>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => handleEliminarInforme(cliente, suministro.id)}
-                                          disabled={guardando[suministro.id]}
-                                          className="text-red-600 hover:bg-red-50 hover:text-red-700 text-xs h-7"
-                                        >
-                                          <X className="w-3 h-3 mr-1" />
-                                          Eliminar
-                                        </Button>
-                                      </div>
-                                      <div className="flex items-center justify-between bg-white p-2 rounded border">
-                                        <span className="text-sm text-green-600">{suministro.informe_potencias.nombre}</span>
-                                        <a
-                                          href={suministro.informe_potencias.url}
-                                          download={suministro.informe_potencias.nombre}
-                                          className="text-sm text-green-600 hover:underline flex items-center gap-1"
-                                        >
-                                          <Download className="w-4 h-4" />
-                                          Descargar
-                                        </a>
-                                      </div>
+                                      <Button size="sm" variant="ghost" onClick={() => setInformesSubidos(prev => { const s={...prev}; delete s[suministro.id]; return s; })} className="h-6 w-6 p-0 text-red-500">
+                                        <X className="w-4 h-4" />
+                                      </Button>
                                     </div>
                                   ) : (
-                                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                      <p className="text-sm font-semibold text-purple-900 mb-3">📤 Subir informe de potencias (Excel o PDF)</p>
-                                      
-                                      {informeSubido ? (
-                                        <div className="space-y-3">
-                                          <div className="bg-white border border-green-300 rounded-lg p-3">
-                                            <div className="flex items-center justify-between">
-                                              <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-green-600" />
-                                                <p className="text-sm text-gray-600">{informeSubido.fileName}</p>
-                                              </div>
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => setInformesSubidos(prev => {
-                                                  const newState = { ...prev };
-                                                  delete newState[suministro.id];
-                                                  return newState;
-                                                })}
-                                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                                              >
-                                                <X className="w-4 h-4" />
-                                              </Button>
-                                            </div>
-                                          </div>
-
-                                          <Button
-                                            size="sm"
-                                            onClick={() => handleGuardarInforme(cliente, suministro.id)}
-                                            disabled={estaGuardando}
-                                            className="w-full bg-green-600 hover:bg-green-700"
-                                          >
-                                            {estaGuardando ? (
-                                              <>
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                                Guardando...
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Save className="w-4 h-4 mr-2" />
-                                                Guardar Informe
-                                              </>
-                                            )}
-                                          </Button>
-                                        </div>
-                                      ) : (
-                                        <>
-                                          <input
-                                            type="file"
-                                            id={`upload-${suministro.id}`}
-                                            className="hidden"
-                                            accept=".xlsx,.xls,.zip,.pdf"
-                                            onChange={(e) => {
-                                              const file = e.target.files[0];
-                                              if (file) {
-                                                handleSeleccionarInforme(suministro.id, file);
-                                              }
-                                              e.target.value = "";
-                                            }}
-                                          />
-                                          <Button
-                                            size="sm"
-                                            onClick={() => document.getElementById(`upload-${suministro.id}`).click()}
-                                            className="bg-purple-600 hover:bg-purple-700"
-                                          >
-                                            <Upload className="w-4 h-4 mr-2" />
-                                              Seleccionar Excel / PDF
-                                          </Button>
-                                        </>
-                                      )}
-                                    </div>
+                                    <>
+                                      <input type="file" id={`upload-${suministro.id}`} className="hidden" accept=".xlsx,.xls,.zip,.pdf" onChange={(e) => { if (e.target.files[0]) handleSeleccionarInforme(suministro.id, e.target.files[0]); e.target.value=""; }} />
+                                      <Button size="sm" onClick={() => document.getElementById(`upload-${suministro.id}`).click()} className="bg-purple-600 hover:bg-purple-700">
+                                        <Upload className="w-4 h-4 mr-2" /> Seleccionar Excel / PDF
+                                      </Button>
+                                    </>
                                   )}
+                                </div>
+
+                                {/* 2. Plantilla económica */}
+                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                  <p className="text-sm font-semibold text-orange-800 mb-2">📊 2. Plantilla Estudio Económico (Excel)</p>
+                                  {suministro.plantilla_economica ? (
+                                    <div className="flex items-center justify-between bg-white border border-orange-300 rounded p-2">
+                                      <span className="text-sm text-orange-700 truncate flex-1">{suministro.plantilla_economica.nombre}</span>
+                                      <div className="flex items-center gap-2">
+                                        <a href={suministro.plantilla_economica.url} download={suministro.plantilla_economica.nombre} className="text-orange-600">
+                                          <Download className="w-4 h-4" />
+                                        </a>
+                                        <Button size="sm" variant="ghost" onClick={() => handleEliminarPlantilla(cliente, suministro.id)} className="h-6 w-6 p-0 text-red-500">
+                                          <X className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : plantillaSubida ? (
+                                    <div className="flex items-center justify-between bg-white border border-green-300 rounded p-2">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-green-600" />
+                                        <span className="text-sm text-gray-700 truncate">{plantillaSubida.fileName}</span>
+                                      </div>
+                                      <Button size="sm" variant="ghost" onClick={() => setPlantillasSubidas(prev => { const s={...prev}; delete s[suministro.id]; return s; })} className="h-6 w-6 p-0 text-red-500">
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <input type="file" id={`plantilla-${suministro.id}`} className="hidden" accept=".xlsx,.xls" onChange={(e) => { if (e.target.files[0]) handleSeleccionarPlantilla(suministro.id, e.target.files[0]); e.target.value=""; }} />
+                                      <Button size="sm" onClick={() => document.getElementById(`plantilla-${suministro.id}`).click()} className="bg-orange-600 hover:bg-orange-700 text-white">
+                                        <Upload className="w-4 h-4 mr-2" /> Seleccionar Excel
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+
+                                {/* Botón único guardar + ignorar */}
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleGuardarTodo(cliente, suministro.id)}
+                                    disabled={estaGuardando || !informeSubido}
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                  >
+                                    {estaGuardando ? (
+                                      <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> Guardando...</>
+                                    ) : (
+                                      <><Save className="w-4 h-4 mr-2" /> Guardar todo</>
+                                    )}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => handleIgnorarSuministro(cliente, suministro.id)} disabled={estaGuardando} className="text-orange-600 border-orange-300 hover:bg-orange-50">
+                                    <Ban className="w-3 h-3 mr-1" /> Ignorar potencias
+                                  </Button>
                                 </div>
                               </CardContent>
                             </Card>
