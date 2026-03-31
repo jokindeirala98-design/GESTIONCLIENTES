@@ -189,7 +189,19 @@ export default function InformesPotencias() {
     }
   };
 
-  const handleIgnorarSuministro = async (cliente, suministroId) => { = { "6.2": 8, "6.1": 7, "3.0": 6, "2.0": 5, "RL6": 4, "RL5": 3, "RL4": 2, "RL3": 2, "RL2": 1, "RL1": 1 };
+  const handleIgnorarSuministro = async (cliente, suministroId) => {
+    const nuevosSuministros = cliente.suministros.map(s =>
+      s.id === suministroId ? { ...s, potencias_ignorado: true } : s
+    );
+    await updateClienteMutation.mutateAsync({
+      id: cliente.id,
+      data: { suministros: nuevosSuministros }
+    });
+    await queryClient.invalidateQueries(['clientes']);
+    toast.success("Informe de potencias omitido");
+  };
+
+  const TIPO_ORDEN_IP = { "6.2": 8, "6.1": 7, "3.0": 6, "2.0": 5, "RL6": 4, "RL5": 3, "RL4": 2, "RL3": 2, "RL2": 1, "RL1": 1 };
   const getTipoMaximoIP = (cliente) => {
     if (!cliente.suministros || cliente.suministros.length === 0) return null;
     return cliente.suministros.reduce((max, s) => {
@@ -199,8 +211,6 @@ export default function InformesPotencias() {
     }, cliente.suministros[0]?.tipo_factura || "2.0");
   };
 
-  // Clientes que tengan al menos un suministro activo con facturas y sin informe de potencias ni ignorado
-  // (independientemente del estado del cliente)
   const clientesPendientes = clientes.filter(c => {
     if (["Informe listo", "Pendiente de firma", "Pendiente de aprobación", "Firmado con éxito", "Rechazado", "Ignorado con mucho éxito"].includes(c.estado)) return false;
     if (!c.suministros || c.suministros.length === 0) return false;
