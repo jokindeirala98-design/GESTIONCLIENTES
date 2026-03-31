@@ -1035,10 +1035,26 @@ export default function InformesPorPresentar() {
                                           </div>
                                         </div>
                                       )}
-                                    </div>
-                                  </div>
+                                      {suministro.plantilla_economica && (
+                                        <div className="space-y-2 mt-3">
+                                          <p className="text-sm text-gray-600 font-medium">📊 Plantilla Estudio Económico:</p>
+                                          <div className="flex items-center gap-2 text-sm bg-orange-50 p-2 rounded border border-orange-300">
+                                            <FileText className="w-4 h-4 text-orange-600" />
+                                            <span className="flex-1 truncate">{suministro.plantilla_economica.nombre}</span>
+                                            <button
+                                              onClick={() => handleDescargarArchivo(suministro.plantilla_economica.url, suministro.plantilla_economica.nombre)}
+                                              className="text-orange-600 hover:underline flex items-center gap-1"
+                                            >
+                                              <Download className="w-4 h-4" />
+                                              Descargar
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                      </div>
+                                      </div>
 
-                                  {!tienePotencias && !esGasSuministro ? (
+                                      {!tienePotencias && !esGasSuministro ? (
                                     <div className="bg-gray-100 border border-gray-300 rounded-lg p-3">
                                       <div className="flex items-center justify-between gap-2">
                                         <p className="text-sm text-gray-500">Esperando a que José suba el informe de potencias</p>

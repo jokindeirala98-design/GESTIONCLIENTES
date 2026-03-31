@@ -20,6 +20,7 @@ export default function InformesPotencias() {
   const [user, setUser] = useState(null);
   const [clienteExpandido, setClienteExpandido] = useState(null);
   const [informesSubidos, setInformesSubidos] = useState({});
+  const [plantillasSubidas, setPlantillasSubidas] = useState({});
   const [guardando, setGuardando] = useState({});
 
   useEffect(() => {
@@ -142,6 +143,73 @@ export default function InformesPotencias() {
       toast.error("Error al guardar el informe");
     } finally {
       setGuardando(prev => ({ ...prev, [suministroId]: false }));
+    }
+  };
+
+  const handleSeleccionarPlantilla = async (suministroId, file) => {
+    if (!file) return;
+    try {
+      toast.loading("Subiendo plantilla...", { id: `plantilla-${suministroId}` });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setPlantillasSubidas(prev => ({
+        ...prev,
+        [suministroId]: { fileUrl: file_url, fileName: file.name }
+      }));
+      toast.success("Plantilla subida. Haz clic en Guardar.", { id: `plantilla-${suministroId}` });
+    } catch (error) {
+      toast.error("Error al subir la plantilla", { id: `plantilla-${suministroId}` });
+    }
+  };
+
+  const handleGuardarPlantilla = async (cliente, suministroId) => {
+    const plantilla = plantillasSubidas[suministroId];
+    if (!plantilla) { toast.error("Selecciona un archivo Excel"); return; }
+
+    setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: true }));
+    try {
+      const nuevosSuministros = cliente.suministros.map(s => {
+        if (s.id === suministroId) {
+          return {
+            ...s,
+            plantilla_economica: {
+              nombre: plantilla.fileName,
+              url: plantilla.fileUrl,
+              fecha_subida: new Date().toISOString(),
+              subido_por_email: user.email
+            }
+          };
+        }
+        return s;
+      });
+      await updateClienteMutation.mutateAsync({ id: cliente.id, data: { suministros: nuevosSuministros } });
+      await queryClient.invalidateQueries(['clientes']);
+      toast.success("Plantilla guardada");
+      setPlantillasSubidas(prev => { const s = { ...prev }; delete s[suministroId]; return s; });
+    } catch (error) {
+      toast.error("Error al guardar la plantilla");
+    } finally {
+      setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: false }));
+    }
+  };
+
+  const handleEliminarPlantilla = async (cliente, suministroId) => {
+    if (!window.confirm("¿Eliminar la plantilla de estudio económico?")) return;
+    setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: true }));
+    try {
+      const nuevosSuministros = cliente.suministros.map(s => {
+        if (s.id === suministroId) {
+          const { plantilla_economica, ...resto } = s;
+          return resto;
+        }
+        return s;
+      });
+      await updateClienteMutation.mutateAsync({ id: cliente.id, data: { suministros: nuevosSuministros } });
+      await queryClient.invalidateQueries(['clientes']);
+      toast.success("Plantilla eliminada");
+    } catch (error) {
+      toast.error("Error al eliminar la plantilla");
+    } finally {
+      setGuardando(prev => ({ ...prev, [`plantilla_${suministroId}`]: false }));
     }
   };
 
@@ -366,6 +434,45 @@ export default function InformesPotencias() {
                                         ))}
                                       </div>
                                     </div>
+                                  </div>
+
+                                  {/* PLANTILLA ESTUDIO ECONÓMICO */}
+                                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <p className="text-sm font-semibold text-orange-800">📊 Plantilla Estudio Económico (Excel)</p>
+                                      {suministro.plantilla_economica && (
+                                        <Button size="sm" variant="outline" onClick={() => handleEliminarPlantilla(cliente, suministro.id)} disabled={guardando[`plantilla_${suministro.id}`]} className="text-red-600 hover:bg-red-50 text-xs h-7">
+                                          <X className="w-3 h-3 mr-1" /> Eliminar
+                                        </Button>
+                                      )}
+                                    </div>
+                                    {suministro.plantilla_economica ? (
+                                      <div className="flex items-center justify-between bg-white p-2 rounded border border-orange-300">
+                                        <span className="text-sm text-orange-700 truncate flex-1">{suministro.plantilla_economica.nombre}</span>
+                                        <a href={suministro.plantilla_economica.url} download={suministro.plantilla_economica.nombre} className="text-orange-600 hover:underline flex items-center gap-1 ml-2">
+                                          <Download className="w-4 h-4" /> Descargar
+                                        </a>
+                                      </div>
+                                    ) : plantillasSubidas[suministro.id] ? (
+                                      <div className="space-y-2">
+                                        <div className="bg-white border border-green-300 rounded p-2 flex items-center justify-between">
+                                          <span className="text-sm text-gray-600 truncate">{plantillasSubidas[suministro.id].fileName}</span>
+                                          <Button size="sm" variant="ghost" onClick={() => setPlantillasSubidas(prev => { const s={...prev}; delete s[suministro.id]; return s; })} className="h-6 w-6 p-0 text-red-500">
+                                            <X className="w-4 h-4" />
+                                          </Button>
+                                        </div>
+                                        <Button size="sm" onClick={() => handleGuardarPlantilla(cliente, suministro.id)} disabled={guardando[`plantilla_${suministro.id}`]} className="w-full bg-orange-600 hover:bg-orange-700">
+                                          {guardando[`plantilla_${suministro.id}`] ? "Guardando..." : <><Save className="w-4 h-4 mr-2" /> Guardar Plantilla</>}
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <input type="file" id={`plantilla-${suministro.id}`} className="hidden" accept=".xlsx,.xls" onChange={(e) => { if (e.target.files[0]) handleSeleccionarPlantilla(suministro.id, e.target.files[0]); e.target.value=""; }} />
+                                        <Button size="sm" onClick={() => document.getElementById(`plantilla-${suministro.id}`).click()} className="bg-orange-600 hover:bg-orange-700 text-white">
+                                          <Upload className="w-4 h-4 mr-2" /> Seleccionar Excel
+                                        </Button>
+                                      </>
+                                    )}
                                   </div>
 
                                   <div className="flex justify-end mb-2">
