@@ -1,0 +1,9 @@
+{
+  "name": "Gestor de Clientes Voltis Energ\u00eda",
+  "site": {
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "serveCommand": "npm run dev",
+    "outputDirectory": "./dist"
+  }
+}
