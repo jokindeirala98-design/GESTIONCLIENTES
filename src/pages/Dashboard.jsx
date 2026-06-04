@@ -234,6 +234,22 @@ export default function Dashboard() {
                   </div>
                 </div>
               </a>
+
+              <a 
+                href={base44.agents.getWhatsAppConnectURL('crm_whatsapp')} 
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="p-4 rounded-lg border-2 border-blue-200 bg-blue-50 hover:border-blue-500 transition-all cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="font-medium text-blue-700">📋 Gestionar Tareas CRM por WhatsApp</p>
+                      <p className="text-xs text-blue-600">Crea y consulta tareas del CRM</p>
+                    </div>
+                  </div>
+                </div>
+              </a>
             </div>
           </CardContent>
         </Card>
