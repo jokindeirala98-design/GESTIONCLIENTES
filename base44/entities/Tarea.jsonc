@@ -1,0 +1,39 @@
+{
+  "name": "Tarea",
+  "type": "object",
+  "properties": {
+    "fecha": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de la tarea"
+    },
+    "descripcion": {
+      "type": "string",
+      "description": "Descripci\u00f3n de la tarea"
+    },
+    "color": {
+      "type": "string",
+      "enum": [
+        "verde",
+        "rojo",
+        "amarillo"
+      ],
+      "default": "verde",
+      "description": "Color/prioridad de la tarea"
+    },
+    "completada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la tarea est\u00e1 completada"
+    },
+    "propietario_email": {
+      "type": "string",
+      "description": "Email del propietario de la tarea"
+    }
+  },
+  "required": [
+    "fecha",
+    "descripcion",
+    "propietario_email"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "iniciales": {
+      "type": "string",
+      "description": "Iniciales del usuario (ej: JDI, NIG)"
+    },
+    "notificaciones_email": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el usuario recibe notificaciones por email"
+    },
+    "activo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el usuario est\u00e1 activo en el sistema"
+    }
+  },
+  "required": [
+    "iniciales"
+  ]
+}

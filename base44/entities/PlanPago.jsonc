@@ -1,0 +1,85 @@
+{
+  "name": "PlanPago",
+  "type": "object",
+  "properties": {
+    "cliente_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "cliente_nombre": {
+      "type": "string",
+      "description": "Nombre del negocio del cliente"
+    },
+    "comercial_email": {
+      "type": "string",
+      "description": "Email del comercial due\u00f1o del cliente"
+    },
+    "tipo_plan": {
+      "type": "string",
+      "enum": [
+        "ahorro_25",
+        "suscripcion_anual"
+      ],
+      "description": "Tipo de plan: 25% del ahorro o suscripci\u00f3n anual"
+    },
+    "frecuencia_pago": {
+      "type": "string",
+      "enum": [
+        "adelantado",
+        "trimestral"
+      ],
+      "description": "Adelantado (pago \u00fanico o anual con descuento) o trimestral"
+    },
+    "importe_total": {
+      "type": "number",
+      "description": "Importe total acordado"
+    },
+    "importe_cuota": {
+      "type": "number",
+      "description": "Importe de cada cuota (si es trimestral, importe_total / 4)"
+    },
+    "descuento_adelantado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si aplica el 5% de descuento por pago adelantado (solo suscripci\u00f3n anual)"
+    },
+    "fecha_activacion": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de activaci\u00f3n del plan"
+    },
+    "fecha_proximo_pago": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del pr\u00f3ximo pago pendiente"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "activo",
+        "pausado",
+        "finalizado",
+        "cancelado"
+      ],
+      "default": "activo",
+      "description": "Estado del plan de pago"
+    },
+    "contrato_url": {
+      "type": "string",
+      "description": "URL del contrato generado (cuando est\u00e9 disponible)"
+    },
+    "notas": {
+      "type": "string",
+      "description": "Notas adicionales sobre el plan"
+    }
+  },
+  "required": [
+    "cliente_id",
+    "cliente_nombre",
+    "comercial_email",
+    "tipo_plan",
+    "frecuencia_pago",
+    "importe_total",
+    "fecha_activacion"
+  ]
+}

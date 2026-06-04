@@ -1,0 +1,65 @@
+{
+  "name": "TareaCorcho",
+  "type": "object",
+  "properties": {
+    "descripcion": {
+      "type": "string",
+      "description": "Descripci\u00f3n de la tarea"
+    },
+    "notas": {
+      "type": "string",
+      "description": "Notas adicionales de la tarea"
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "URL del audio explicativo de la tarea"
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha opcional de la tarea"
+    },
+    "completada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la tarea est\u00e1 completada"
+    },
+    "fecha_completada": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se complet\u00f3 la tarea"
+    },
+    "tiene_alerta": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la tarea tiene una alerta/problema"
+    },
+    "prioridad": {
+      "type": "string",
+      "enum": [
+        "rojo",
+        "amarillo",
+        "verde"
+      ],
+      "default": "verde",
+      "description": "Prioridad de la tarea (rojo=alta, amarillo=media, verde=baja)"
+    },
+    "orden": {
+      "type": "number",
+      "description": "Orden de la tarea en la columna"
+    },
+    "creador_email": {
+      "type": "string",
+      "description": "Email del admin que cre\u00f3 la tarea"
+    },
+    "propietario_email": {
+      "type": "string",
+      "description": "Email del propietario asignado a la tarea (Nico, Iranzu o Jos\u00e9)"
+    }
+  },
+  "required": [
+    "descripcion",
+    "orden",
+    "propietario_email"
+  ]
+}

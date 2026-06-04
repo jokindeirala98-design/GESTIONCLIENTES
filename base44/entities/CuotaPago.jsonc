@@ -1,0 +1,68 @@
+{
+  "name": "CuotaPago",
+  "type": "object",
+  "properties": {
+    "plan_pago_id": {
+      "type": "string",
+      "description": "ID del plan de pago asociado"
+    },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID del cliente"
+    },
+    "cliente_nombre": {
+      "type": "string",
+      "description": "Nombre del negocio del cliente"
+    },
+    "comercial_email": {
+      "type": "string",
+      "description": "Email del comercial due\u00f1o"
+    },
+    "numero_cuota": {
+      "type": "number",
+      "description": "N\u00famero de cuota (1, 2, 3, 4...)"
+    },
+    "importe": {
+      "type": "number",
+      "description": "Importe de esta cuota"
+    },
+    "fecha_vencimiento": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de vencimiento de esta cuota"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "pagado",
+        "retrasado"
+      ],
+      "default": "pendiente",
+      "description": "Estado de esta cuota"
+    },
+    "fecha_pago_real": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se registr\u00f3 el pago"
+    },
+    "factura_url": {
+      "type": "string",
+      "description": "URL de la factura generada para esta cuota (cuando est\u00e9 disponible)"
+    },
+    "tarea_creada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si ya se cre\u00f3 la tarea en el corcho de Iranzu"
+    }
+  },
+  "required": [
+    "plan_pago_id",
+    "cliente_id",
+    "cliente_nombre",
+    "comercial_email",
+    "numero_cuota",
+    "importe",
+    "fecha_vencimiento"
+  ]
+}

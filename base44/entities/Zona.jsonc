@@ -1,0 +1,30 @@
+{
+  "name": "Zona",
+  "type": "object",
+  "properties": {
+    "nombre": {
+      "type": "string",
+      "description": "Nombre de la zona"
+    },
+    "fecha_creacion_zona": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de creaci\u00f3n de la zona"
+    },
+    "ultima_visita": {
+      "type": "string",
+      "description": "Fecha o nota de la \u00faltima visita"
+    },
+    "anotaciones": {
+      "type": "string",
+      "description": "Anotaciones sobre la zona"
+    },
+    "creador_email": {
+      "type": "string",
+      "description": "Email del usuario que cre\u00f3 la zona"
+    }
+  },
+  "required": [
+    "nombre"
+  ]
+}

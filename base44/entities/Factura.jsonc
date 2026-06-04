@@ -1,0 +1,74 @@
+{
+  "name": "Factura",
+  "type": "object",
+  "properties": {
+    "numero_factura": {
+      "type": "number",
+      "description": "N\u00famero secuencial de la factura"
+    },
+    "fecha_creacion": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de creaci\u00f3n de la factura"
+    },
+    "mes_comision": {
+      "type": "string",
+      "description": "Mes de comisi\u00f3n en formato YYYY-MM"
+    },
+    "comercial_email": {
+      "type": "string",
+      "description": "Email del comercial"
+    },
+    "comercial_nombre": {
+      "type": "string",
+      "description": "Nombre completo del comercial"
+    },
+    "importe_comision": {
+      "type": "number",
+      "description": "Base imponible (campo 3 y 4)"
+    },
+    "importe_total": {
+      "type": "number",
+      "description": "Importe total de la factura (campo 7)"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "pendiente_revision",
+        "revisada"
+      ],
+      "default": "pendiente_revision",
+      "description": "Estado de la factura"
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL del PDF generado"
+    },
+    "suministros_incluidos": {
+      "type": "array",
+      "description": "IDs de los suministros incluidos en esta factura",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cliente_id": {
+            "type": "string"
+          },
+          "suministro_id": {
+            "type": "string"
+          },
+          "comision": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "numero_factura",
+    "fecha_creacion",
+    "mes_comision",
+    "comercial_email",
+    "importe_comision",
+    "importe_total"
+  ]
+}

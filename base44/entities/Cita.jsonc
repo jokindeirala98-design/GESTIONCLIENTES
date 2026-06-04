@@ -1,0 +1,52 @@
+{
+  "name": "Cita",
+  "type": "object",
+  "properties": {
+    "cliente_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "cliente_nombre": {
+      "type": "string",
+      "description": "Nombre del negocio del cliente"
+    },
+    "comercial_email": {
+      "type": "string",
+      "description": "Email del comercial responsable"
+    },
+    "comercial_iniciales": {
+      "type": "string",
+      "description": "Iniciales del comercial"
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de la cita (YYYY-MM-DD)"
+    },
+    "hora": {
+      "type": "string",
+      "description": "Hora de la cita (HH:MM formato 24h)"
+    },
+    "visitado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si la visita ya se realiz\u00f3"
+    },
+    "fecha_visitado": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha en que se marc\u00f3 como visitado"
+    },
+    "notas": {
+      "type": "string",
+      "description": "Notas sobre la cita"
+    }
+  },
+  "required": [
+    "cliente_id",
+    "cliente_nombre",
+    "comercial_email",
+    "fecha",
+    "hora"
+  ]
+}

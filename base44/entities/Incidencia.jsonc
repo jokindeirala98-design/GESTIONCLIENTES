@@ -1,0 +1,85 @@
+{
+  "name": "Incidencia",
+  "type": "object",
+  "properties": {
+    "cliente_id": {
+      "type": "string",
+      "description": "ID del cliente relacionado"
+    },
+    "cliente_nombre": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "comercial_email": {
+      "type": "string",
+      "description": "Email del comercial que cre\u00f3 la incidencia"
+    },
+    "comercial_iniciales": {
+      "type": "string",
+      "description": "Iniciales del comercial"
+    },
+    "descripcion": {
+      "type": "string",
+      "description": "Descripci\u00f3n inicial de la incidencia"
+    },
+    "mensajes": {
+      "type": "array",
+      "description": "Conversaci\u00f3n entre admin y comercial",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "autor_email": {
+            "type": "string"
+          },
+          "autor_nombre": {
+            "type": "string"
+          },
+          "contenido": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "leido": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "prioridad": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baja"
+      ],
+      "default": "media",
+      "description": "Prioridad de la incidencia"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "activa",
+        "resuelta",
+        "revisada"
+      ],
+      "default": "activa",
+      "description": "Estado de la incidencia"
+    },
+    "fecha_resolucion": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se resolvi\u00f3 definitivamente"
+    }
+  },
+  "required": [
+    "cliente_id",
+    "comercial_email",
+    "descripcion",
+    "prioridad"
+  ]
+}

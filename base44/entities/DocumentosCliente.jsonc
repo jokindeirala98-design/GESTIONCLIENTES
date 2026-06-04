@@ -1,0 +1,82 @@
+{
+  "name": "DocumentosCliente",
+  "type": "object",
+  "properties": {
+    "cliente_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "cliente_nombre": {
+      "type": "string",
+      "description": "Nombre del negocio del cliente"
+    },
+    "cif": {
+      "type": "string",
+      "description": "CIF de la empresa"
+    },
+    "cif_archivo_url": {
+      "type": "string",
+      "description": "URL del archivo con el CIF"
+    },
+    "nombre_empresa": {
+      "type": "string",
+      "description": "Nombre oficial de la empresa"
+    },
+    "consumo_anual": {
+      "type": "number",
+      "description": "Consumo anual en kWh"
+    },
+    "direccion_fiscal": {
+      "type": "string",
+      "description": "Direcci\u00f3n fiscal de la empresa"
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Tel\u00e9fono de contacto"
+    },
+    "iban": {
+      "type": "string",
+      "description": "IBAN bancario"
+    },
+    "iban_archivo_url": {
+      "type": "string",
+      "description": "URL del archivo con el IBAN"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email de contacto"
+    },
+    "dni_texto": {
+      "type": "string",
+      "description": "N\u00famero de DNI/NIE"
+    },
+    "dni_archivos": {
+      "type": "array",
+      "description": "Hasta 2 archivos del DNI (anverso/reverso)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "fecha_subida": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "tarea_contrato_creada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si ya se cre\u00f3 la tarea de generar contrato para Iranzu"
+    }
+  },
+  "required": [
+    "cliente_id",
+    "cliente_nombre"
+  ]
+}

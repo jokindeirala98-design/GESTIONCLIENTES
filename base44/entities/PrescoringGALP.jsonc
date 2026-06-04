@@ -1,0 +1,57 @@
+{
+  "name": "PrescoringGALP",
+  "type": "object",
+  "properties": {
+    "cups": {
+      "type": "string",
+      "description": "CUPS del suministro"
+    },
+    "nombre_razon_social": {
+      "type": "string",
+      "description": "Nombre o raz\u00f3n social"
+    },
+    "cif": {
+      "type": "string",
+      "description": "CIF del cliente"
+    },
+    "producto": {
+      "type": "string",
+      "description": "Producto"
+    },
+    "tarifa": {
+      "type": "string",
+      "description": "Tarifa"
+    },
+    "qa": {
+      "type": "string",
+      "description": "Qa"
+    },
+    "part_auto": {
+      "type": "string",
+      "description": "Participaci\u00f3n / Autoconsumo"
+    },
+    "telefono": {
+      "type": "string",
+      "description": "Tel\u00e9fono"
+    },
+    "poblacion": {
+      "type": "string",
+      "description": "Poblaci\u00f3n"
+    },
+    "direccion_fiscal": {
+      "type": "string",
+      "description": "Direcci\u00f3n fiscal"
+    },
+    "enviado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el cliente ha sido enviado a revisi\u00f3n"
+    },
+    "denegado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el prescoring fue denegado por la compa\u00f1\u00eda"
+    }
+  },
+  "required": []
+}
