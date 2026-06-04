@@ -7,6 +7,19 @@
       "description": "Realiza acciones en el CRM externo de Voltis: get_user, search_clients, list_users, create_task, list_tasks, complete_task, cancel_task"
     }
   ],
-  "whatsapp_greeting": "\ud83d\udc4b \u00a1Hola! Soy BOTtis CRM, tu asistente de tareas conectado al CRM de Voltis.\n\nPuedo ayudarte a:\n\ud83d\udcdd Crear tareas (vinculadas a clientes si quieres)\n\ud83d\udccb Ver tus tareas pendientes\n\u2705 Marcar tareas como completadas\n\nEjemplos:\n\u2022 'Llamar a C\u00e1rnicas Arrieta el viernes'\n\u2022 'Tarea para jose: revisar contrato Valle de Eg\u00fc\u00e9s'\n\u2022 '\u00bfQu\u00e9 tengo pendiente?'\n\u2022 'Completa la tarea 1'",
+  "whatsapp_greeting": "Holiputiii, ya est\u00e1s activoski. ",
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "telegram_greeting": "",
+  "line_greeting": "",
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
   "name": "crm_whatsapp"
 }
